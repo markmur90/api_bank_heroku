@@ -1,0 +1,38 @@
+name: devcontainer_ant2
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    ports:
+      - "8004:8000"
+    depends_on:
+      database:
+        condition: service_started
+    environment:
+      DATABASE_URL: postgres://postgres:postgres@database:5432/swiftapi4_ant2
+    networks:
+      app_ant2_network: null
+    restart: always
+  database:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: swiftapi4_ant2
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    networks:
+      app_ant2_network: null
+    restart: always
+    ports:
+      - mode: ingress
+        target: 5432
+        published: "5435" # Cambiado de 5433 a 5434 para evitar conflictos
+        protocol: tcp    
+volumes:
+  db_data:
+    driver: local
+networks:
+  app_ant2_network:
+    driver: bridge

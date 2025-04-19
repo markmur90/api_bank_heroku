@@ -1,0 +1,17 @@
+
+docker run -d -p 5432:5432 
+
+markmur88/conf3-backend		8000
+markmur88/conf3-frontend	3000
+markmur88/conf33		5432
+
+docker run -d -p 5432:5432 conf3-database-1
+docker run -d -p 5432:5432 conf3-backend-1
+docker run -d -p 5432:5432 conf3-frontend-1
+
+find /ruta/de/la/carpeta -type f exec chmod +x {} \;
+
+find /home/markmur88/Documentos/Docker/conf3 -type f exec chmod +x {} \;
+
+find /home/markmur88/Documentos/Docker/conf3/ -type f -exec chmod +x {} \;
+

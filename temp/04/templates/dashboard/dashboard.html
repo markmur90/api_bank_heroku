@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html> 
+<head>
+    <title>Dashboard</title>
+    {% load static %}
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+
+    <link rel="stylesheet" type="text/css" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="title-card">
+        <h1>Dashboard</h1>
+    </div>
+    <div class="container">
+        <div class="card">
+            <h2>Transferencias</h2>
+            <a href="{% url 'transferencia' %}">Transferencias (HTML)</a> <!-- Enlace a la vista de transferencias en HTML -->
+            <a href="{% url 'transferencia_list' %}">Transferencias (GET)</a> <!-- Enlace a la vista de transferencias en GET -->
+        </div>
+        <div class="card">
+            <h2>OAuth2</h2>
+            <a href="{% url 'oauth2_provider:token' %}">OAuth2 Provider</a> <!-- Enlace a la vista de OAuth2 Provider -->
+        </div>
+        <div class="card">
+            <h2>Admin</h2>
+            <a href="{% url 'admin:index' %}">Admin</a> <!-- Enlace a la vista de administración -->
+        </div>
+        <div class="card">
+            <h2>Pagos</h2>
+            <a href="{% url 'load_data' %}">Cargar Datos</a> <!-- Enlace a la vista de cargar datos -->
+            <a href="{% url 'initiate_payment' %}">Iniciar Pago</a> <!-- Enlace a la vista de iniciar pago -->
+            <a href="{% url 'initiate_payment2' %}">Iniciar Pago2</a> <!-- Enlace a la vista de iniciar pago -->
+            <a href="{% url 'initiate_payment3' %}">Iniciar Pago3</a> <!-- Enlace a la vista de iniciar pago -->
+            <a href="{% url 'check_payment_status' payment_id='example_payment_id' %}">Verificar Estado de Pago</a> <!-- Enlace a la vista de verificar estado de pago -->
+            <a href="{% url 'check_iban_reachability' iban='example_iban' %}">Verificar Alcanzabilidad de IBAN</a> <!-- Enlace a la vista de verificar alcanzabilidad de IBAN -->
+        </div>
+        <div class="card">
+            <h2>Modelos Complementarios</h2>
+            <a href="{% url 'error_response' %}">ErrorResponse</a>
+            <a href="{% url 'message' %}">Message</a>
+            <a href="{% url 'transaction_status' %}">TransactionStatus</a>
+            <a href="{% url 'status_response' %}">StatusResponse</a>
+        </div>
+        <div class="card">
+            <h2>OAuth_app</h2>
+            <a href="{% url 'oauth2_client' %}">Crear OAuth2 Client</a>
+
+            <a href="{% url 'access_token' %}">Crear Access Token</a>
+
+            <a href="{% url 'refresh_token_form' %}">Crear Refresh Token</a>
+        </div>
+    </div>
+</body>
+</html>

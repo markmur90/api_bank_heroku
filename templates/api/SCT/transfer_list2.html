@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h2>Transferencias SEPA</h2>
+    <a href="{% url 'initiate_transfer2' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nueva Transferencia
+    </a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Deudor</th>
+                <th>Beneficiario</th>
+                <th>Monto</th>
+                <th>Estado</th>
+                <th>Fecha Creación</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transfer in transfers %}
+            <tr>
+                <td class="text-muted">{{ transfer.payment_id|truncatechars:12 }}</td>
+                <td>{{ transfer.debtor.debtor_name }}</td>
+                <td>{{ transfer.creditor.creditor_name }}</td>
+                <td class="fw-bold">
+                    {{ transfer.instructed_amount.amount }} {{ transfer.instructed_amount.currency }}
+                </td>
+                <td>
+                    <span class="badge bg-{{ transfer.status_color }}">
+                        {{ transfer.status_display }}
+                    </span>
+                </td>
+                <td>{{ transfer.created_at|date:"d/m/Y H:i" }}</td>
+                <td class="text-end">
+                    <a href="{{ transfer.get_absolute_url }}" class="btn btn-sm btn-outline-secondary">
+                        Detalles <i class="bi bi-chevron-right"></i>
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No se encontraron transferencias
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

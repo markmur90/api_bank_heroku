@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cargar Amount</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="form-card">
+            <h1>Cargar Amount</h1>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="currency_code">Código de Moneda:</label>
+                    <select id="currency_code" name="currency_code" required>
+                        {% for currency in currency_codes %}
+                            <option value="{{ currency.id }}">{{ currency.currency_code }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="amount">Monto:</label>
+                    <input type="number" id="amount" name="amount" placeholder="Ingrese el monto" required>
+                    <small>Ejemplo: 100.00</small>
+                </div>
+                <button type="submit" class="btn btn-primary">Cargar</button>
+            </form>
+            <a href="{% url 'load_data' %}" class="btn btn-secondary">Regresar a Cargar Datos</a>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Regresar al Dashboard</a>
+            <a href="{% url 'initiate_payment' %}" class="btn btn-secondary">Regresar a Iniciar Pago</a>
+        </div>
+        <div class="info-card">
+            <h2>Datos Ingresados</h2>
+            <ul>
+                {% for amount in amounts %}
+                    <li>Monto: {{ amount.amount }} {{ amount.currency_code.currency_code }}</li>
+                {% empty %}
+                    <li>No se encontraron montos.</li>
+                {% endfor %}
+            </ul>
+            <a href="{% url 'load_amount' %}" class="btn btn-primary">Modificar</a>
+        </div>
+    </div>
+</body>
+</html>

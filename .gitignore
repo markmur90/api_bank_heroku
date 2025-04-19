@@ -1,0 +1,28 @@
+# .venv
+# venv
+# *.pyc
+# migrations/
+# __pycache__/
+db.sqlite3
+# node_modules/
+# scripts/
+# temp/
+# test/
+# Docker/
+# docs/
+# dbapi/
+
+# .coverage
+
+# my.cnf
+# openapi.yaml
+# opentools.json
+# package-lock.json
+# package.json
+# petstore.json
+# pytest.ini
+
+
+# a001Black_proc
+
+config/settings/local.py

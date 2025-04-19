@@ -1,0 +1,26 @@
+{
+    "dockerComposeFile": "docker-compose.yml",
+    "service": "app",
+    "waitFor": "onCreateCommand",
+    "updateContentCommand": "",
+    "postCreateCommand": "pip install --user -r requirements.txt && python manage.py collectstatic && python manage.py migrate",
+    "postAttachCommand": {
+      "server": "python manage.py runserver"
+    },
+    "containerEnv": {
+      "DATABASE_URL": "postgres://postgres:postgres@db/swiftapi"
+    },
+    "customizations": {
+      "vscode": {
+        "extensions": [
+          "ms-python.python"
+        ]
+      }
+    },
+    "portsAttributes": {
+      "8000": {
+        "label": "Application"
+      }
+    },
+    "forwardPorts": [8000]
+  }

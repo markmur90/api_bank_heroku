@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cargar IBAN</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="form-card">
+            <h1>Cargar IBAN</h1>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="iban">IBAN:</label>
+                    <input type="text" id="iban" name="iban" placeholder="Ingrese el IBAN" required>
+                    <small>Ejemplo: DE89370400440532013000</small>
+                </div>
+                <button type="submit" class="btn btn-primary">Cargar</button>
+            </form>
+            <a href="{% url 'load_data' %}" class="btn btn-secondary">Regresar a Cargar Datos</a>
+            <a href="{% url 'dashboard' %}" class="btn btn-secondary">Regresar al Dashboard</a>
+            <a href="{% url 'initiate_payment' %}" class="btn btn-secondary">Regresar a Iniciar Pago</a>
+        </div>
+        <div class="info-card">
+            <h2>Datos Ingresados</h2>
+            <ul>
+                {% for iban in ibans %}
+                    <li>IBAN: {{ iban.iban }}</li>
+                {% empty %}
+                    <li>No IBANs found.</li>
+                {% endfor %}
+            </ul> 
+            {% comment %} <a href="{% url 'load_iban' %}" class="btn btn-primary">Modificar</a> {% endcomment %}
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,32 @@
+{
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+  
+	"dockerComposeFile": "docker-compose.yml",
+	"service": "app",
+	"workspaceFolder": "/workspace",
+  
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+  
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	"forwardPorts": [8000],
+  
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "python manage.py collectstatic --noinput && python manage.py migrate",
+  
+	// Configure tool-specific properties.
+	"customizations": {
+	  "vscode": {
+		"extensions": [
+		  "ms-python.python",
+		  "ms-azuretools.vscode-docker", // Extensión para Docker
+		  "ms-vscode-remote.remote-containers" // Extensión para contenedores remotos
+		]
+	  }
+	}
+  
+	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}
+
+  

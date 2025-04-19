@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Datos Cargados</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="success-card">
+            <h1>Datos Cargados Exitosamente</h1>
+            <p>Los datos han sido cargados en la base de datos exitosamente.</p>
+            <a href="{% url 'load_data' %}" class="btn btn-primary">Cargar Más Datos</a> <!-- Botón para cargar más datos -->
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,37 @@
+name: devcontainer_act
+
+services:
+  backend:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    ports:
+      - "8002:8000"
+    restart: unless-stopped
+    init: true
+    depends_on:
+      - database
+    environment:
+      # Uncomment and set the following if needed
+      # env_file: ./.env
+
+  database:
+    image: postgres:latest
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: swiftapi4_act
+    volumes:
+      - db_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    ports:
+      - mode: ingress
+        target: 5432
+        published: "5434" # Cambiado de 5433 a 5434 para evitar conflictos
+        protocol: tcp    
+volumes:
+  db_data:
+    driver: local
+networks:
+  default:
+    driver: bridge

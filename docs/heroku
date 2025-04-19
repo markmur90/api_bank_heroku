@@ -1,0 +1,18 @@
+heroku login
+heroku apps:create
+
+git push heroku main
+heroku run python manage.py migrate
+heroku run python manage.py createsuperuser
+heroku apps:info
+
+heroku run python manage.py makemigrations --app api-bank-mt
+heroku run python manage.py migrate --app api-bank-mt
+heroku run python manage.py createsuperuser --app api-bank-mt
+
+heroku run python manage.py flush --no-input --app api-bank-mt
+heroku run python manage.py dumpdata > bdd.json --app api-bank-mt 
+heroku run python manage.py loaddata bdd.json --app api-bank-mt
+
+	
+heroku pg:reset DATABASE --confirm NOMBRE-DE-APP

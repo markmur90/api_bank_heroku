@@ -1,0 +1,40 @@
+name: devcontainer_ant5
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    command: sleep infinity
+    depends_on:
+      - db
+    networks:
+      swiftapi4_ant5-network: null
+    ports:
+      - "8007:8000"
+    volumes:
+      - .:/app:cached
+    user: "1000:1000" # UID y GID del usuario markmur
+  db:
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: swiftapi4_ant5
+    image: postgres:latest
+    networks:
+      swiftapi4_ant5-network: null
+    restart: unless-stopped
+    ports:
+      - mode: ingress
+        target: 5432
+        published: "5438" # Cambiado de 5433 a 5434 para evitar conflictos
+        protocol: tcp
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+networks:
+  swiftapi4_ant5-network:
+    name: devcontainer_swiftapi4_ant5-network
+
+volumes:
+  postgres-data:
+    name: devcontainer_swiftapi4_ant5-data

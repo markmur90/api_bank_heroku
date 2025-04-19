@@ -1,0 +1,9 @@
+services:
+  app:
+    user: "1000:1000" # UID y GID del usuario markmur
+    volumes:
+      - ~/.vscode-server:/root/.vscode-server
+      - /vscode:/vscode
+      - /app:/app:cached
+    environment:
+      - NODE_OPTIONS=--max_old_space_size=4096

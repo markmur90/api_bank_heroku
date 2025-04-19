@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Cargar Currency Code</title>
+    {% load static %}
+    <link rel="stylesheet" type="text/css" href="{% static 'css/dashboard.css' %}">
+</head>
+<body>
+    <div class="container">
+        <div class="form-card">
+            <h1>Cargar Currency Code</h1>
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-group">
+                    <label for="currency_code">Código de Moneda:</label>
+                    <input type="text" id="currency_code" name="currency_code" placeholder="Ingrese el código de moneda (ISO 4217)" required>
+                    <small>Ejemplo: USD, EUR, GBP</small>
+                </div>
+                <button type="submit" class="btn btn-primary mb-3">Cargar</button>
+            </form>
+            <div class="d-flex flex-column">
+                <a href="{% url 'load_data' %}" class="btn btn-secondary mb-3">Regresar a Cargar Datos</a>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary mb-3">Regresar al Dashboard</a>
+                <a href="{% url 'initiate_payment' %}" class="btn btn-secondary mb-3">Regresar a Iniciar Pago</a>
+            </div>
+        </div>
+        <div class="info-card mt-4">
+            <h2>Datos Ingresados</h2>
+            <ul>
+                {% for currency in currency_codes %}
+                    <li>Código de Moneda: {{ currency.currency_code }}</li>
+                {% empty %}
+                    <li>No se encontraron códigos de moneda.</li>
+                {% endfor %}
+            </ul>
+            {% comment %} <a href="{% url 'load_currency_code' %}" class="btn btn-primary">Modificar</a> {% endcomment %}
+        </div>
+    </div>
+</body>
+</html>

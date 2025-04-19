@@ -1,0 +1,40 @@
+name: devcontainer4_00
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    command: sleep infinity
+    depends_on:
+      - db
+    networks:
+      swiftapi4-network: null
+    ports:
+      - "8000:8000"
+    volumes:
+      - ../..:/workspaces:cached
+  db:
+    environment:
+      POSTGRES_DB: swiftapi4
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    image: postgres:latest
+    networks:
+      swiftapi4-network: null
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+
+    volumes:
+      - type: volume
+        source: postgres-data
+        target: /var/lib/postgresql/data
+        volume: {}
+
+networks:
+  swiftapi4-network:
+    name: devcontainer_swiftapi4_00-network
+    
+volumes:
+  postgres-data:
+    name: devcontainer_swiftapi4_00-data
