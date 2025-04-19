@@ -93,11 +93,32 @@ TEMPLATES = [
 
 import dj_database_url
 
-DATABASES = {
+DATABASES_HEROKU = {
 	'default': dj_database_url.config()
 }
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+
+# Databases
+DATABASE_SQLITE = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
+}
+
+DATABASE_PSQL = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'mydatabase',
+        'USER': 'markmur88',
+        'PASSWORD': 'Ptf8454Jd55',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
+DATABASES = DATABASE_SQLITE
 
 
 # Authentication
