@@ -260,7 +260,7 @@ def transfer_list_view(request):
 
     
 from django.http import FileResponse
-from .generate_pdf import generar_pdf_transferencia
+from .utils import generar_pdf_transferencia
 
 
 def generate_transfer_pdf(request, payment_id):
