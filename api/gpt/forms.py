@@ -15,6 +15,12 @@ class SepaCreditTransferForm(forms.ModelForm):
             'remittance_information_unstructured'
         ]  # Eliminados 'idempotency_key' y 'payment_identification' de los campos editables
         widgets = {
+            'debtor': forms.TextInput(attrs={'maxlength': 140, 'class': 'form-control'}),
+            'debtor_account': forms.TextInput(attrs={'pattern': '[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}', 'class': 'form-control'}),
+            'creditor': forms.TextInput(attrs={'maxlength': 140, 'class': 'form-control'}),
+            'creditor_account': forms.TextInput(attrs={'pattern': '[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}', 'class': 'form-control'}),
+            'creditor_agent': forms.TextInput(attrs={'maxlength': 35, 'class': 'form-control'}),
+            'instructed_amount': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),
             'requested_execution_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'purpose_code': forms.TextInput(attrs={
                 'pattern': '.{4}',
