@@ -25,7 +25,6 @@ SECRET_KEY = 'django-insecure-z*_hrh0ssiq1s5t=dqe5_c6@qfb(fhb!+ruqnvu$mxi4$*m0s4
 DEBUG = False
 ALLOWED_HOSTS = ['api-bank-heroku-72c443ab11d3.herokuapp.com', '0.0.0.0']
 ORIGIN = 'api-bank-heroku-72c443ab11d3.herokuapp.com'
-# https://api-bank-mt-8baa98a9ca2b.herokuapp.com/ | https://git.heroku.com/api-bank-mt.git
 
 # Installed apps
 INSTALLED_APPS = [
