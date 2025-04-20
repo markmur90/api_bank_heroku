@@ -1,5 +1,5 @@
-# .venv
-# venv
+.venv
+venv
 # *.pyc
 # migrations/
 # __pycache__/
