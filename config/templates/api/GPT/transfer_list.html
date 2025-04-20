@@ -25,8 +25,8 @@
             {% for transfer in transfers %}
             <tr>
                 <td class="text-muted">{{ transfer.payment_id|truncatechars:12 }}</td>
-                <td>{{ transfer.debtor.name }}</td>
-                <td>{{ transfer.creditor.name }}</td>
+                <td>{{ transfer.debtor.debtor_name }}</td>
+                <td>{{ transfer.creditor.creditor_name }}</td>
                 <td class="fw-bold">
                     {{ transfer.instructed_amount.amount }} {{ transfer.instructed_amount.currency }}
                 </td>

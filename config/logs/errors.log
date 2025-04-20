@@ -1049,3 +1049,26 @@ Traceback (most recent call last):
     creditor_name = transfers.creditor_name.replace(" ", "_")
                     ^^^^^^^^^^^^^^^^^^^^^^^
 AttributeError: 'SepaCreditTransfer' object has no attribute 'creditor_name'. Did you mean: 'creditor_agent'?
+ERROR 2025-04-20 06:23:19,649 middleware Error en /app/gpt/transfer/50d94e47-cfae-4cbc-a1af-06a67e3ea1d3/pdf/: 'Creditor' object has no attribute 'name'
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/gpt/views.py", line 256, in generate_transfer_pdf
+    pdf_path = generar_pdf_transferencia(transfer)
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/gpt/generate_pdf.py", line 82, in generar_pdf_transferencia
+    ["Name", transfers.creditor.name],
+             ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Creditor' object has no attribute 'name'
+ERROR 2025-04-20 06:23:19,655 log Internal Server Error: /app/gpt/transfer/50d94e47-cfae-4cbc-a1af-06a67e3ea1d3/pdf/
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/gpt/views.py", line 256, in generate_transfer_pdf
+    pdf_path = generar_pdf_transferencia(transfer)
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/gpt/generate_pdf.py", line 82, in generar_pdf_transferencia
+    ["Name", transfers.creditor.name],
+             ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'Creditor' object has no attribute 'name'
+WARNING 2025-04-20 06:25:34,505 log Bad Request: /app/gpt/transfer/50d94e47-cfae-4cbc-a1af-06a67e3ea1d3/retry-auth/

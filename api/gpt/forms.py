@@ -101,9 +101,9 @@ class PaymentIdentificationForm(forms.ModelForm):
 class DebtorForm(forms.ModelForm):
     class Meta:
         model = Debtor
-        fields = ['name', 'postal_address']
+        fields = ['debtor_name', 'postal_address']
         widgets = {
-            'name': forms.TextInput(attrs={'maxlength': 100, 'class': 'form-control'}),
+            'debtor_name': forms.TextInput(attrs={'maxlength': 100, 'class': 'form-control'}),
             'postal_address': forms.Select(attrs={'class': 'form-control'}),
         }
 
@@ -111,8 +111,8 @@ class DebtorForm(forms.ModelForm):
 class CreditorForm(forms.ModelForm):
     class Meta:
         model = Creditor
-        fields = ['name', 'postal_address']
+        fields = ['creditor_name', 'postal_address']
         widgets = {
-            'name': forms.TextInput(attrs={'maxlength': 100, 'class': 'form-control'}),
+            'creditor_name': forms.TextInput(attrs={'maxlength': 100, 'class': 'form-control'}),
             'postal_address': forms.Select(attrs={'class': 'form-control'}),
         }

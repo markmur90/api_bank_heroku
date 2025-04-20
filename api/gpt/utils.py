@@ -14,7 +14,7 @@ def generate_sepa_json_payload(transfer):
     """Genera el JSON de transferencia SEPA según especificación del banco"""
     return {
         "creditor": {
-            "name": transfer.creditor.name,
+            "name": transfer.creditor.creditor_name,
             "account": {
                 "iban": transfer.creditor_account.iban,
                 "currency": transfer.creditor_account.currency
@@ -29,7 +29,7 @@ def generate_sepa_json_payload(transfer):
             }
         },
         "debtor": {
-            "name": transfer.debtor.name,
+            "name": transfer.debtor.debtor_name,
             "account": {
                 "iban": transfer.debtor_account.iban,
                 "currency": transfer.debtor_account.currency

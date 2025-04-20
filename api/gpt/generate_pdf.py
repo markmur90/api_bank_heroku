@@ -13,7 +13,7 @@ def generar_pdf_transferencia(transfers):
     Generates a well-organized PDF with SEPA transfer details.
     """
     # PDF file name
-    creditor_name = transfers.creditor_name.replace(" ", "_")
+    creditor_name = transfers.creditor.creditor_name.replace(" ", "_")
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     payment_reference = transfers.payment_id
     pdf_filename = f"{creditor_name}_{timestamp}_{payment_reference}.pdf"
@@ -56,7 +56,7 @@ def generar_pdf_transferencia(transfers):
     # Debtor Information
     debtor_data = [
         ["Debtor Information", ""],
-        ["Name", transfers.debtor.name],
+        ["Name", transfers.debtor.debtor_name],
         ["IBAN", transfers.debtor_account.iban],
         ["BIC", transfers.debtor_account.currency],  # No hay campo BIC en Account, se usa currency
         ["Address", f"{transfers.debtor.postal_address.street_and_house_number}, "
@@ -79,7 +79,7 @@ def generar_pdf_transferencia(transfers):
     # Creditor Information
     creditor_data = [
         ["Creditor Information", ""],
-        ["Name", transfers.creditor.name],
+        ["Name", transfers.creditor.creditor_name],
         ["IBAN", transfers.creditor_account.iban],
         ["BIC", transfers.creditor_account.currency],  # No hay campo BIC en Account, se usa currency
         ["Address", f"{transfers.creditor.postal_address.street_and_house_number}, "
