@@ -1,4 +1,6 @@
 from django import forms
+from datetime import datetime
+import pytz
 from .models import (
     SepaCreditTransfer, Party, Account, Amount,
     FinancialInstitution, PostalAddress, PaymentIdentification
@@ -13,15 +15,19 @@ class SepaCreditTransferForm(forms.ModelForm):
             'creditor_agent', 'instructed_amount', 'purpose_code',
             'requested_execution_date', 'remittance_information_structured',
             'remittance_information_unstructured'
-        ]  # Eliminados 'idempotency_key' y 'payment_identification' de los campos editables
+        ]
         widgets = {
-            'debtor': forms.TextInput(attrs={'maxlength': 140, 'class': 'form-control'}),
-            'debtor_account': forms.TextInput(attrs={'pattern': '[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}', 'class': 'form-control'}),
-            'creditor': forms.TextInput(attrs={'maxlength': 140, 'class': 'form-control'}),
-            'creditor_account': forms.TextInput(attrs={'pattern': '[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}', 'class': 'form-control'}),
-            'creditor_agent': forms.TextInput(attrs={'maxlength': 35, 'class': 'form-control'}),
-            'instructed_amount': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),
-            'requested_execution_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'debtor': forms.Select(attrs={'class': 'form-control'}),
+            'debtor_account': forms.Select(attrs={'class': 'form-control'}),
+            'creditor': forms.Select(attrs={'class': 'form-control'}),
+            'creditor_account': forms.Select(attrs={'class': 'form-control'}),
+            'creditor_agent': forms.Select(attrs={'class': 'form-control'}),
+            'instructed_amount': forms.Select(attrs={'class': 'form-control'}),
+            'requested_execution_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control',
+                'value': datetime.now(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d')
+            }),
             'purpose_code': forms.TextInput(attrs={
                 'pattern': '.{4}',
                 'class': 'form-control',
@@ -49,8 +55,8 @@ class PartyForm(forms.ModelForm):
         widgets = {
             'debtor_name': forms.TextInput(attrs={'maxlength': 140, 'class': 'form-control'}),
             'creditor_name': forms.TextInput(attrs={'maxlength': 70, 'class': 'form-control'}),
-            'debtor_postal_address': forms.TextInput(attrs={'class': 'form-control'}),
-            'creditor_postal_address': forms.TextInput(attrs={'class': 'form-control'}),
+            'debtor_postal_address': forms.Select(attrs={'class': 'form-control'}),
+            'creditor_postal_address': forms.Select(attrs={'class': 'form-control'}),
         }
 
 

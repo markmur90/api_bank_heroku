@@ -13,16 +13,14 @@
 
                 <!-- SEPA Transfers -->
                 <li class="nav-item">
-                    <a class="btn btn-outline-light me-2" href="{% url 'transfer_list22' %}">Listado</a>
+                    <a class="btn btn-outline-light me-2" href="{% url 'transfer_list22' %}">SEPA XML</a>
                 </li>
-                <li class="nav-item">
-                    <a class="btn btn-outline-light me-2" href="{% url 'initiate_transfer2' %}">Nueva Transferencia</a>
-                </li>
+
 
                 <!-- SEPA Transfers Dropdown -->
                 <li class="nav-item dropdown">
                     <a class="btn btn-outline-light dropdown-toggle me-2" href="#" id="sepaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        Transferencias SEPA
+                        SEPA JSON
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="sepaDropdown">
                         <li><a class="dropdown-item" href="{% url 'transfer_listGPT' %}">Listado de Transferencias</a></li>
@@ -32,7 +30,7 @@
                         <li><a class="dropdown-item" href="{% url 'create_amountGPT' %}">Crear Monto</a></li>
                         <li><a class="dropdown-item" href="{% url 'create_financial_institutionGPT' %}">Crear Institución Financiera</a></li>
                         <li><a class="dropdown-item" href="{% url 'create_postal_addressGPT' %}">Crear Dirección Postal</a></li>
-                        <li><a class="dropdown-item" href="{% url 'create_payment_identificationGPT' %}">Crear Identificación de Pago</a></li>
+
                     </ul>
                 </li>
 
