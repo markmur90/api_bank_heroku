@@ -1,43 +1,52 @@
 markmur90: revisa detalladamente las views contra datos=[Cabeceras y dbapi-sepaCreditTransfer2.json]; busca errores y faltantes en las views vs datos; antes de hacer las modificaciones muestramelas en un listado para autorizarte con cuales proceder
 
-GitHub Copilot: Aquí tienes un listado de los posibles errores y faltantes en las views del archivo `views.py` en comparación con los datos proporcionados en `Cabeceras` y `dbapi-sepaCreditTransfer2.json`. Por favor, revísalos y autorízame para proceder con las modificaciones necesarias:
+GitHub Copilot: Aquí tienes un listado de posibles errores y faltantes en las views del archivo `views.py` en comparación con los datos proporcionados en `Cabeceras` y `dbapi-sepaCreditTransfer2.json`:
 
 ---
 
 ### **Errores y faltantes detectados:**
 
-1. **Cabeceras faltantes o incorrectas en las solicitudes HTTP:**
-   - En las views `initiate_sepa_transfer`, `check_transfer_status`, `cancel_sepa_transfer`, y `retry_sepa_transfer_auth`, faltan algunas cabeceras requeridas según `Cabeceras` y `dbapi-sepaCreditTransfer2.json`:
-     - `X-Requested-With` (ya está en algunos lugares, pero no en todos).
-     - `Origin` (ya está en algunos lugares, pero no en todos).
-     - `previewsignature` (debe ser opcional, pero validada si está presente).
-     - `apikey` (debe ser requerida).
-     - `Correlation-Id` (debe ser opcional, pero validada si excede 50 caracteres).
+1. **Cabeceras requeridas no validadas completamente:**
+   - En `validate_headers`, faltan validaciones para las siguientes cabeceras requeridas según `Cabeceras`:
+     - `access-control-allow-origin`
+     - `access-control-allow-methods`
+     - `access-control-allow-headers`
+     - `x-request-id`
+   - Estas cabeceras no están siendo verificadas en las solicitudes.
 
-2. **Validación de parámetros faltantes en el cuerpo de la solicitud:**
-   - En `initiate_sepa_transfer`, no se valida que los campos requeridos en el cuerpo de la solicitud coincidan con los definidos en `dbapi-sepaCreditTransfer2.json`:
-     - `creditor`, `creditorAccount`, `creditorAgent`, `debtor`, `debtorAccount`, `instructedAmount` son obligatorios y deben validarse.
-     - `requestedExecutionDate` debe coincidir con el formato `yyyy-MM-dd`.
+2. **Cabecera `apikey` no incluida en las solicitudes salientes:**
+   - Aunque se valida en `validate_headers`, no se incluye en los headers de las solicitudes salientes en las funciones como `initiate_sepa_transfer`, `check_transfer_status`, `cancel_sepa_transfer`, etc.
 
-3. **Faltan mensajes de error específicos:**
-   - En `handle_error_response`, faltan algunos códigos de error definidos en `dbapi-sepaCreditTransfer2.json`, como:
-     - `6503`: "Parameters submitted are missing or invalid."
-     - `6504`: "The parameters in the request do not match the initial request."
-     - `6508`: "Sepa payment not found."
-     - `6520`: "Invalid value: requestedExecutionDate must match yyyy-MM-dd format."
+3. **Faltan validaciones específicas para los datos del cuerpo de la solicitud:**
+   - En `validate_parameters`, no se valida el formato de `createDateTime` (debe coincidir con `yyyy-MM-dd'T'HH:mm:ss`).
+   - No se valida que `currency` sea un código ISO 4217 válido (ejemplo: `EUR`).
+   - No se valida que `amount` sea un número positivo.
 
-4. **Faltan endpoints para operaciones bulk:**
-   - No hay views para manejar operaciones bulk (`/bulk`, `/bulk/{paymentId}/status`, `/bulk/{paymentId}`) como se define en `dbapi-sepaCreditTransfer2.json`.
+4. **Endpoint incorrecto en `initiate_sepa_transfer`:**
+   - El endpoint utilizado para crear transferencias SEPA es `https://api.db.com:443/gw/dbapi/banking/transactions/v2`, pero según `dbapi-sepaCreditTransfer2.json`, debería ser:
+     - `https://simulator-api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer`.
 
-5. **Faltan validaciones de UUID:**
-   - En `delete_transfer`, ya se valida que `payment_id` sea un UUID válido, pero esta validación debería aplicarse también en otros lugares donde se usa `payment_id` (como `check_transfer_status`, `cancel_sepa_transfer`, y `retry_sepa_transfer_auth`).
+5. **Faltan respuestas de error específicas:**
+   - En `handle_error_response`, faltan mensajes de error para los códigos `6509`, `6510`, `6518`, `6519`, `6520`, `6521`, `6523`, `6524`, `6525`, y `6526`, que están definidos en `dbapi-sepaCreditTransfer2.json`.
 
-6. **Faltan respuestas para códigos de estado específicos:**
-   - En las views que realizan solicitudes HTTP (`initiate_sepa_transfer`, `check_transfer_status`, `cancel_sepa_transfer`, `retry_sepa_transfer_auth`), no se manejan correctamente los códigos de estado `401`, `404`, y `409` según `dbapi-sepaCreditTransfer2.json`.
+6. **Faltan validaciones para los parámetros de ruta:**
+   - En las funciones que usan `paymentId` como parámetro de ruta (`check_transfer_status`, `cancel_sepa_transfer`, etc.), no se valida que sea un UUID válido.
 
-7. **Faltan logs para seguimiento:**
-   - En varias views, faltan logs para registrar errores o eventos importantes, como solicitudes fallidas o excepciones.
+7. **Faltan validaciones para los scopes de seguridad:**
+   - Según `dbapi-sepaCreditTransfer2.json`, los scopes requeridos para las operaciones son:
+     - `sepa_credit_transfers` para transferencias individuales.
+     - `bulk_sepa_credit_transfer` para transferencias masivas.
+   - No se verifica que el token de acceso tenga los scopes adecuados.
+
+8. **Faltan endpoints para transferencias masivas:**
+   - No hay funciones en `views.py` para manejar transferencias masivas (`/bulk` y sus subrutas).
+
+9. **Faltan validaciones para los métodos HTTP permitidos:**
+   - Según `Cabeceras`, los métodos permitidos son `GET`, `POST`, `PATCH`, `HEAD`, `OPTIONS`, y `DELETE`. No se valida que las solicitudes usen únicamente estos métodos.
+
+10. **Faltan validaciones para los valores de enumeraciones:**
+    - En `validate_parameters`, no se valida que los valores de campos como `transactionStatus`, `action`, y `chargeBearer` correspondan a los valores permitidos en `dbapi-sepaCreditTransfer2.json`.
 
 ---
 
-Por favor, confirma con cuáles de estos puntos deseas proceder para realizar las modificaciones necesarias.
+Por favor, confirma con cuáles de estos puntos deseas proceder para realizar las modificaciones.
