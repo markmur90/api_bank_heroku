@@ -11,7 +11,7 @@ class PostalAddress(models.Model):
     
 
 class Debtor(models.Model):
-    name = models.CharField(max_length=100, blank=True, null=True)
+    name = models.CharField(max_length=100, blank=True, null=True, unique=True)
     postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='debtor_addresses', null=True, blank=True)
 
     def __str__(self):
@@ -20,7 +20,7 @@ class Debtor(models.Model):
 
 
 class Creditor(models.Model):
-    name = models.CharField(max_length=100, blank=True, null=True)
+    name = models.CharField(max_length=100, blank=True, null=True, unique=True)
     postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='creditor_addresses', null=True, blank=True)
 
     def __str__(self):
@@ -28,7 +28,7 @@ class Creditor(models.Model):
     
 
 class Account(models.Model):
-    iban = models.CharField(max_length=34)
+    iban = models.CharField(max_length=34, unique=True)
     currency = models.CharField(max_length=3, default='EUR')
     
     def __str__(self):
@@ -36,7 +36,7 @@ class Account(models.Model):
     
 
 class FinancialInstitution(models.Model):
-    financial_institution_id = models.CharField(max_length=11)
+    financial_institution_id = models.CharField(max_length=11, unique=True)
     
     def __str__(self):
         return self.financial_institution_id
