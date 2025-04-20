@@ -118,7 +118,7 @@ DATABASE_PSQL = {
         'PORT': '5432',
     }
 }
-DATABASES = DATABASE_SQLITE
+DATABASES = DATABASES_HEROKU
 
 
 # Authentication
