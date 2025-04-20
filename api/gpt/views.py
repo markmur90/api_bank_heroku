@@ -3,12 +3,21 @@ from django.views.decorators.http import require_http_methods
 from django.http import FileResponse, HttpResponseBadRequest, HttpResponseServerError
 from .models import SepaCreditTransfer, ErrorResponse, PaymentIdentification
 from .forms import SepaCreditTransferForm
-from .utils import get_oauth_session, access_token, generate_sepa_json_payload
+from .utils import get_oauth_session, generate_sepa_json_payload
 import uuid
 import logging
 from .helpers import generate_payment_id, generate_deterministic_id
 
 logger = logging.getLogger(__name__)
+
+ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg"
+
+ORIGIN = 'https://api.db.com'
+
+CLIENT_ID = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
+
+CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzsniABTiDYl7QCh6XXEXzgDrjBD4zSvtHbP0Qa707g3eYbmKxO'
+
 
 
 @require_http_methods(["GET", "POST"])
@@ -43,16 +52,16 @@ def initiate_sepa_transfer(request):
 
                 headers.update({
                     'Content-Type': 'application/json',
-                    'otp': request.POST.get('otp', 'PUSHTAN'),
+                    'otp': request.POST.get('otp', 'SEPA_TRANSFER_GRANT'),
                     'Correlation-ID': str(uuid.uuid4()),
-                    'Authorization': f"Bearer {access_token}",
+                    'Authorization': f"Bearer {ACCESS_TOKEN}",
                     'X-Requested-With': 'XMLHttpRequest',
-                    'Origin': request.get_host(),
+                    'Origin': str(ORIGIN),
                 })
 
                 oauth = get_oauth_session(request)
                 response = oauth.post(
-                    'https://api.db.com:443/gw/dbapi/banking/transactions/v2/sepaCreditTransfer',
+                    'https://api.db.com:443/gw/dbapi/banking/transactions/v2',
                     json=payload,
                     headers=headers
                 )
@@ -95,13 +104,13 @@ def check_transfer_status(request, payment_id):
             'idempotency-id': str(uuid.uuid4()),
             'Accept': 'application/json',
             'Correlation-ID': str(uuid.uuid4()),
-            'Authorization': f"Bearer {access_token}",
+            'Authorization': f"Bearer {ACCESS_TOKEN}",
             'X-Requested-With': 'XMLHttpRequest',
-            'Origin': request.get_host(),
+            'Origin': str(ORIGIN),
         }
 
         response = oauth.get(
-            f'https://api.db.com:443/gw/dbapi/banking/transactions/v2/sepaCreditTransfer/{payment_id}/status',
+            f'https://api.db.com:443/gw/dbapi/banking/transactions/v2/{payment_id}/status',
             headers=headers
         )
 
@@ -138,16 +147,16 @@ def cancel_sepa_transfer(request, payment_id):
         oauth = get_oauth_session(request)
         headers = {
             'idempotency-id': str(uuid.uuid4()),
-            'otp': request.POST.get('otp', 'PUSHTAN'),
+            'otp': request.POST.get('otp', 'SEPA_TRANSFER_GRANT'),
             'Correlation-ID': str(uuid.uuid4()),
-            'Authorization': f"Bearer {access_token}",
+            'Authorization': f"Bearer {ACCESS_TOKEN}",
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
-            'Origin': request.get_host(),
+            'Origin': str(ORIGIN),
         }
 
         response = oauth.delete(
-            f'https://api.db.com:443/gw/dbapi/banking/transactions/v2/sepaCreditTransfer/{payment_id}',
+            f'https://api.db.com:443/gw/dbapi/banking/transactions/v2/{payment_id}',
             headers=headers
         )
 
@@ -181,13 +190,13 @@ def retry_sepa_transfer_auth(request, payment_id):
         oauth = get_oauth_session(request)
         headers = {
             'idempotency-id': str(uuid.uuid4()),
-            'otp': request.POST.get('otp', 'PUSHTAN'),
+            'otp': request.POST.get('otp', 'SEPA_TRANSFER_GRANT'),
             'Correlation-ID': str(uuid.uuid4()),
-            'Authorization': f"Bearer {access_token}",
+            'Authorization': f"Bearer {ACCESS_TOKEN}",
             'Accept': 'application/json',
             'Content-Type': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
-            'Origin': request.get_host(),
+            'Origin': str(ORIGIN),
         }
 
         payload = {
@@ -195,7 +204,7 @@ def retry_sepa_transfer_auth(request, payment_id):
         }
 
         response = oauth.patch(
-            f'https://api.db.com:443/gw/dbapi/banking/transactions/v2/sepaCreditTransfer/{payment_id}',
+            f'https://api.db.com:443/gw/dbapi/banking/transactions/v2/{payment_id}',
             json=payload,
             headers=headers
         )
@@ -220,7 +229,9 @@ def retry_sepa_transfer_auth(request, payment_id):
         return HttpResponseServerError("Error en retry autenticación")
 
 
+
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
 
 def transfer_list_view(request):
     """Listado de todas las transferencias con paginación"""
@@ -245,10 +256,12 @@ def transfer_list_view(request):
     return render(request, 'api/GPT/transfer_list.html', {
         'transfers': transfers_paginated
     })
-    
+
+
     
 from django.http import FileResponse
 from .generate_pdf import generar_pdf_transferencia
+
 
 def generate_transfer_pdf(request, payment_id):
     """Genera un PDF para una transferencia específica"""

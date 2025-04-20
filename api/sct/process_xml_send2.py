@@ -3,6 +3,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseServerError
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from api.sct.helpers import generate_deterministic_id, generate_payment_id
 from config import settings
 from lxml import etree
 from api.sct.models import *
@@ -19,7 +20,13 @@ load_dotenv()
 
 logger = logging.getLogger(__name__)
 
-access_token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg'
+ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg"
+
+ORIGIN = 'https://api.db.com'
+
+CLIENT_ID = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
+
+CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzsniABTiDYl7QCh6XXEXzgDrjBD4zSvtHbP0Qa707g3eYbmKxO'
 
 # Configuración Namespaces XML
 PAIN_001_NSMAP = {
@@ -33,8 +40,8 @@ PAIN_002_NSMAP = {
 
 # Configuración OAuth2
 OAUTH_CONFIG = {
-    'client_id': settings.OAUTH_CLIENT_ID,
-    'client_secret': settings.OAUTH_CLIENT_SECRET,
+    'client_id': str(CLIENT_ID),
+    'client_secret': str(CLIENT_SECRET),
     'token_url': 'https://api.db.com/gw/oidc/token',
     'authorization_url': 'https://api.db.com/gw/oidc/authorize',
     'scopes': ['sepa_credit_transfers']
@@ -54,12 +61,12 @@ OAUTH_CONFIG = {
 
 def get_oauth_session(request):
     """Crea sesión OAuth2 utilizando el access_token del entorno"""
-    if not access_token:
+    if not ACCESS_TOKEN:
         logger.error("ACCESS_TOKEN no está configurado en las variables de entorno")
         raise ValueError("ACCESS_TOKEN no está configurado")
 
     # Crear sesión OAuth2 con el token de acceso
-    return OAuth2Session(client_id=OAUTH_CONFIG['client_id'], token={'access_token': access_token, 'token_type': 'Bearer'})
+    return OAuth2Session(client_id=OAUTH_CONFIG['client_id'], token={'access_token': ACCESS_TOKEN, 'token_type': 'Bearer'})
 
 
 def validate_xml(xml_data, xsd_path):
@@ -200,6 +207,8 @@ def generate_pain_001(transfer):
         logger.error(f"Error generando XML: {str(e)}")
         raise
 
+
+
 @require_http_methods(["GET", "POST"])
 def initiate_sepa_transfer(request):
     """Vista para iniciar transferencia SEPA"""
@@ -216,8 +225,12 @@ def initiate_sepa_transfer(request):
                 transfer.payment_id = uuid.uuid4()
                 transfer.auth_id = uuid.uuid4()
                 transfer.transaction_status = 'PDNG'
-                transfer.payment_identification.end_to_end_id = uuid.uuid4().hex[:36]
-                transfer.payment_identification.instruction_id = uuid.uuid4().hex[:36]
+                transfer.payment_identification.end_to_end_id = generate_payment_id("E2E")
+                transfer.payment_identification.instruction_id = generate_deterministic_id(
+                        transfer.creditor_account.iban,
+                        transfer.instructed_amount.amount,
+                        transfer.requested_execution_date
+                    )
                 transfer.payment_identification.save()
                 transfer.save()
                 
@@ -232,18 +245,18 @@ def initiate_sepa_transfer(request):
                 # Configurar headers
                 headers.update({
                     'Content-Type': 'application/xml',
-                    'otp': request.POST.get('otp', 'PUSHTAN'),
+                    'otp': request.POST.get('otp', 'SEPA_TRANSFER_GRANT'),
                     'Correlation-ID': str(uuid.uuid4()),
-                    'Authorization': f"Bearer {access_token}",
+                    'Authorization': f"Bearer {ACCESS_TOKEN}",
                     'Accept': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest',
-                    'Origin': settings.ORIGIN,
+                    'Origin': str(ORIGIN),
                 })
 
                 # Obtener sesión OAuth2
                 oauth = get_oauth_session(request)
                 response = oauth.post(
-                    'https://api.db.com:443/gw/dbapi/banking/transactions/v2/sepaCreditTransfer',
+                    'https://api.db.com:443/gw/dbapi/banking/transactions/v2',
                     data=xml_data,
                     headers=headers
                 )
@@ -309,6 +322,8 @@ def bank_notification(request):
         )
         logger.exception("Error procesando notificación bancaria")
         return HttpResponseServerError("Error procesando notificación")
+
+
 
 def check_transfer_status(request, payment_id):
     """Consulta estado de transferencia y actualiza desde el banco si es necesario"""
@@ -387,6 +402,8 @@ def transfer_list(request):
         'transfers': transfers_paginated
     })
 
+
+
 # views.py
 from django.shortcuts import get_object_or_404
 
@@ -408,6 +425,7 @@ def transfer_success(request, payment_id):
 from django.shortcuts import render, redirect
 from .forms import AddressForm, DebtorForm, AccountForm, CreditorForm, CreditorAgentForm, InstructedAmountForm
 
+
 def create_debtor(request):
     if request.method == 'POST':
         form = DebtorForm(request.POST)
@@ -417,6 +435,7 @@ def create_debtor(request):
     else:
         form = DebtorForm()
     return render(request, 'api/SCT/create_debtor.html', {'form': form})
+
 
 def create_account(request):
     if request.method == 'POST':
@@ -428,6 +447,7 @@ def create_account(request):
         form = AccountForm()
     return render(request, 'api/SCT/create_account.html', {'form': form})
 
+
 def create_creditor(request):
     if request.method == 'POST':
         form = CreditorForm(request.POST)
@@ -437,6 +457,7 @@ def create_creditor(request):
     else:
         form = CreditorForm()
     return render(request, 'api/SCT/create_creditor.html', {'form': form})
+
 
 def create_creditor_agent(request):
     if request.method == 'POST':
@@ -448,6 +469,7 @@ def create_creditor_agent(request):
         form = CreditorAgentForm()
     return render(request, 'api/SCT/create_creditor_agent.html', {'form': form})
 
+
 def create_instructed_amount(request):
     if request.method == 'POST':
         form = InstructedAmountForm(request.POST)
@@ -457,6 +479,7 @@ def create_instructed_amount(request):
     else:
         form = InstructedAmountForm()
     return render(request, 'api/SCT/create_instructed_amount.html', {'form': form})
+
 
 def create_address(request):
     if request.method == 'POST':
@@ -468,14 +491,19 @@ def create_address(request):
         form = AddressForm()
     return render(request, 'api/SCT/create_address.html', {'form': form})
 
+
+
+
 from django.http import FileResponse
 from .generate_pdf import generar_pdf_transferencia
+
 
 def generate_transfer_pdf(request, payment_id):
     """Genera un PDF para una transferencia específica"""
     transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
     pdf_path = generar_pdf_transferencia(transfer)
     return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf', as_attachment=True, filename=f"{transfer.payment_id}.pdf")
+
 
 @require_http_methods(["DELETE"])
 def delete_transfer(request, payment_id):
