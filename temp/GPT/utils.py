@@ -3,7 +3,7 @@ from requests_oauthlib import OAuth2Session
 from django.conf import settings
 
 # Token de acceso dummy (debería obtenerse con autenticación OAuth real)
-access_token = "TU_TOKEN_DEMO_AQUI"
+access_token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg"
 
 def get_oauth_session(request):
     """Retorna una sesión OAuth2 configurada para hacer llamadas autenticadas"""

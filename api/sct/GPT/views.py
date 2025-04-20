@@ -1,6 +1,6 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
-from django.http import HttpResponseBadRequest, HttpResponseServerError
+from django.http import FileResponse, HttpResponseBadRequest, HttpResponseServerError
 from .models import SepaCreditTransfer, ErrorResponse
 from .forms import SepaCreditTransferForm
 from .utils import get_oauth_session, access_token, generate_sepa_json_payload
@@ -213,3 +213,121 @@ def retry_sepa_transfer_auth(request, payment_id):
             message=f"Error en retry auth: {str(e)}"
         )
         return HttpResponseServerError("Error en retry autenticación")
+
+
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+
+def transfer_list_view(request):
+    """Listado de todas las transferencias con paginación"""
+    transfers = SepaCreditTransfer.objects.all().order_by('-created_at')
+    
+    # Configurar paginación
+    page = request.GET.get('page', 1)  # Obtener el número de página de la URL
+    paginator = Paginator(transfers, 10)  # Mostrar 10 transferencias por página
+
+    try:
+        transfers_paginated = paginator.page(page)
+    except PageNotAnInteger:
+        transfers_paginated = paginator.page(1)  # Mostrar la primera página si el número de página no es válido
+    except EmptyPage:
+        transfers_paginated = paginator.page(paginator.num_pages)  # Mostrar la última página si el número es demasiado alto
+
+    # Agregar información de estado para la plantilla
+    for transfer in transfers_paginated:
+        transfer.status_display = transfer.get_transaction_status_display()
+        transfer.status_color = transfer.get_status_color()
+    
+    return render(request, 'api/SCT/transfer_list2.html', {
+        'transfers': transfers_paginated
+    })
+    
+    
+from django.http import FileResponse
+from .generate_pdf import generar_pdf_transferencia
+
+def generate_transfer_pdf(request, payment_id):
+    """Genera un PDF para una transferencia específica"""
+    transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+    pdf_path = generar_pdf_transferencia(transfer)
+    return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf', as_attachment=True, filename=f"{transfer.payment_id}.pdf")
+
+@require_http_methods(["DELETE"])
+def delete_transfer(request, payment_id):
+    """Elimina una transferencia SEPA por su payment_id."""
+    try:
+        transfer = SepaCreditTransfer.objects.get(payment_id=payment_id)
+        transfer.delete()
+        logger.info(f"Transferencia eliminada: {payment_id}")
+        return redirect('api/SCT/transfer_list2.html')  # Redirigir al listado de transferencias
+    except SepaCreditTransfer.DoesNotExist:
+        logger.error(f"Transferencia no encontrada: {payment_id}")
+        return HttpResponseBadRequest("Transferencia no existe")
+    except Exception as e:
+        logger.exception("Error eliminando transferencia")
+        return HttpResponseServerError("Error eliminando transferencia")
+
+
+
+from django.shortcuts import render, redirect
+from .forms import AddressForm, DebtorForm, AccountForm, CreditorForm, CreditorAgentForm, InstructedAmountForm
+
+def create_debtor(request):
+    if request.method == 'POST':
+        form = DebtorForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('initiate_transfer2')
+    else:
+        form = DebtorForm()
+    return render(request, 'api/SCT/create_debtor.html', {'form': form})
+
+def create_account(request):
+    if request.method == 'POST':
+        form = AccountForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('initiate_transfer2')
+    else:
+        form = AccountForm()
+    return render(request, 'api/SCT/create_account.html', {'form': form})
+
+def create_creditor(request):
+    if request.method == 'POST':
+        form = CreditorForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('initiate_transfer2')
+    else:
+        form = CreditorForm()
+    return render(request, 'api/SCT/create_creditor.html', {'form': form})
+
+def create_creditor_agent(request):
+    if request.method == 'POST':
+        form = CreditorAgentForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('initiate_transfer2')
+    else:
+        form = CreditorAgentForm()
+    return render(request, 'api/SCT/create_creditor_agent.html', {'form': form})
+
+def create_instructed_amount(request):
+    if request.method == 'POST':
+        form = InstructedAmountForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('initiate_transfer2')
+    else:
+        form = InstructedAmountForm()
+    return render(request, 'api/SCT/create_instructed_amount.html', {'form': form})
+
+def create_address(request):
+    if request.method == 'POST':
+        form = AddressForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('initiate_transfer2')
+    else:
+        form = AddressForm()
+    return render(request, 'api/SCT/create_address.html', {'form': form})
+
