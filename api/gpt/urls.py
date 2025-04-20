@@ -22,5 +22,26 @@ urlpatterns = [
 
     # 🔁 Retry segundo factor TAN (PATCH)
     path('transfer/<uuid:payment_id>/retry-auth/', views.retry_sepa_transfer_auth, name='retry_transfer_authGPT'),
+
+    # Éxito de cancelación
+    path('transfer/<uuid:payment_id>/cancel-success/', views.cancel_success_view, name='cancel_successGPT'),
+
+    # Crear Party
+    path('create/party/', views.create_party, name='create_partyGPT'),
+
+    # Crear Account
+    path('create/account/', views.create_account, name='create_accountGPT'),
+
+    # Crear Amount
+    path('create/amount/', views.create_amount, name='create_amountGPT'),
+
+    # Crear Financial Institution
+    path('create/financial-institution/', views.create_financial_institution, name='create_financial_institutionGPT'),
+
+    # Crear Postal Address
+    path('create/postal-address/', views.create_postal_address, name='create_postal_addressGPT'),
+
+    # Crear Payment Identification
+    path('create/payment-identification/', views.create_payment_identification, name='create_payment_identificationGPT'),
 ]
 

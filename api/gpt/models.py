@@ -24,8 +24,8 @@ class Amount(models.Model):
     currency = models.CharField(max_length=3, default='EUR')
 
 class PaymentIdentification(models.Model):
-    end_to_end_id = models.CharField(max_length=36)
-    instruction_id = models.CharField(max_length=36)
+    end_to_end_id = models.CharField(max_length=35)
+    instruction_id = models.CharField(max_length=35)
 
 class SepaCreditTransfer(models.Model):
     payment_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -52,6 +52,7 @@ class SepaCreditTransfer(models.Model):
 
     payment_identification = models.OneToOneField(PaymentIdentification, on_delete=models.CASCADE)
     created_at = models.DateTimeField(auto_now_add=True)
+    idempotency_key = models.CharField(max_length=100, blank=True, null=True)
 
     def get_transaction_status_display(self):
         return dict(SepaCreditTransfer._meta.get_field('transaction_status').choices).get(self.transaction_status, 'Desconocido')

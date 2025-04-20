@@ -24,8 +24,8 @@ class Amount(models.Model):
     currency = models.CharField(max_length=3, default='EUR')
 
 class PaymentIdentification(models.Model):
-    end_to_end_id = models.CharField(max_length=36)
-    instruction_id = models.CharField(max_length=36)
+    end_to_end_id = models.CharField(max_length=35)
+    instruction_id = models.CharField(max_length=35)
 
 class SepaCreditTransfer(models.Model):
     payment_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)

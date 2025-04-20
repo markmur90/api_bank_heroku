@@ -33,6 +33,7 @@ def initiate_sepa_transfer(request):
                 )
 
                 transfer.payment_identification.save()
+                transfer.idempotency_key = headers['idempotency-id']
                 transfer.save()
 
                 payload = generate_sepa_json_payload(transfer)
@@ -54,11 +55,12 @@ def initiate_sepa_transfer(request):
                 )
 
                 if response.status_code == 201:
-                    return render(request, 'api/SCT/transfer_success.html', {
+                    return render(request, 'api/GPT/transfer_success.html', {
                         'payment_id': transfer.payment_id,
                         'execution_date': transfer.requested_execution_date,
                         'creditor': transfer.creditor.creditor_name,
-                        'debtor': transfer.debtor.debtor_name
+                        'debtor': transfer.debtor.debtor_name,
+                        'idempotency_key': transfer.idempotency_key
                     })
                 else:
                     ErrorResponse.objects.create(
@@ -78,7 +80,7 @@ def initiate_sepa_transfer(request):
     else:
         form = SepaCreditTransferForm()
 
-    return render(request, 'api/SCT/initiate_transfer.html', {'form': form})
+    return render(request, 'api/GPT/initiate_transfer.html', {'form': form})
 
 
 def check_transfer_status(request, payment_id):
@@ -109,7 +111,7 @@ def check_transfer_status(request, payment_id):
         else:
             logger.warning(f"Respuesta no exitosa del banco: {response.status_code} - {response.text}")
 
-        return render(request, 'api/SCT/transfer_status.html', {
+        return render(request, 'api/GPT/transfer_status.html', {
             'transfer': transfer,
             'bank_response': response.json() if response.ok else None
         })
@@ -119,7 +121,7 @@ def check_transfer_status(request, payment_id):
             code=500,
             message=f"Error consultando estado: {str(e)}"
         )
-        return render(request, 'api/SCT/transfer_status.html', {
+        return render(request, 'api/GPT/transfer_status.html', {
             'transfer': transfer,
             'error': str(e)
         })
@@ -149,7 +151,7 @@ def cancel_sepa_transfer(request, payment_id):
         if response.status_code == 200:
             transfer.transaction_status = 'CANC'
             transfer.save()
-            return render(request, 'api/SCT/cancel_success.html', {
+            return render(request, 'api/GPT/cancel_success.html', {
                 'transfer': transfer
             })
         else:
@@ -196,7 +198,7 @@ def retry_sepa_transfer_auth(request, payment_id):
         )
 
         if response.status_code == 200:
-            return render(request, 'api/SCT/retry_success.html', {
+            return render(request, 'api/GPT/retry_success.html', {
                 'transfer': transfer
             })
         else:
@@ -237,7 +239,7 @@ def transfer_list_view(request):
         transfer.status_display = transfer.get_transaction_status_display()
         transfer.status_color = transfer.get_status_color()
     
-    return render(request, 'api/SCT/transfer_list2.html', {
+    return render(request, 'api/GPT/transfer_list.html', {
         'transfers': transfers_paginated
     })
     
@@ -258,7 +260,7 @@ def delete_transfer(request, payment_id):
         transfer = SepaCreditTransfer.objects.get(payment_id=payment_id)
         transfer.delete()
         logger.info(f"Transferencia eliminada: {payment_id}")
-        return redirect('api/SCT/transfer_list2.html')  # Redirigir al listado de transferencias
+        return redirect('api/GPT/transfer_list.html')  # Redirigir al listado de transferencias
     except SepaCreditTransfer.DoesNotExist:
         logger.error(f"Transferencia no encontrada: {payment_id}")
         return HttpResponseBadRequest("Transferencia no existe")
@@ -266,68 +268,79 @@ def delete_transfer(request, payment_id):
         logger.exception("Error eliminando transferencia")
         return HttpResponseServerError("Error eliminando transferencia")
 
-
-
+from .forms import (
+    PartyForm, AccountForm, AmountForm, FinancialInstitutionForm,
+    PostalAddressForm, PaymentIdentificationForm
+)
 from django.shortcuts import render, redirect
-from .forms import AddressForm, DebtorForm, AccountForm, CreditorForm, CreditorAgentForm, InstructedAmountForm
 
-def create_debtor(request):
+def create_party(request):
     if request.method == 'POST':
-        form = DebtorForm(request.POST)
+        form = PartyForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('initiate_transfer2')
+            return redirect('initiate_transferGPT')
     else:
-        form = DebtorForm()
-    return render(request, 'api/SCT/create_debtor.html', {'form': form})
+        form = PartyForm()
+    return render(request, 'api/GPT/create_party.html', {'form': form})
+
 
 def create_account(request):
     if request.method == 'POST':
         form = AccountForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('initiate_transfer2')
+            return redirect('initiate_transferGPT')
     else:
         form = AccountForm()
-    return render(request, 'api/SCT/create_account.html', {'form': form})
+    return render(request, 'api/GPT/create_account.html', {'form': form})
 
-def create_creditor(request):
+
+def create_amount(request):
     if request.method == 'POST':
-        form = CreditorForm(request.POST)
+        form = AmountForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('initiate_transfer2')
+            return redirect('initiate_transferGPT')
     else:
-        form = CreditorForm()
-    return render(request, 'api/SCT/create_creditor.html', {'form': form})
+        form = AmountForm()
+    return render(request, 'api/GPT/create_amount.html', {'form': form})
 
-def create_creditor_agent(request):
+
+def create_financial_institution(request):
     if request.method == 'POST':
-        form = CreditorAgentForm(request.POST)
+        form = FinancialInstitutionForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('initiate_transfer2')
+            return redirect('initiate_transferGPT')
     else:
-        form = CreditorAgentForm()
-    return render(request, 'api/SCT/create_creditor_agent.html', {'form': form})
+        form = FinancialInstitutionForm()
+    return render(request, 'api/GPT/create_financial_institution.html', {'form': form})
 
-def create_instructed_amount(request):
+
+def create_postal_address(request):
     if request.method == 'POST':
-        form = InstructedAmountForm(request.POST)
+        form = PostalAddressForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('initiate_transfer2')
+            return redirect('initiate_transferGPT')
     else:
-        form = InstructedAmountForm()
-    return render(request, 'api/SCT/create_instructed_amount.html', {'form': form})
+        form = PostalAddressForm()
+    return render(request, 'api/GPT/create_postal_address.html', {'form': form})
 
-def create_address(request):
+
+def create_payment_identification(request):
     if request.method == 'POST':
-        form = AddressForm(request.POST)
+        form = PaymentIdentificationForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('initiate_transfer2')
+            return redirect('initiate_transferGPT')
     else:
-        form = AddressForm()
-    return render(request, 'api/SCT/create_address.html', {'form': form})
+        form = PaymentIdentificationForm()
+    return render(request, 'api/GPT/create_payment_identification.html', {'form': form})
+
+
+def cancel_success_view(request, payment_id):
+    """Vista para mostrar éxito de cancelación."""
+    return render(request, 'api/GPT/cancel_success.html', {'payment_id': payment_id})
 

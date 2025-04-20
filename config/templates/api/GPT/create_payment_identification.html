@@ -1,28 +1,26 @@
 {% extends 'base.html' %}
 
 {% block content %}
-    <h2 class="mb-4">Crear Monto Instruido</h2>
+    <h2 class="mb-4">Crear Identificación de Pago</h2>
     <form method="post" class="needs-validation" novalidate>
         {% csrf_token %}
-        
         <div class="card mb-4">
-            <div class="card-header">Información del Monto Instruido</div>
+            <div class="card-header">Información de la Identificación</div>
             <div class="card-body">
                 <div class="row g-3">
                     <div class="col-md-6">
-                        <label for="id_amount" class="form-label">Monto</label>
-                        {{ form.amount }}
+                        <label for="id_end_to_end_id" class="form-label">End-to-End ID</label>
+                        {{ form.end_to_end_id }}
                     </div>
                     <div class="col-md-6">
-                        <label for="id_currency" class="form-label">Moneda</label>
-                        {{ form.currency }}
+                        <label for="id_instruction_id" class="form-label">Instruction ID</label>
+                        {{ form.instruction_id }}
                     </div>
                 </div>
             </div>
         </div>
-
         <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-            <a href="{% url 'initiate_transfer2' %}" class="btn btn-secondary me-2">
+            <a href="{% url 'initiate_transferGPT' %}" class="btn btn-secondary me-2">
                 <i class="bi bi-arrow-left"></i> Volver a la Transferencia
             </a>
             <button type="submit" class="btn btn-primary">
