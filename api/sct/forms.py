@@ -73,7 +73,8 @@ class DebtorForm(forms.ModelForm):
         model = Debtor
         fields = ['debtor_name', 'debtor_postal_address']
         widgets = {
-            'debtor_name': forms.TextInput(attrs={'maxlength': 140})
+            'debtor_name': forms.TextInput(attrs={'maxlength': 140}),
+            'debtor_postal_address': forms.Select(attrs={'maxlength': 70})
         }
 
 class CreditorForm(forms.ModelForm):
@@ -81,7 +82,8 @@ class CreditorForm(forms.ModelForm):
         model = Creditor
         fields = ['creditor_name', 'creditor_postal_address']
         widgets = {
-            'creditor_name': forms.TextInput(attrs={'maxlength': 70})
+            'creditor_name': forms.TextInput(attrs={'maxlength': 70}),
+            'creditor_postal_address': forms.Select(attrs={'maxlength': 70})
         }
 
 class CreditorAgentForm(forms.ModelForm):
