@@ -18,6 +18,24 @@
                 <li class="nav-item">
                     <a class="btn btn-outline-light me-2" href="{% url 'initiate_transfer2' %}">Nueva Transferencia</a>
                 </li>
+
+                <!-- SEPA Transfers Dropdown -->
+                <li class="nav-item dropdown">
+                    <a class="btn btn-outline-light dropdown-toggle me-2" href="#" id="sepaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        Transferencias SEPA
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="sepaDropdown">
+                        <li><a class="dropdown-item" href="{% url 'transfer_listGPT' %}">Listado de Transferencias</a></li>
+                        <li><a class="dropdown-item" href="{% url 'initiate_transferGPT' %}">Nueva Transferencia</a></li>
+                        <li><a class="dropdown-item" href="{% url 'create_partyGPT' %}">Crear Deudor/Acreedor</a></li>
+                        <li><a class="dropdown-item" href="{% url 'create_accountGPT' %}">Crear Cuenta</a></li>
+                        <li><a class="dropdown-item" href="{% url 'create_amountGPT' %}">Crear Monto</a></li>
+                        <li><a class="dropdown-item" href="{% url 'create_financial_institutionGPT' %}">Crear Institución Financiera</a></li>
+                        <li><a class="dropdown-item" href="{% url 'create_postal_addressGPT' %}">Crear Dirección Postal</a></li>
+                        <li><a class="dropdown-item" href="{% url 'create_payment_identificationGPT' %}">Crear Identificación de Pago</a></li>
+                    </ul>
+                </li>
+
             </ul>
             <div class="d-flex ms-auto">
                 <a class="btn btn-danger" href="{% url 'logout' %}">Cerrar Sesión</a>
