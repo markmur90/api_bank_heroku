@@ -43,5 +43,11 @@ urlpatterns = [
 
     # Crear Payment Identification
     path('create/payment-identification/', views.create_payment_identification, name='create_payment_identificationGPT'),
+
+    # Crear Debtor
+    path('create/debtor/', views.create_debtor, name='create_debtorGPT'),
+
+    # Crear Creditor
+    path('create/creditor/', views.create_creditor, name='create_creditorGPT'),
 ]
 

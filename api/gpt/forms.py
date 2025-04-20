@@ -3,7 +3,7 @@ from datetime import datetime
 import pytz
 from .models import (
     SepaCreditTransfer, Party, Account, Amount,
-    FinancialInstitution, PostalAddress, PaymentIdentification
+    FinancialInstitution, PostalAddress, PaymentIdentification, Debtor, Creditor
 )
 
 
@@ -107,4 +107,24 @@ class PaymentIdentificationForm(forms.ModelForm):
         widgets = {
             'end_to_end_id': forms.TextInput(attrs={'pattern': '[a-zA-Z0-9.-]{1,36}', 'class': 'form-control'}),
             'instruction_id': forms.TextInput(attrs={'pattern': '[a-zA-Z0-9.-]{1,36}', 'class': 'form-control'}),
+        }
+
+
+class DebtorForm(forms.ModelForm):
+    class Meta:
+        model = Debtor
+        fields = ['name', 'postal_address']
+        widgets = {
+            'name': forms.TextInput(attrs={'maxlength': 100, 'class': 'form-control'}),
+            'postal_address': forms.Select(attrs={'class': 'form-control'}),
+        }
+
+
+class CreditorForm(forms.ModelForm):
+    class Meta:
+        model = Creditor
+        fields = ['name', 'postal_address']
+        widgets = {
+            'name': forms.TextInput(attrs={'maxlength': 100, 'class': 'form-control'}),
+            'postal_address': forms.Select(attrs={'class': 'form-control'}),
         }

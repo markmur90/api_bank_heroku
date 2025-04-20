@@ -273,7 +273,7 @@ def delete_transfer(request, payment_id):
 
 from .forms import (
     PartyForm, AccountForm, AmountForm, FinancialInstitutionForm,
-    PostalAddressForm, PaymentIdentificationForm
+    PostalAddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm
 )
 from django.shortcuts import render, redirect
 
@@ -341,6 +341,28 @@ def create_payment_identification(request):
     else:
         form = PaymentIdentificationForm()
     return render(request, 'api/GPT/create_payment_identification.html', {'form': form})
+
+
+def create_debtor(request):
+    if request.method == 'POST':
+        form = DebtorForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('initiate_transferGPT')
+    else:
+        form = DebtorForm()
+    return render(request, 'api/GPT/create_debtor.html', {'form': form})
+
+
+def create_creditor(request):
+    if request.method == 'POST':
+        form = CreditorForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('initiate_transferGPT')
+    else:
+        form = CreditorForm()
+    return render(request, 'api/GPT/create_creditor.html', {'form': form})
 
 
 def cancel_success_view(request, payment_id):

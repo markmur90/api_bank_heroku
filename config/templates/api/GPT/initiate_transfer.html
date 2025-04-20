@@ -13,7 +13,7 @@
                     <div class="col-md-6">
                         <label for="id_debtor" class="form-label">Deudor</label>
                         {{ form.debtor }}
-                        <a href="{% url 'create_partyGPT' %}" class="btn btn-link">Crear nuevo deudor</a>
+                        <a href="{% url 'create_debtorGPT' %}" class="btn btn-link">Crear nuevo deudor</a>
                     </div>
                     <div class="col-md-6">
                         <label for="id_debtor_account" class="form-label">Cuenta del Deudor</label>
@@ -32,7 +32,7 @@
                     <div class="col-md-6">
                         <label for="id_creditor" class="form-label">Acreedor</label>
                         {{ form.creditor }}
-                        <a href="{% url 'create_partyGPT' %}" class="btn btn-link">Crear nuevo acreedor</a>
+                        <a href="{% url 'create_creditorGPT' %}" class="btn btn-link">Crear nuevo acreedor</a>
                     </div>
                     <div class="col-md-6">
                         <label for="id_creditor_account" class="form-label">Cuenta del Acreedor</label>

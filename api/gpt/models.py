@@ -10,11 +10,20 @@ class PostalAddress(models.Model):
         return f"{self.country} - {self.street_and_house_number} - {self.zip_code_and_city}"
     
 
-class Party(models.Model):
-    debtor_name = models.CharField(max_length=100, blank=True, null=True)
-    creditor_name = models.CharField(max_length=100, blank=True, null=True)
-    debtor_postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='debtor_addresses', null=True, blank=True)
-    creditor_postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='creditor_addresses', null=True, blank=True)
+class Debtor(models.Model):
+    name = models.CharField(max_length=100, blank=True, null=True)
+    postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='debtor_addresses', null=True, blank=True)
+
+    def __str__(self):
+        return self.name or "Debtor sin nombre"
+
+
+class Creditor(models.Model):
+    name = models.CharField(max_length=100, blank=True, null=True)
+    postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='creditor_addresses', null=True, blank=True)
+
+    def __str__(self):
+        return self.name or "Creditor sin nombre"
 
 
 class Account(models.Model):
@@ -54,9 +63,9 @@ class SepaCreditTransfer(models.Model):
         ('CANC', 'Cancelado')
     ], default='PDNG')
 
-    debtor = models.ForeignKey(Party, on_delete=models.CASCADE, related_name='debtor_transfers')
+    debtor = models.ForeignKey(Debtor, on_delete=models.CASCADE, related_name='debtor_transfers')
     debtor_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='debtor_accounts')
-    creditor = models.ForeignKey(Party, on_delete=models.CASCADE, related_name='creditor_transfers')
+    creditor = models.ForeignKey(Creditor, on_delete=models.CASCADE, related_name='creditor_transfers')
     creditor_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='creditor_accounts')
     creditor_agent = models.ForeignKey(FinancialInstitution, on_delete=models.SET_NULL, null=True, blank=True)
 
