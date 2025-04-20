@@ -5,6 +5,10 @@ class PostalAddress(models.Model):
     country = models.CharField(max_length=2)
     zip_code_and_city = models.CharField(max_length=100)
     street_and_house_number = models.CharField(max_length=100)
+    
+    def __str__(self):
+        return f"{self.country} - {self.street_and_house_number} - {self.zip_code_and_city}"
+    
 
 class Party(models.Model):
     debtor_name = models.CharField(max_length=100, blank=True, null=True)
@@ -12,16 +16,29 @@ class Party(models.Model):
     debtor_postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='debtor_addresses', null=True, blank=True)
     creditor_postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='creditor_addresses', null=True, blank=True)
 
+
 class Account(models.Model):
     iban = models.CharField(max_length=34)
     currency = models.CharField(max_length=3, default='EUR')
+    
+    def __str__(self):
+        return f"{self.iban} - {self.currency}"
+    
 
 class FinancialInstitution(models.Model):
     financial_institution_id = models.CharField(max_length=11)
+    
+    def __str__(self):
+        return self.financial_institution_id
+
 
 class Amount(models.Model):
     amount = models.DecimalField(max_digits=15, decimal_places=2)
     currency = models.CharField(max_length=3, default='EUR')
+
+    def __str__(self):
+        return f"{self.currency} - {self.amount}"
+
 
 class PaymentIdentification(models.Model):
     end_to_end_id = models.CharField(max_length=35)
