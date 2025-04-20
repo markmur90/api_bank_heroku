@@ -63,9 +63,9 @@ class AddressForm(forms.ModelForm):
         model = Address
         fields = '__all__'
         widgets = {
-            'country': forms.TextInput(attrs={'pattern': '[A-Z]{2}'}),
-            'street_and_house_number': forms.TextInput(attrs={'maxlength': 70}),
-            'zip_code_and_city': forms.TextInput(attrs={'maxlength': 70})
+            'country': forms.TextInput(attrs={'pattern': '[A-Z]{2}', 'class': 'form-control'}),
+            'street_and_house_number': forms.TextInput(attrs={'maxlength': 70, 'class': 'form-control'}),
+            'zip_code_and_city': forms.TextInput(attrs={'maxlength': 70, 'class': 'form-control'}),
         }
 
 class DebtorForm(forms.ModelForm):
@@ -73,8 +73,8 @@ class DebtorForm(forms.ModelForm):
         model = Debtor
         fields = ['debtor_name', 'debtor_postal_address']
         widgets = {
-            'debtor_name': forms.TextInput(attrs={'maxlength': 140}),
-            'debtor_postal_address': forms.Select(attrs={'maxlength': 70})
+            'debtor_name': forms.TextInput(attrs={'maxlength': 100, 'class': 'form-control'}),
+            'debtor_postal_address': forms.Select(attrs={'class': 'form-control'}),
         }
 
 class CreditorForm(forms.ModelForm):
@@ -82,8 +82,8 @@ class CreditorForm(forms.ModelForm):
         model = Creditor
         fields = ['creditor_name', 'creditor_postal_address']
         widgets = {
-            'creditor_name': forms.TextInput(attrs={'maxlength': 70}),
-            'creditor_postal_address': forms.Select(attrs={'maxlength': 70})
+            'creditor_name': forms.TextInput(attrs={'maxlength': 100, 'class': 'form-control'}),
+            'creditor_postal_address': forms.Select(attrs={'class': 'form-control'}),
         }
 
 class CreditorAgentForm(forms.ModelForm):
@@ -91,7 +91,7 @@ class CreditorAgentForm(forms.ModelForm):
         model = CreditorAgent
         fields = ['financial_institution_id']
         widgets = {
-            'financial_institution_id': forms.TextInput(attrs={'maxlength': 35})
+            'financial_institution_id': forms.TextInput(attrs={'maxlength': 35, 'class': 'form-control'}),
         }
         
 class AccountForm(forms.ModelForm):
@@ -99,8 +99,8 @@ class AccountForm(forms.ModelForm):
         model = Account
         fields = '__all__'
         widgets = {
-            'iban': forms.TextInput(attrs={'pattern': '[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}'}),
-            'currency': forms.TextInput(attrs={'pattern': '[A-Z]{3}'})
+            'iban': forms.TextInput(attrs={'pattern': '[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}', 'maxlength': 34, 'class': 'form-control'}),
+            'currency': forms.TextInput(attrs={'pattern': '[A-Z]{3}', 'maxlength': 3, 'class': 'form-control'}),
         }
 
 class PaymentIdentificationForm(forms.ModelForm):
@@ -117,8 +117,8 @@ class InstructedAmountForm(forms.ModelForm):
         model = InstructedAmount
         fields = '__all__'
         widgets = {
-            'amount': forms.NumberInput(attrs={'step': '0.01'}),
-            'currency': forms.TextInput(attrs={'pattern': '[A-Z]{3}'})
+            'amount': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),
+            'currency': forms.TextInput(attrs={'pattern': '[A-Z]{3}', 'maxlength': 3, 'class': 'form-control'}),
         }
 
 from django.forms import ModelChoiceField
@@ -204,11 +204,11 @@ class SepaCreditTransferForm(forms.ModelForm):
         instance.requested_execution_date = datetime.now(frankfurt_tz)
 
         # Crear o asociar automáticamente un PaymentIdentification
-        if not instance.payment_identification:
-            instance.payment_identification, _ = PaymentIdentification.objects.get_or_create(
-                end_to_end_id=uuid.uuid4().hex[:36],
-                instruction_id=uuid.uuid4().hex[:36]
-            )
+        # if not instance.payment_identification:
+        #     instance.payment_identification, _ = PaymentIdentification.objects.get_or_create(
+        #         end_to_end_id=uuid.uuid4().hex[:36],
+        #         instruction_id=uuid.uuid4().hex[:36]
+        #     )
 
         if commit:
             instance.save()
