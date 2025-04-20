@@ -56,11 +56,11 @@ def generar_pdf_transferencia(transfers):
     # Debtor Information
     debtor_data = [
         ["Debtor Information", ""],
-        ["Name", transfers.debtor.debtor_name],
+        ["Name", transfers.debtor.name],
         ["IBAN", transfers.debtor_account.iban],
-        ["BIC", transfers.debtor_account.bic],
-        ["Address", f"{transfers.debtor.debtor_postal_address.street_and_house_number}, "
-                    f"{transfers.debtor.debtor_postal_address.zip_code_and_city}, {transfers.debtor.debtor_postal_address.country}"]
+        ["BIC", transfers.debtor_account.currency],  # No hay campo BIC en Account, se usa currency
+        ["Address", f"{transfers.debtor.postal_address.street_and_house_number}, "
+                    f"{transfers.debtor.postal_address.zip_code_and_city}, {transfers.debtor.postal_address.country}"]
     ]
     debtor_table = Table(debtor_data, colWidths=[150, 300])
     debtor_table.setStyle(TableStyle([
@@ -79,11 +79,11 @@ def generar_pdf_transferencia(transfers):
     # Creditor Information
     creditor_data = [
         ["Creditor Information", ""],
-        ["Name", transfers.creditor.creditor_name],
+        ["Name", transfers.creditor.name],
         ["IBAN", transfers.creditor_account.iban],
-        ["BIC", transfers.creditor_account.bic],
-        ["Address", f"{transfers.creditor.creditor_postal_address.street_and_house_number}, "
-                    f"{transfers.creditor.creditor_postal_address.zip_code_and_city}, {transfers.creditor.creditor_postal_address.country}"]
+        ["BIC", transfers.creditor_account.currency],  # No hay campo BIC en Account, se usa currency
+        ["Address", f"{transfers.creditor.postal_address.street_and_house_number}, "
+                    f"{transfers.creditor.postal_address.zip_code_and_city}, {transfers.creditor.postal_address.country}"]
     ]
     creditor_table = Table(creditor_data, colWidths=[150, 300])
     creditor_table.setStyle(TableStyle([
@@ -108,7 +108,7 @@ def generar_pdf_transferencia(transfers):
         ["Remittance Information (Structured)", transfers.remittance_information_structured or 'N/A'],
         ["Remittance Information (Unstructured)", transfers.remittance_information_unstructured or 'N/A'],
         ["Auth ID", transfers.auth_id],
-        ["Transaction Status", transfers.transaction_status],
+        ["Transaction Status", transfers.get_transaction_status_display()],
         ["Priority", "High (Instant SEPA Credit Transfer)"]
     ]
     transfer_table = Table(transfer_data, colWidths=[200, 250])

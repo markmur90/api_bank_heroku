@@ -1,6 +1,6 @@
 from django.contrib import admin
 from .models import (
-    SepaCreditTransfer, Party, Account, Amount,
+    SepaCreditTransfer, Account, Amount,
     FinancialInstitution, PostalAddress, PaymentIdentification,
     ErrorResponse
 )
@@ -11,7 +11,6 @@ class SepaCreditTransferAdmin(admin.ModelAdmin):
     list_filter = ('transaction_status',)
     search_fields = ('payment_id', 'debtor__debtor_name', 'creditor__creditor_name')
 
-admin.site.register(Party)
 admin.site.register(Account)
 admin.site.register(Amount)
 admin.site.register(FinancialInstitution)

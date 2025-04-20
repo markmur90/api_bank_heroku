@@ -2,7 +2,7 @@ from django import forms
 from datetime import datetime
 import pytz
 from .models import (
-    SepaCreditTransfer, Party, Account, Amount,
+    SepaCreditTransfer, Account, Amount,
     FinancialInstitution, PostalAddress, PaymentIdentification, Debtor, Creditor
 )
 
@@ -45,18 +45,6 @@ class SepaCreditTransferForm(forms.ModelForm):
                 'rows': 1,
                 'placeholder': 'Ingrese información no estructurada (máx. 60 caracteres)'
             }),
-        }
-
-
-class PartyForm(forms.ModelForm):
-    class Meta:
-        model = Party
-        fields = ['debtor_name', 'creditor_name', 'debtor_postal_address', 'creditor_postal_address']
-        widgets = {
-            'debtor_name': forms.TextInput(attrs={'maxlength': 140, 'class': 'form-control'}),
-            'creditor_name': forms.TextInput(attrs={'maxlength': 70, 'class': 'form-control'}),
-            'debtor_postal_address': forms.Select(attrs={'class': 'form-control'}),
-            'creditor_postal_address': forms.Select(attrs={'class': 'form-control'}),
         }
 
 

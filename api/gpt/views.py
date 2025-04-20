@@ -256,6 +256,7 @@ def generate_transfer_pdf(request, payment_id):
     pdf_path = generar_pdf_transferencia(transfer)
     return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf', as_attachment=True, filename=f"{transfer.payment_id}.pdf")
 
+
 @require_http_methods(["DELETE"])
 def delete_transfer(request, payment_id):
     """Elimina una transferencia SEPA por su payment_id."""
@@ -271,21 +272,13 @@ def delete_transfer(request, payment_id):
         logger.exception("Error eliminando transferencia")
         return HttpResponseServerError("Error eliminando transferencia")
 
+
+
 from .forms import (
-    PartyForm, AccountForm, AmountForm, FinancialInstitutionForm,
+    AccountForm, AmountForm, FinancialInstitutionForm,
     PostalAddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm
 )
 from django.shortcuts import render, redirect
-
-def create_party(request):
-    if request.method == 'POST':
-        form = PartyForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('initiate_transferGPT')
-    else:
-        form = PartyForm()
-    return render(request, 'api/GPT/create_party.html', {'form': form})
 
 
 def create_account(request):

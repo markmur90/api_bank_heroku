@@ -26,9 +26,6 @@ urlpatterns = [
     # Éxito de cancelación
     path('transfer/<uuid:payment_id>/cancel-success/', views.cancel_success_view, name='cancel_successGPT'),
 
-    # Crear Party
-    path('create/party/', views.create_party, name='create_partyGPT'),
-
     # Crear Account
     path('create/account/', views.create_account, name='create_accountGPT'),
 

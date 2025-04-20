@@ -53,6 +53,7 @@ class PaymentIdentification(models.Model):
     end_to_end_id = models.CharField(max_length=35)
     instruction_id = models.CharField(max_length=35)
 
+
 class SepaCreditTransfer(models.Model):
     payment_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     auth_id = models.UUIDField(default=uuid.uuid4)

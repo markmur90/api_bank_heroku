@@ -14,30 +14,30 @@ def generate_sepa_json_payload(transfer):
     """Genera el JSON de transferencia SEPA según especificación del banco"""
     return {
         "creditor": {
-            "name": transfer.creditor.creditor_name,
+            "name": transfer.creditor.name,
             "account": {
                 "iban": transfer.creditor_account.iban,
-                "currency": "EUR"
+                "currency": transfer.creditor_account.currency
             },
             "agent": {
                 "bic": transfer.creditor_agent.financial_institution_id if transfer.creditor_agent else None
             },
             "address": {
-                "country": transfer.creditor.creditor_postal_address.country,
-                "zipCodeAndCity": transfer.creditor.creditor_postal_address.zip_code_and_city,
-                "streetAndHouseNumber": transfer.creditor.creditor_postal_address.street_and_house_number
+                "country": transfer.creditor.postal_address.country,
+                "zipCodeAndCity": transfer.creditor.postal_address.zip_code_and_city,
+                "streetAndHouseNumber": transfer.creditor.postal_address.street_and_house_number
             }
         },
         "debtor": {
-            "name": transfer.debtor.debtor_name,
+            "name": transfer.debtor.name,
             "account": {
                 "iban": transfer.debtor_account.iban,
                 "currency": transfer.debtor_account.currency
             },
             "address": {
-                "country": transfer.debtor.debtor_postal_address.country,
-                "zipCodeAndCity": transfer.debtor.debtor_postal_address.zip_code_and_city,
-                "streetAndHouseNumber": transfer.debtor.debtor_postal_address.street_and_house_number
+                "country": transfer.debtor.postal_address.country,
+                "zipCodeAndCity": transfer.debtor.postal_address.zip_code_and_city,
+                "streetAndHouseNumber": transfer.debtor.postal_address.street_and_house_number
             }
         },
         "amount": {
@@ -48,5 +48,6 @@ def generate_sepa_json_payload(transfer):
         "requestedExecutionDate": transfer.requested_execution_date.strftime('%Y-%m-%d'),
         "endToEndId": transfer.payment_identification.end_to_end_id,
         "instructionId": transfer.payment_identification.instruction_id,
-        "purposeCode": transfer.purpose_code
+        "purposeCode": transfer.purpose_code,
+        "priority": "High"  # Agregar prioridad (Instant SEPA Credit Transfer)
     }
