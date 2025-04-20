@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
 from django.http import FileResponse, HttpResponseBadRequest, HttpResponseServerError
-from .models import SepaCreditTransfer, ErrorResponse
+from .models import SepaCreditTransfer, ErrorResponse, PaymentIdentification
 from .forms import SepaCreditTransferForm
 from .utils import get_oauth_session, access_token, generate_sepa_json_payload
 import uuid
@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 def initiate_sepa_transfer(request):
     if request.method == 'POST':
         headers = {
-            'idempotency-id': str(uuid.uuid4()),
+            'idempotency-id': str(uuid.uuid4()),  # Generar idempotency_key automáticamente
             'Accept': 'application/json'
         }
         form = SepaCreditTransferForm(request.POST)
@@ -25,15 +25,18 @@ def initiate_sepa_transfer(request):
                 transfer.payment_id = uuid.uuid4()
                 transfer.auth_id = uuid.uuid4()
                 transfer.transaction_status = 'PDNG'
-                transfer.payment_identification.end_to_end_id = generate_payment_id("E2E")
-                transfer.payment_identification.instruction_id = generate_deterministic_id(
-                    transfer.creditor_account.iban,
-                    transfer.instructed_amount.amount,
-                    transfer.requested_execution_date
+                
+                # Generar PaymentIdentification automáticamente
+                transfer.payment_identification = PaymentIdentification.objects.create(
+                    end_to_end_id=generate_payment_id("E2E"),
+                    instruction_id=generate_deterministic_id(
+                        transfer.creditor_account.iban,
+                        transfer.instructed_amount.amount,
+                        transfer.requested_execution_date
+                    )
                 )
-
-                transfer.payment_identification.save()
-                transfer.idempotency_key = headers['idempotency-id']
+                
+                transfer.idempotency_key = headers['idempotency-id']  # Asignar idempotency_key
                 transfer.save()
 
                 payload = generate_sepa_json_payload(transfer)
