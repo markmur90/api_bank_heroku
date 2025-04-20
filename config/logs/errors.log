@@ -1,0 +1,199 @@
+WARNING 2025-04-20 17:58:21,902 log Not Found: /favicon.ico
+WARNING 2025-04-20 17:58:26,700 log Not Found: /favicon.ico
+WARNING 2025-04-20 17:58:41,453 log Not Found: /favicon.ico
+WARNING 2025-04-20 18:00:23,508 log Not Found: /favicon.ico
+WARNING 2025-04-20 18:01:35,089 log Not Found: /favicon.ico
+WARNING 2025-04-20 18:01:45,403 log Not Found: /favicon.ico
+ERROR 2025-04-20 18:04:05,882 middleware Error en /app/gpt/transfer/initiate/: 'Debtor' object has no attribute 'name'
+Traceback (most recent call last):
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+  File "/home/markmur88/Documentos/api_bank_heroku/api/gpt/views.py", line 95, in initiate_sepa_transfer
+    return render(request, 'api/GPT/initiate_transfer.html', {'form': form})
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/test/utils.py", line 114, in instrumented_test_render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/test/utils.py", line 114, in instrumented_test_render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 65, in render
+    result = block.nodelist.render(context)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 1081, in render
+    return render_value_in_context(output, context)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 1058, in render_value_in_context
+    value = str(value)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/utils.py", line 79, in __str__
+    return self.as_widget()
+           ~~~~~~~~~~~~~~^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/boundfield.py", line 108, in as_widget
+    return widget.render(
+           ~~~~~~~~~~~~~^
+        name=self.html_initial_name if only_initial else self.html_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        renderer=self.form.renderer,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/widgets.py", line 329, in render
+    context = self.get_context(name, value, attrs)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/widgets.py", line 830, in get_context
+    context = super().get_context(name, value, attrs)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/widgets.py", line 781, in get_context
+    context["widget"]["optgroups"] = self.optgroups(
+                                     ~~~~~~~~~~~~~~^
+        name, context["widget"]["value"], attrs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/widgets.py", line 721, in optgroups
+    for index, (option_value, option_label) in enumerate(self.choices):
+                                               ~~~~~~~~~^^^^^^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/models.py", line 1425, in __iter__
+    yield self.choice(obj)
+          ~~~~~~~~~~~^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/models.py", line 1439, in choice
+    self.field.label_from_instance(obj),
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/models.py", line 1529, in label_from_instance
+    return str(obj)
+  File "/home/markmur88/Documentos/api_bank_heroku/api/gpt/models.py", line 19, in __str__
+    return self.name
+           ^^^^^^^^^
+AttributeError: 'Debtor' object has no attribute 'name'
+ERROR 2025-04-20 18:04:05,924 log Internal Server Error: /app/gpt/transfer/initiate/
+Traceback (most recent call last):
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+  File "/home/markmur88/Documentos/api_bank_heroku/api/gpt/views.py", line 95, in initiate_sepa_transfer
+    return render(request, 'api/GPT/initiate_transfer.html', {'form': form})
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/shortcuts.py", line 25, in render
+    content = loader.render_to_string(template_name, context, request, using=using)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/loader.py", line 62, in render_to_string
+    return template.render(context, request)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/backends/django.py", line 107, in render
+    return self.template.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 171, in render
+    return self._render(context)
+           ~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/test/utils.py", line 114, in instrumented_test_render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 159, in render
+    return compiled_parent._render(context)
+           ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/test/utils.py", line 114, in instrumented_test_render
+    return self.nodelist.render(context)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/loader_tags.py", line 65, in render
+    result = block.nodelist.render(context)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 1016, in render
+    return SafeString("".join([node.render_annotated(context) for node in self]))
+                               ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 977, in render_annotated
+    return self.render(context)
+           ~~~~~~~~~~~^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 1081, in render
+    return render_value_in_context(output, context)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/template/base.py", line 1058, in render_value_in_context
+    value = str(value)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/utils.py", line 79, in __str__
+    return self.as_widget()
+           ~~~~~~~~~~~~~~^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/boundfield.py", line 108, in as_widget
+    return widget.render(
+           ~~~~~~~~~~~~~^
+        name=self.html_initial_name if only_initial else self.html_name,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        renderer=self.form.renderer,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/widgets.py", line 329, in render
+    context = self.get_context(name, value, attrs)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/widgets.py", line 830, in get_context
+    context = super().get_context(name, value, attrs)
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/widgets.py", line 781, in get_context
+    context["widget"]["optgroups"] = self.optgroups(
+                                     ~~~~~~~~~~~~~~^
+        name, context["widget"]["value"], attrs
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/widgets.py", line 721, in optgroups
+    for index, (option_value, option_label) in enumerate(self.choices):
+                                               ~~~~~~~~~^^^^^^^^^^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/models.py", line 1425, in __iter__
+    yield self.choice(obj)
+          ~~~~~~~~~~~^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/models.py", line 1439, in choice
+    self.field.label_from_instance(obj),
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/home/markmur88/Documentos/api_bank_heroku/.venv/lib/python3.13/site-packages/django/forms/models.py", line 1529, in label_from_instance
+    return str(obj)
+  File "/home/markmur88/Documentos/api_bank_heroku/api/gpt/models.py", line 19, in __str__
+    return self.name
+           ^^^^^^^^^
+AttributeError: 'Debtor' object has no attribute 'name'
+WARNING 2025-04-20 18:04:06,402 log Not Found: /favicon.ico
+WARNING 2025-04-20 18:06:04,855 log Not Found: /favicon.ico
+WARNING 2025-04-20 18:06:08,165 log Not Found: /favicon.ico
+WARNING 2025-04-20 18:06:24,250 log Not Found: /favicon.ico
+WARNING 2025-04-20 18:06:37,650 log Not Found: /favicon.ico
+WARNING 2025-04-20 18:06:41,589 log Not Found: /favicon.ico
+WARNING 2025-04-20 18:06:51,383 log Not Found: /favicon.ico
+WARNING 2025-04-20 18:07:13,449 log Not Found: /favicon.ico
+WARNING 2025-04-20 18:07:32,253 log Not Found: /favicon.ico

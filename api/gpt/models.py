@@ -16,7 +16,7 @@ class Debtor(models.Model):
 
     def __str__(self):
         
-        return self.name
+        return self.debtor_name
 
 
 class Creditor(models.Model):
@@ -24,7 +24,7 @@ class Creditor(models.Model):
     postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='creditor_addresses', null=True, blank=True)
 
     def __str__(self):
-        return self.name
+        return self.creditor_name
     
 
 class Account(models.Model):

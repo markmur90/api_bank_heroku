@@ -2597,18 +2597,18 @@
 },
 {
   "model": "sessions.session",
-  "pk": "u4k7rjj7896g08a7ssk9hnvjocwwrmp3",
+  "pk": "m56rkolg1vvf06bmr96pyjzo6dkrnz6g",
   "fields": {
-    "session_data": ".eJxVjMsOwiAUBf-FtSEgRcCle7-BXO5DqoYmpV0Z_12bdKHbMzPnpTKsS81r5zmPpM7KqsPvVgAf3DZAd2i3SePUlnkselP0Tru-TsTPy-7-HVTo9VsLEXM5uWLBxuCgRJRAxScjjnA4JojMFgWtiKB3QwTjKQFIwmCNV-8PLCI5gw:1u6M06:DxM_Ze7QQsXkZNQvu8Wj0Y7gWkv3c_LWbdq_Jt99blE",
-    "expire_date": "2025-04-20T04:39:50.230Z"
+    "session_data": ".eJxVjEsOwjAMBe-SNYpit00cluw5Q-U6DimgVOpnhbg7VOoCtm9m3sv0vK2l3xad-zGZswFz-t0GlofWHaQ719tkZarrPA52V-xBF3udkj4vh_t3UHgp35oSaRM9ghdGVI0ONGdAERrIRclAHQNqcG0rHhiDx8ABA0rnGyHz_gDbxjdD:1u6Yvy:cTLhoSj_Ab_AJaJsLHXQhPEmIphl3CHIRVUIIFzGKhU",
+    "expire_date": "2025-04-20T18:28:26.505Z"
   }
 },
 {
   "model": "authentication.customuser",
   "pk": 1,
   "fields": {
-    "password": "pbkdf2_sha256$1000000$RVBXjarj7KgFpoIkZT3Iuo$Btdsq3vC0jnQF09WMKgGvx2zUndRvBStrBeCIiuH6KI=",
-    "last_login": "2025-04-20T04:38:45.212Z",
+    "password": "pbkdf2_sha256$1000000$Tqs9aIkBzJp0oyOZECuVcR$Wr6tAs96TI71DSYNrAe5BLpGksvHFB6yI8lwf3xyk94=",
+    "last_login": "2025-04-20T17:58:26.483Z",
     "is_superuser": true,
     "email": "j.moltke@db.com",
     "username": "493069k1",
@@ -2670,6 +2670,14 @@
   }
 },
 {
+  "model": "sct.instructedamount",
+  "pk": 1,
+  "fields": {
+    "amount": "618.25",
+    "currency": "EUR"
+  }
+},
+{
   "model": "sct.creditoragent",
   "pk": 1,
   "fields": {
@@ -2698,7 +2706,7 @@
   "model": "gpt.debtor",
   "pk": 1,
   "fields": {
-    "name": "MIRYA TRADING CO LTD",
+    "debtor_name": "MIRYA TRADING CO LTD",
     "postal_address": 1
   }
 },
@@ -2706,7 +2714,7 @@
   "model": "gpt.creditor",
   "pk": 1,
   "fields": {
-    "name": "MOHAMMAD REZA NAJAFI KALASHI",
+    "creditor_name": "MOHAMMAD REZA NAJAFI KALASHI",
     "postal_address": 2
   }
 },
@@ -2731,6 +2739,14 @@
   "pk": 1,
   "fields": {
     "financial_institution_id": "WELADED1MST"
+  }
+},
+{
+  "model": "gpt.amount",
+  "pk": 1,
+  "fields": {
+    "amount": "618.25",
+    "currency": "EUR"
   }
 }
 ]

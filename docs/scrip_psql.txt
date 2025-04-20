@@ -15,11 +15,11 @@ nombre_usuario = "markmur88"
 contraseña_segura = "Ptf8454Jd55"
 
 1. Instalación de PostgreSQL:
-sudo apt install postgresql postgresql-contrib -y
+sudo apt install postgresql postgresql-contrib postgresql-doc postgresql-doc-17 isag gnuplot-doc rcs -y
 
 2. Habilitar y arrancar el servicio:
-service postgresql start
-service postgresql status
+sudo service postgresql start
+sudo service postgresql status
 
 3. Reiniciar el servicio (opcional):
 service postgresql restart
