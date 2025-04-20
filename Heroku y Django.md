@@ -164,3 +164,61 @@ Saludos!
 
 
 #### Organizado por Team ProbarDjango & CodingForEntrepreneurs
+
+
+    heroku login
+    heroku apps:create
+
+    git push heroku main
+    heroku run python manage.py migrate
+    heroku run python manage.py createsuperuser
+    heroku apps:info
+
+    heroku run python manage.py makemigrations --app api-bank-heroku
+    heroku run python manage.py migrate --app api-bank-heroku
+    heroku run python manage.py createsuperuser --app api-bank-heroku
+
+    heroku run python manage.py flush --no-input --app api-bank-heroku
+    heroku run python manage.py dumpdata > bdd.json --app api-bank-heroku 
+    heroku run python manage.py loaddata bdd.json --app api-bank-heroku
+
+        
+    heroku pg:reset DATABASE --confirm NOMBRE-DE-APP
+
+
+    heroku addons:create heroku-postgresql:standard-0 --app api-bank-heroku
+
+    heroku pg:push api-bank-heroku DATABASE --app api-bank-heroku
+    heroku pg:pull DATABASE api-bank-heroku --app api-bank-heroku
+    heroku pg:psql --app api-bank-heroku
+
+
+    heroku config:set DISABLE_COLLECTSTATIC=1 --app api-bank-heroku
+    heroku run python manage.py makemigrations --app api-bank-heroku
+    heroku run python manage.py migrate --app api-bank-heroku
+    heroku run python manage.py collectstatic --app api-bank-heroku
+    heroku run python manage.py loaddata bdd.json --app api-bank-heroku
+
+
+
+## INFORMATION
+	└─$ heroku addons:create heroku-postgresql:standard-0 --app api-bank-heroku
+		Creating heroku-postgresql:standard-0 on ⬢ api-bank-heroku... ⣻
+		›   Warning: Release command executing: config vars set by this add-on will not be available until the command succeeds. Use `heroku releases:output` to view the log.
+		Creating heroku-postgresql:standard-0 on ⬢ api-bank-heroku... ~$0.069/hour (max $50/month)
+		The database should be available in 3-5 minutes.
+		Use `heroku pg:wait` to track status.
+		postgresql-graceful-46710 is being created in the background. The app will restart when complete...
+		Use heroku addons:info postgresql-graceful-46710 to check creation progress
+		Use heroku addons:docs heroku-postgresql to view documentation
+
+
+
+## HEROKU POSTGRESQL
+    heroku pg:info --app api-bank-heroku
+    heroku pg:psql --app api-bank-heroku
+    heroku pg:reset DATABASE --confirm api-bank-heroku
+    heroku pg:pull DATABASE_URL db.sqlite3 --app api-bank-heroku
+    heroku pg:push db.sqlite3 DATABASE_URL --app api-bank-heroku
+
+

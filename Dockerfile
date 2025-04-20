@@ -74,6 +74,4 @@ RUN service postgresql start && \
 
 # Comando por defecto para iniciar PostgreSQL, la aplicación y ngrok
 USER root
-CMD service postgresql start && \
-    su - markmur88 -c "cd /home/app && /home/app/.venv/bin/python /home/app/manage.py runserver 0.0.0.0:8000 && \
-    ngrok http http://localhost:8000"
+CMD ["bash", "-c", "service postgresql start && su - markmur88 -c 'cd /home/app && /home/app/.venv/bin/python /home/app/manage.py runserver 0.0.0.0:8000 && ngrok http http://localhost:8000'"]
