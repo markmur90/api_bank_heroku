@@ -25,8 +25,8 @@
             {% for transfer in transfers %}
             <tr>
                 <td class="text-muted">{{ transfer.payment_id|truncatechars:12 }}</td>
-                <td>{{ transfer.debtor.debtor_name }}</td>
-                <td>{{ transfer.creditor.creditor_name }}</td>
+                <td>{{ transfer.debtor.name }}</td>
+                <td>{{ transfer.creditor.name }}</td>
                 <td class="fw-bold">
                     {{ transfer.instructed_amount.amount }} {{ transfer.instructed_amount.currency }}
                 </td>
@@ -40,26 +40,7 @@
                     <a href="{{ transfer.get_absolute_url }}" class="btn btn-sm btn-outline-secondary">
                         Detalles <i class="bi bi-chevron-right"></i>
                     </a>
-                    <form method="POST" action="{% url 'cancel_transferGPT' transfer.payment_id %}" class="d-inline">
-                        {% csrf_token %}
-                        <input type="hidden" name="otp" value="PUSHTAN">
-                        <button type="submit" class="btn btn-sm btn-warning" title="Cancelar transferencia">
-                            <i class="bi bi-x-circle"></i>
-                        </button>
-                    </form>
-                    <form method="POST" action="{% url 'retry_transfer_authGPT' transfer.payment_id %}" class="d-inline">
-                        {% csrf_token %}
-                        <input type="hidden" name="otp" value="PUSHTAN">
-                        <button type="submit" class="btn btn-sm btn-info" title="Retry Auth">
-                            <i class="bi bi-arrow-repeat"></i>
-                        </button>
-                    </form>
-                    <form method="POST" action="{% url 'delete_transferGPT' transfer.payment_id %}" class="d-inline">
-                        {% csrf_token %}
-                        <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('¿Estás seguro de eliminar esta transferencia?');">
-                            Eliminar <i class="bi bi-trash"></i>
-                        </button>
-                    </form>
+
                 </td>
             </tr>
             {% empty %}

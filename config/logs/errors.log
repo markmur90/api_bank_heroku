@@ -831,3 +831,221 @@ Traceback (most recent call last):
   File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/urls/resolvers.py", line 831, in _reverse_with_prefix
     raise NoReverseMatch(msg)
 django.urls.exceptions.NoReverseMatch: Reverse for 'create_addressGPT' not found. 'create_addressGPT' is not a valid view function or pattern name.
+WARNING 2025-04-20 05:38:28,728 log Not Found: /favicon.ico
+ERROR 2025-04-20 05:45:38,849 middleware Error en /app/sct/status/50d94e47-cfae-4cbc-a1af-06a67e3ea1d3/: cannot access local variable 'transfer' where it is not associated with a value
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/shortcuts.py", line 90, in get_object_or_404
+    return queryset.get(*args, **kwargs)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/db/models/query.py", line 633, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+api.sct.models.SepaCreditTransfer.DoesNotExist: SepaCreditTransfer matching query does not exist.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/sct/process_xml_send2.py", line 316, in check_transfer_status
+    transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/shortcuts.py", line 92, in get_object_or_404
+    raise Http404(
+        "No %s matches the given query." % queryset.model._meta.object_name
+    )
+django.http.response.Http404: No SepaCreditTransfer matches the given query.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/sct/process_xml_send2.py", line 347, in check_transfer_status
+    'transfer': transfer,
+                ^^^^^^^^
+UnboundLocalError: cannot access local variable 'transfer' where it is not associated with a value
+ERROR 2025-04-20 05:45:38,854 log Internal Server Error: /app/sct/status/50d94e47-cfae-4cbc-a1af-06a67e3ea1d3/
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/shortcuts.py", line 90, in get_object_or_404
+    return queryset.get(*args, **kwargs)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/db/models/query.py", line 633, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+api.sct.models.SepaCreditTransfer.DoesNotExist: SepaCreditTransfer matching query does not exist.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/sct/process_xml_send2.py", line 316, in check_transfer_status
+    transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/shortcuts.py", line 92, in get_object_or_404
+    raise Http404(
+        "No %s matches the given query." % queryset.model._meta.object_name
+    )
+django.http.response.Http404: No SepaCreditTransfer matches the given query.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/sct/process_xml_send2.py", line 347, in check_transfer_status
+    'transfer': transfer,
+                ^^^^^^^^
+UnboundLocalError: cannot access local variable 'transfer' where it is not associated with a value
+WARNING 2025-04-20 05:48:29,329 log Bad Request: /app/gpt/transfer/50d94e47-cfae-4cbc-a1af-06a67e3ea1d3/cancel/
+WARNING 2025-04-20 05:48:39,160 log Bad Request: /app/gpt/transfer/50d94e47-cfae-4cbc-a1af-06a67e3ea1d3/retry-auth/
+WARNING 2025-04-20 05:48:49,400 log Method Not Allowed (POST): /app/gpt/transfer/50d94e47-cfae-4cbc-a1af-06a67e3ea1d3/delete/
+ERROR 2025-04-20 05:49:05,693 middleware Error en /app/sct/status/50d94e47-cfae-4cbc-a1af-06a67e3ea1d3/: cannot access local variable 'transfer' where it is not associated with a value
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/shortcuts.py", line 90, in get_object_or_404
+    return queryset.get(*args, **kwargs)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/db/models/query.py", line 633, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+api.sct.models.SepaCreditTransfer.DoesNotExist: SepaCreditTransfer matching query does not exist.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/sct/process_xml_send2.py", line 316, in check_transfer_status
+    transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/shortcuts.py", line 92, in get_object_or_404
+    raise Http404(
+        "No %s matches the given query." % queryset.model._meta.object_name
+    )
+django.http.response.Http404: No SepaCreditTransfer matches the given query.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/sct/process_xml_send2.py", line 347, in check_transfer_status
+    'transfer': transfer,
+                ^^^^^^^^
+UnboundLocalError: cannot access local variable 'transfer' where it is not associated with a value
+ERROR 2025-04-20 05:49:05,697 log Internal Server Error: /app/sct/status/50d94e47-cfae-4cbc-a1af-06a67e3ea1d3/
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/shortcuts.py", line 90, in get_object_or_404
+    return queryset.get(*args, **kwargs)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/db/models/query.py", line 633, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+api.sct.models.SepaCreditTransfer.DoesNotExist: SepaCreditTransfer matching query does not exist.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/sct/process_xml_send2.py", line 316, in check_transfer_status
+    transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/shortcuts.py", line 92, in get_object_or_404
+    raise Http404(
+        "No %s matches the given query." % queryset.model._meta.object_name
+    )
+django.http.response.Http404: No SepaCreditTransfer matches the given query.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/sct/process_xml_send2.py", line 347, in check_transfer_status
+    'transfer': transfer,
+                ^^^^^^^^
+UnboundLocalError: cannot access local variable 'transfer' where it is not associated with a value
+ERROR 2025-04-20 05:55:27,154 middleware Error en /app/sct/status/50d94e47-cfae-4cbc-a1af-06a67e3ea1d3/: cannot access local variable 'transfer' where it is not associated with a value
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/shortcuts.py", line 90, in get_object_or_404
+    return queryset.get(*args, **kwargs)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/db/models/query.py", line 633, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+api.sct.models.SepaCreditTransfer.DoesNotExist: SepaCreditTransfer matching query does not exist.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/sct/process_xml_send2.py", line 316, in check_transfer_status
+    transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/shortcuts.py", line 92, in get_object_or_404
+    raise Http404(
+        "No %s matches the given query." % queryset.model._meta.object_name
+    )
+django.http.response.Http404: No SepaCreditTransfer matches the given query.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/sct/process_xml_send2.py", line 347, in check_transfer_status
+    'transfer': transfer,
+                ^^^^^^^^
+UnboundLocalError: cannot access local variable 'transfer' where it is not associated with a value
+ERROR 2025-04-20 05:55:27,159 log Internal Server Error: /app/sct/status/50d94e47-cfae-4cbc-a1af-06a67e3ea1d3/
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/shortcuts.py", line 90, in get_object_or_404
+    return queryset.get(*args, **kwargs)
+           ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/db/models/query.py", line 633, in get
+    raise self.model.DoesNotExist(
+        "%s matching query does not exist." % self.model._meta.object_name
+    )
+api.sct.models.SepaCreditTransfer.DoesNotExist: SepaCreditTransfer matching query does not exist.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/sct/process_xml_send2.py", line 316, in check_transfer_status
+    transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/shortcuts.py", line 92, in get_object_or_404
+    raise Http404(
+        "No %s matches the given query." % queryset.model._meta.object_name
+    )
+django.http.response.Http404: No SepaCreditTransfer matches the given query.
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/sct/process_xml_send2.py", line 347, in check_transfer_status
+    'transfer': transfer,
+                ^^^^^^^^
+UnboundLocalError: cannot access local variable 'transfer' where it is not associated with a value
+ERROR 2025-04-20 05:58:05,955 middleware Error en /app/gpt/transfer/50d94e47-cfae-4cbc-a1af-06a67e3ea1d3/pdf/: 'SepaCreditTransfer' object has no attribute 'creditor_name'
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/gpt/views.py", line 256, in generate_transfer_pdf
+    pdf_path = generar_pdf_transferencia(transfer)
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/gpt/generate_pdf.py", line 16, in generar_pdf_transferencia
+    creditor_name = transfers.creditor_name.replace(" ", "_")
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SepaCreditTransfer' object has no attribute 'creditor_name'. Did you mean: 'creditor_agent'?
+ERROR 2025-04-20 05:58:05,960 log Internal Server Error: /app/gpt/transfer/50d94e47-cfae-4cbc-a1af-06a67e3ea1d3/pdf/
+Traceback (most recent call last):
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home/kali/Documentos/Heroku/bank_api/.venv/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/gpt/views.py", line 256, in generate_transfer_pdf
+    pdf_path = generar_pdf_transferencia(transfer)
+  File "/home/kali/Documentos/Heroku/api_bank_heroku/api/gpt/generate_pdf.py", line 16, in generar_pdf_transferencia
+    creditor_name = transfers.creditor_name.replace(" ", "_")
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SepaCreditTransfer' object has no attribute 'creditor_name'. Did you mean: 'creditor_agent'?

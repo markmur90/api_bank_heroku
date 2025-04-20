@@ -11,7 +11,7 @@ class PostalAddress(models.Model):
     
 
 class Debtor(models.Model):
-    name = models.CharField(max_length=100, blank=True, null=True, unique=True)
+    debtor_name = models.CharField(max_length=100, blank=True, null=True, unique=True)
     postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='debtor_addresses', null=True, blank=True)
 
     def __str__(self):
@@ -20,7 +20,7 @@ class Debtor(models.Model):
 
 
 class Creditor(models.Model):
-    name = models.CharField(max_length=100, blank=True, null=True, unique=True)
+    creditor_name = models.CharField(max_length=100, blank=True, null=True, unique=True)
     postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='creditor_addresses', null=True, blank=True)
 
     def __str__(self):
@@ -95,7 +95,7 @@ class SepaCreditTransfer(models.Model):
 
     def get_absolute_url(self):
         from django.urls import reverse
-        return reverse('check_status2', args=[str(self.payment_id)])
+        return reverse('check_statusGPT', args=[str(self.payment_id)])
 
 class ErrorResponse(models.Model):
     code = models.IntegerField()
