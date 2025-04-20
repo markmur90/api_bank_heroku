@@ -15,7 +15,8 @@ class Debtor(models.Model):
     postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='debtor_addresses', null=True, blank=True)
 
     def __str__(self):
-        return self.name or "Debtor sin nombre"
+        
+        return self.name
 
 
 class Creditor(models.Model):
@@ -23,8 +24,8 @@ class Creditor(models.Model):
     postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='creditor_addresses', null=True, blank=True)
 
     def __str__(self):
-        return self.name or "Creditor sin nombre"
-
+        return self.name
+    
 
 class Account(models.Model):
     iban = models.CharField(max_length=34)
