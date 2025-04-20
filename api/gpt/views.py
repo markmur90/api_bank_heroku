@@ -7,6 +7,14 @@ from .utils import get_oauth_session, generate_sepa_json_payload
 import uuid
 import logging
 from .helpers import generate_payment_id, generate_deterministic_id
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.http import FileResponse
+from .utils import generar_pdf_transferencia
+from .forms import (
+    AccountForm, AmountForm, FinancialInstitutionForm,
+    PostalAddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm
+)
+from django.shortcuts import render, redirect
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +26,12 @@ CLIENT_ID = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
 
 CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzsniABTiDYl7QCh6XXEXzgDrjBD4zSvtHbP0Qa707g3eYbmKxO'
 
+
+def generate_transfer_pdf(request, payment_id):
+    """Genera un PDF para una transferencia específica"""
+    transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+    pdf_path = generar_pdf_transferencia(transfer)
+    return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf', as_attachment=True, filename=f"{transfer.payment_id}.pdf")
 
 
 @require_http_methods(["GET", "POST"])
@@ -229,10 +243,6 @@ def retry_sepa_transfer_auth(request, payment_id):
         return HttpResponseServerError("Error en retry autenticación")
 
 
-
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
-
 def transfer_list_view(request):
     """Listado de todas las transferencias con paginación"""
     transfers = SepaCreditTransfer.objects.all().order_by('-created_at')
@@ -258,18 +268,6 @@ def transfer_list_view(request):
     })
 
 
-    
-from django.http import FileResponse
-from .utils import generar_pdf_transferencia
-
-
-def generate_transfer_pdf(request, payment_id):
-    """Genera un PDF para una transferencia específica"""
-    transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
-    pdf_path = generar_pdf_transferencia(transfer)
-    return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf', as_attachment=True, filename=f"{transfer.payment_id}.pdf")
-
-
 @require_http_methods(["DELETE"])
 def delete_transfer(request, payment_id):
     """Elimina una transferencia SEPA por su payment_id."""
@@ -286,12 +284,9 @@ def delete_transfer(request, payment_id):
         return HttpResponseServerError("Error eliminando transferencia")
 
 
-
-from .forms import (
-    AccountForm, AmountForm, FinancialInstitutionForm,
-    PostalAddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm
-)
-from django.shortcuts import render, redirect
+def cancel_success_view(request, payment_id):
+    """Vista para mostrar éxito de cancelación."""
+    return render(request, 'api/GPT/cancel_success.html', {'payment_id': payment_id})
 
 
 def create_account(request):
@@ -369,9 +364,4 @@ def create_creditor(request):
     else:
         form = CreditorForm()
     return render(request, 'api/GPT/create_creditor.html', {'form': form})
-
-
-def cancel_success_view(request, payment_id):
-    """Vista para mostrar éxito de cancelación."""
-    return render(request, 'api/GPT/cancel_success.html', {'payment_id': payment_id})
 
