@@ -156,8 +156,8 @@ def initiate_sepa_transfer(request):
                 headers.update({
                     'Content-Type': 'application/json',
                     'Authorization': f"Bearer {ACCESS_TOKEN}",
-                    'X-Requested-With': 'XMLHttpRequest',
-                    'Origin': str(ORIGIN),
+                    'X-Requested-With': 'XMLHttpRequest',  # Cabecera requerida
+                    'Origin': str(ORIGIN),  # Cabecera requerida
                 })
 
                 oauth = get_oauth_session(request)
