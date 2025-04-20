@@ -1,0 +1,75 @@
+from django.db import models
+import uuid
+
+class PostalAddress(models.Model):
+    country = models.CharField(max_length=2)
+    zip_code_and_city = models.CharField(max_length=100)
+    street_and_house_number = models.CharField(max_length=100)
+
+class Party(models.Model):
+    debtor_name = models.CharField(max_length=100, blank=True, null=True)
+    creditor_name = models.CharField(max_length=100, blank=True, null=True)
+    debtor_postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='debtor_addresses', null=True, blank=True)
+    creditor_postal_address = models.ForeignKey(PostalAddress, on_delete=models.CASCADE, related_name='creditor_addresses', null=True, blank=True)
+
+class Account(models.Model):
+    iban = models.CharField(max_length=34)
+    currency = models.CharField(max_length=3, default='EUR')
+
+class FinancialInstitution(models.Model):
+    financial_institution_id = models.CharField(max_length=11)
+
+class Amount(models.Model):
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    currency = models.CharField(max_length=3, default='EUR')
+
+class PaymentIdentification(models.Model):
+    end_to_end_id = models.CharField(max_length=36)
+    instruction_id = models.CharField(max_length=36)
+
+class SepaCreditTransfer(models.Model):
+    payment_id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    auth_id = models.UUIDField(default=uuid.uuid4)
+    transaction_status = models.CharField(max_length=10, choices=[
+        ('PDNG', 'Pendiente'),
+        ('ACSC', 'Aceptado'),
+        ('RJCT', 'Rechazado'),
+        ('CANC', 'Cancelado')
+    ], default='PDNG')
+
+    debtor = models.ForeignKey(Party, on_delete=models.CASCADE, related_name='debtor_transfers')
+    debtor_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='debtor_accounts')
+    creditor = models.ForeignKey(Party, on_delete=models.CASCADE, related_name='creditor_transfers')
+    creditor_account = models.ForeignKey(Account, on_delete=models.CASCADE, related_name='creditor_accounts')
+    creditor_agent = models.ForeignKey(FinancialInstitution, on_delete=models.SET_NULL, null=True, blank=True)
+
+    instructed_amount = models.ForeignKey(Amount, on_delete=models.CASCADE)
+    purpose_code = models.CharField(max_length=4, blank=True, null=True)
+    requested_execution_date = models.DateField(blank=True, null=True)
+
+    remittance_information_structured = models.CharField(max_length=140, blank=True, null=True)
+    remittance_information_unstructured = models.CharField(max_length=140, blank=True, null=True)
+
+    payment_identification = models.OneToOneField(PaymentIdentification, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def get_transaction_status_display(self):
+        return dict(SepaCreditTransfer._meta.get_field('transaction_status').choices).get(self.transaction_status, 'Desconocido')
+
+    def get_status_color(self):
+        return {
+            'PDNG': 'warning',
+            'ACSC': 'success',
+            'RJCT': 'danger',
+            'CANC': 'secondary'
+        }.get(self.transaction_status, 'dark')
+
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('check_status2', args=[str(self.payment_id)])
+
+class ErrorResponse(models.Model):
+    code = models.IntegerField()
+    message = models.TextField()
+    message_id = models.CharField(max_length=100, blank=True, null=True)
+    created_at = models.DateTimeField(auto_now_add=True)
