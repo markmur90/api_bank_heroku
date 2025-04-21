@@ -1,0 +1,45 @@
+{
+  "creditor": {
+    "creditorName": "MOHAMMAD REZA NAJAFI KALASHI",
+    "creditorPostalAddress": {
+      "addressLine": {
+        "streetAndHouseNumber": "WESELER STRABE 230",
+        "zipCodeAndCity": "48151 MÜNSTER"
+      },
+      "country": "DE"
+    }
+  },
+  "creditorAccount": {
+    "currency": "EUR",
+    "iban": "DE41400501500154813455"
+  },
+  "creditorAgent": {
+    "financialInstitutionId": "WELADED1MST"
+  },
+  "debtor": {
+    "debtorName": "MIRYA TRADING CO LTD",
+    "debtorPostalAddress": {
+      "addressLine": {
+        "streetAndHouseNumber": "TAUNUSANLAGE 12",
+        "zipCodeAndCity": "60325 FRANKFURT"
+      },
+      "country": "DE"
+    }
+  },
+  "debtorAccount": {
+    "currency": "EUR",
+    "iban": "DE86500700100925993805"
+  },
+  "instructedAmount": {
+    "amount": 610.13,
+    "currency": "EUR"
+  },
+  "paymentIdentification": {
+    "endToEndId": "endToEndId",
+    "instructionId": "instructionId"
+  },
+  "purposeCode": "purposeCode",
+  "remittanceInformationStructured": "remittanceInformationStructured",
+  "remittanceInformationUnstructured": "remittanceInformationUnstructured",
+  "requestedExecutionDate": "2000-01-23"
+}
