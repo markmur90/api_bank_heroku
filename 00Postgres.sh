@@ -23,18 +23,18 @@ GRANT ALL PRIVILEGES ON SCHEMA public TO ${DB_USER};
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO ${DB_USER};
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ${DB_USER};
 ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ${DB_USER};
+EOF
 
--- Verificar si la base de datos existe antes de eliminarla
-DO \$\$
-BEGIN
-    IF EXISTS (SELECT FROM pg_database WHERE datname = '${DB_NAME}') THEN
-        PERFORM pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${DB_NAME}';
-        DROP DATABASE ${DB_NAME};
-    END IF;
-END
-\$\$;
+# Verificar si la base de datos existe y eliminarla si es necesario
+sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}'" | grep -q 1
+if [ $? -eq 0 ]; then
+    echo "La base de datos ${DB_NAME} existe. Eliminándola..."
+    sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${DB_NAME}';"
+    sudo -u postgres psql -c "DROP DATABASE ${DB_NAME};"
+fi
 
--- Crear la base de datos y asignar permisos
+# Crear la base de datos y asignar permisos
+sudo -u postgres psql <<-EOF
 CREATE DATABASE ${DB_NAME};
 GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
 GRANT CONNECT ON DATABASE ${DB_NAME} TO ${DB_USER};
