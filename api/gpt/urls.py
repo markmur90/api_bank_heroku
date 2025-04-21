@@ -46,5 +46,13 @@ urlpatterns = [
 
     # Crear Creditor
     path('create/creditor/', views.create_creditor, name='create_creditorGPT'),
+
+    # Listados
+    path('list/postal-address/', views.postal_address_list_view, name='postal_address_listGPT'),
+    path('list/debtor/', views.debtor_list_view, name='debtor_listGPT'),
+    path('list/creditor/', views.creditor_list_view, name='creditor_listGPT'),
+    path('list/account/', views.account_list_view, name='account_listGPT'),
+    path('list/financial-institution/', views.financial_institution_list_view, name='financial_institution_listGPT'),
+    path('list/amount/', views.amount_list_view, name='amount_listGPT'),
 ]
 

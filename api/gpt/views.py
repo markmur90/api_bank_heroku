@@ -1,7 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
 from django.http import FileResponse, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
-from .models import SepaCreditTransfer, ErrorResponse, PaymentIdentification
+from .models import SepaCreditTransfer, ErrorResponse, PaymentIdentification, PostalAddress, Debtor, Creditor, Account, FinancialInstitution, Amount
 from .forms import SepaCreditTransferForm
 from .utils import get_oauth_session, generate_sepa_json_payload
 import uuid
@@ -449,7 +449,7 @@ def create_account(request):
         form = AccountForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('initiate_transferGPT')
+            return redirect('account_listGPT')
     else:
         form = AccountForm()
     return render(request, 'api/GPT/create_account.html', {'form': form})
@@ -460,7 +460,7 @@ def create_amount(request):
         form = AmountForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('initiate_transferGPT')
+            return redirect('amount_listGPT')
     else:
         form = AmountForm()
     return render(request, 'api/GPT/create_amount.html', {'form': form})
@@ -471,7 +471,7 @@ def create_financial_institution(request):
         form = FinancialInstitutionForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('initiate_transferGPT')
+            return redirect('financial_institution_listGPT')
     else:
         form = FinancialInstitutionForm()
     return render(request, 'api/GPT/create_financial_institution.html', {'form': form})
@@ -482,7 +482,7 @@ def create_postal_address(request):
         form = PostalAddressForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('initiate_transferGPT')
+            return redirect('postal_address_listGPT')
     else:
         form = PostalAddressForm()
     return render(request, 'api/GPT/create_postal_address.html', {'form': form})
@@ -504,7 +504,7 @@ def create_debtor(request):
         form = DebtorForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('initiate_transferGPT')
+            return redirect('debtor_listGPT')
     else:
         form = DebtorForm()
     return render(request, 'api/GPT/create_debtor.html', {'form': form})
@@ -515,8 +515,74 @@ def create_creditor(request):
         form = CreditorForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('initiate_transferGPT')
+            return redirect('creditor_listGPT')
     else:
         form = CreditorForm()
     return render(request, 'api/GPT/create_creditor.html', {'form': form})
+
+
+def postal_address_list_view(request):
+    addresses = PostalAddress.objects.all().order_by('-id')
+    paginator = Paginator(addresses, 10)
+    page = request.GET.get('page', 1)
+    try:
+        addresses_paginated = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        addresses_paginated = paginator.page(1)
+    return render(request, 'api/GPT/postal_address_list.html', {'addresses': addresses_paginated})
+
+
+def debtor_list_view(request):
+    debtors = Debtor.objects.all().order_by('-id')
+    paginator = Paginator(debtors, 10)
+    page = request.GET.get('page', 1)
+    try:
+        debtors_paginated = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        debtors_paginated = paginator.page(1)
+    return render(request, 'api/GPT/debtor_list.html', {'debtors': debtors_paginated})
+
+
+def creditor_list_view(request):
+    creditors = Creditor.objects.all().order_by('-id')
+    paginator = Paginator(creditors, 10)
+    page = request.GET.get('page', 1)
+    try:
+        creditors_paginated = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        creditors_paginated = paginator.page(1)
+    return render(request, 'api/GPT/creditor_list.html', {'creditors': creditors_paginated})
+
+
+def account_list_view(request):
+    accounts = Account.objects.all().order_by('-id')
+    paginator = Paginator(accounts, 10)
+    page = request.GET.get('page', 1)
+    try:
+        accounts_paginated = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        accounts_paginated = paginator.page(1)
+    return render(request, 'api/GPT/account_list.html', {'accounts': accounts_paginated})
+
+
+def financial_institution_list_view(request):
+    institutions = FinancialInstitution.objects.all().order_by('-id')
+    paginator = Paginator(institutions, 10)
+    page = request.GET.get('page', 1)
+    try:
+        institutions_paginated = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        institutions_paginated = paginator.page(1)
+    return render(request, 'api/GPT/financial_institution_list.html', {'institutions': institutions_paginated})
+
+
+def amount_list_view(request):
+    amounts = Amount.objects.all().order_by('-id')
+    paginator = Paginator(amounts, 10)
+    page = request.GET.get('page', 1)
+    try:
+        amounts_paginated = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        amounts_paginated = paginator.page(1)
+    return render(request, 'api/GPT/amount_list.html', {'amounts': amounts_paginated})
 
