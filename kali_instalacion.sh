@@ -125,6 +125,10 @@ apt-get install -y python3-pip openvpn dialog
 pip3 install protonvpn-cli
 protonvpn init || echo "⚠️ ProtonVPN requiere configuración manual posterior."
 
+# === INKSCAPE Y GIMP ===
+echo "🎨 Instalando Inkscape y GIMP..."
+apt-get install -y inkscape gimp
+
 echo "🚀 Instalando Heroku CLI..."
 curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
 
