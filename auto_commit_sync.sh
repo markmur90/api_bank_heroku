@@ -4,6 +4,9 @@
 REPO_PATH=$(eval echo ~/Documentos/GitHub/api_bank_heroku)
 cd "$REPO_PATH" || exit 1
 
+# Archivo de log para registrar eventos
+LOG_FILE="$REPO_PATH/commit_sync.log"
+
 # Función para generar un mensaje de commit automáticamente con detalles de los cambios
 generate_commit_message() {
     # Obtener la fecha y hora actual
@@ -37,6 +40,8 @@ if [ -n "$CHANGES" ]; then
     COMMIT_MESSAGE=$(generate_commit_message)
     git commit -m "$COMMIT_MESSAGE"
     git push origin "$(git rev-parse --abbrev-ref HEAD)"
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - Commit y sincronización realizados." >> "$LOG_FILE"
 else
-    echo "No se detectaron cambios. No se realizará ningún commit."
+    echo "No se detectaron cambios. Registrando en el log..."
+    echo "$(date '+%Y-%m-%d %H:%M:%S') - No se detectaron cambios. No se realizó ningún commit." >> "$LOG_FILE"
 fi
