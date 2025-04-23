@@ -47,7 +47,8 @@ def validate_headers(headers):
     if 'otp' not in headers or not headers.get('otp'):
         errors.append("Cabecera 'otp' es requerida.")
         
-    if 'Correlation-Id' in headers and len(headers['Correlation-Id']) > 50:
+    correlation_id = headers.get('Correlation-Id')
+    if correlation_id is not None and len(correlation_id) > 50:
         errors.append("Cabecera 'Correlation-Id' no debe exceder los 50 caracteres.")
         
     if 'apikey' not in headers or not headers.get('apikey'):
