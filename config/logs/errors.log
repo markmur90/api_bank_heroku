@@ -59,3 +59,30 @@ Traceback (most recent call last):
                                        ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
 TypeError: object of type 'NoneType' has no len()
 WARNING 2025-04-23 20:37:59,204 log Not Found: /favicon.ico
+ERROR 2025-04-23 22:44:26,256 middleware Error en /app/gpt/transfer/initiate/: object of type 'NoneType' has no len()
+Traceback (most recent call last):
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+  File "/home/markmur88/Documentos/GitHub/api_bank_heroku/api/gpt/views.py", line 175, in initiate_sepa_transfer
+    validation_errors = validate_headers(headers)
+  File "/home/markmur88/Documentos/GitHub/api_bank_heroku/api/gpt/views.py", line 50, in validate_headers
+    if 'Correlation-Id' in headers and len(headers['Correlation-Id']) > 50:
+                                       ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: object of type 'NoneType' has no len()
+ERROR 2025-04-23 22:44:26,614 log Internal Server Error: /app/gpt/transfer/initiate/
+Traceback (most recent call last):
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/views/decorators/http.py", line 64, in inner
+    return func(request, *args, **kwargs)
+  File "/home/markmur88/Documentos/GitHub/api_bank_heroku/api/gpt/views.py", line 175, in initiate_sepa_transfer
+    validation_errors = validate_headers(headers)
+  File "/home/markmur88/Documentos/GitHub/api_bank_heroku/api/gpt/views.py", line 50, in validate_headers
+    if 'Correlation-Id' in headers and len(headers['Correlation-Id']) > 50:
+                                       ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+TypeError: object of type 'NoneType' has no len()
+WARNING 2025-04-23 22:44:26,684 log Not Found: /favicon.ico

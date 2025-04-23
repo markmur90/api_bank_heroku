@@ -33,7 +33,11 @@ service postgresql restart
 sudo -u postgres psql
 
 
+sudo apt install postgresql postgresql-contrib postgresql-doc postgresql-doc-17 isag gnuplot-doc rcs -y
 
+sudo systemctl enable postgresql
+sudo systemctl start postgresql
+sudo systemctl status postgresql
 
 
 CREATE USER markmur88 WITH PASSWORD 'Ptf8454Jd55';
