@@ -34,28 +34,40 @@ def validate_headers(headers):
     """Valida las cabeceras requeridas para las solicitudes."""
     errors = []
     idempotency_id = headers.get('idempotency-id', '')
+    
     if not isinstance(idempotency_id, str):
         idempotency_id = str(idempotency_id)  # Asegurarse de que sea una cadena
+        
     if 'idempotency-id' not in headers or not re.match(r'^[a-f0-9\-]{36}$', idempotency_id):
         errors.append("Cabecera 'idempotency-id' es requerida y debe ser un UUID válido.")
+        
     if 'otp' not in headers or not headers.get('otp'):
         errors.append("Cabecera 'otp' es requerida.")
+        
     if 'Correlation-Id' in headers and len(headers['Correlation-Id']) > 50:
         errors.append("Cabecera 'Correlation-Id' no debe exceder los 50 caracteres.")
+        
     if 'apikey' not in headers or not headers.get('apikey'):
         errors.append("Cabecera 'apikey' es requerida.")
+        
     if 'process-id' in headers and not headers.get('process-id'):
         errors.append("Cabecera 'process-id' no debe estar vacía si está presente.")
+        
     if 'previewsignature' in headers and not headers.get('previewsignature'):
         errors.append("Cabecera 'previewsignature' no debe estar vacía si está presente.")
+        
     if 'access-control-allow-origin' not in headers:
         errors.append("Cabecera 'access-control-allow-origin' es requerida.")
+        
     if 'access-control-allow-methods' in headers and not headers.get('access-control-allow-methods'):
         errors.append("Cabecera 'access-control-allow-methods' es requerida.")
+        
     if 'access-control-allow-headers' in headers and not headers.get('access-control-allow-headers'):
         errors.append("Cabecera 'access-control-allow-headers' es requerida.")
+        
     if 'x-request-id' not in headers or not re.match(r'^[a-f0-9\-]{36}$', headers.get('x-request-id', '')):
         errors.append("Cabecera 'x-request-id' es requerida y debe ser un UUID válido.")
+        
     return errors
 
 
@@ -64,26 +76,34 @@ def validate_parameters(data):
     errors = []
     if 'iban' in data and not re.match(r'^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$', data['iban']):
         errors.append("El IBAN proporcionado no es válido.")
+        
     if 'requestedExecutionDate' in data:
         try:
             datetime.strptime(data['requestedExecutionDate'], '%Y-%m-%d')
         except ValueError:
             errors.append("El formato de 'requestedExecutionDate' debe ser yyyy-MM-dd.")
+            
     if 'createDateTime' in data:
         try:
             datetime.strptime(data['createDateTime'], '%Y-%m-%dT%H:%M:%S')
         except ValueError:
             errors.append("El formato de 'createDateTime' debe ser yyyy-MM-dd'T'HH:mm:ss.")
+            
     if 'currency' in data and not re.match(r'^[A-Z]{3}$', data['currency']):
         errors.append("La moneda debe ser un código ISO 4217 válido (ejemplo: EUR).")
+        
     if 'amount' in data and (not isinstance(data['amount'], (int, float)) or data['amount'] <= 0):
         errors.append("El monto debe ser un número positivo.")
+        
     if 'transactionStatus' in data and data['transactionStatus'] not in ['RJCT', 'RCVD', 'ACCP', 'ACTC', 'ACSP', 'ACSC', 'ACWC', 'ACWP', 'ACCC', 'CANC', 'PDNG']:
         errors.append("El estado de la transacción no es válido.")
+        
     if 'action' in data and data['action'] not in ['CREATE', 'CANCEL']:
         errors.append("El valor de 'action' no es válido. Valores permitidos: 'CREATE', 'CANCEL'.")
+        
     if 'chargeBearer' in data and len(data['chargeBearer']) > 35:
         errors.append("El valor de 'chargeBearer' no debe exceder los 35 caracteres.")
+        
     return errors
 
 
