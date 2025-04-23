@@ -8,3 +8,4 @@ pip3 install -r requirements.txt
 python3 manage.py collectstatic --noinput
 
 echo "✅ ✅ ✅ Environment setup complete. You can now run your Django application.✅ ✅ ✅ "
+
