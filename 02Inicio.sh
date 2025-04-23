@@ -9,6 +9,6 @@ source $HOME/Documentos/Entorno/venvAPI/bin/activate
 python3 manage.py makemigrations
 python3 manage.py migrate
 python3 manage.py loaddata bdd.json
-clear
+
 echo "Base de datos inicializada"
 
