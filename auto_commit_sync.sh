@@ -2,10 +2,11 @@
 
 # Ruta del repositorio que deseas monitorizar
 REPO_PATH=$(eval echo ~/Documentos/GitHub/api_bank_heroku)
+LOGS_PATH=$(eval echo ~/Documentos/GitHub/logs)
 cd "$REPO_PATH" || exit 1
 
 # Archivo de log para registrar eventos
-LOG_FILE="$REPO_PATH/commit_sync.log"
+LOG_FILE="$LOGS_PATH/commit_sync.log"
 
 # Función para generar un mensaje de commit automáticamente con detalles de los cambios
 generate_commit_message() {
