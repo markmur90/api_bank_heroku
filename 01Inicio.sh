@@ -11,3 +11,4 @@ python3 manage.py migrate
 python3 manage.py loaddata bdd.json
 
 echo "Base de datos inicializada"
+
