@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Ruta del repositorio que deseas monitorizar
-REPO_PATH="/ruta/a/tu/repositorio"
+REPO_PATH=$(eval echo ~/Documentos/GitHub/api_bank_heroku)
 cd "$REPO_PATH" || exit 1
 
 # Función para generar un mensaje de commit automáticamente con detalles de los cambios
