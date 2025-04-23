@@ -10,3 +10,4 @@ python3 manage.py collectstatic --noinput
 
 echo "✅ ✅ ✅ Environment setup complete. You can now run your Django application.✅ ✅ ✅ "
 
+
