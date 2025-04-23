@@ -165,12 +165,19 @@ def generate_transfer_pdf(request, payment_id):
 def initiate_sepa_transfer(request):
     if request.method == 'POST':
         headers = {
-            'idempotency-id': request.headers.get('idempotency-id'),
-            'otp': request.headers.get('otp'),
-            'Correlation-Id': request.headers.get('Correlation-Id'),
+            'idempotency-id': request.headers.get(str(uuid.uuid4())),
+            'otp': request.headers.get(request.POST.get('otp', 'SEPA_TRANSFER_GRANT')),
+            'Correlation-Id': request.headers.get(str(uuid.uuid4())),
             'apikey': request.headers.get('apikey'),
-            'process-id': request.headers.get('process-id'),
-            'previewsignature': request.headers.get('previewsignature'),
+            'Access-Control-Request-Method': request.headers.get('Access-Control-Request-Method'),
+            'Access-Control-Request-Headers': request.headers.get('Access-Control-Request-Headers'),
+            'x-request-id': request.headers.get(str(uuid.uuid4())),
+            'Cookie': request.headers.get('Cookie'),
+            'X-Frame-Options': request.headers.get('X-Frame-Options'),
+            'X-Content-Type-Options': request.headers.get('X-Content-Type-Options'),
+            'Strict-Transport-Security': request.headers.get('Strict-Transport-Security'),
+            # 'process-id': request.headers.get('process-id'),
+            # 'previewsignature': request.headers.get('previewsignature'),
             'Accept': 'application/json'
         }
         validation_errors = validate_headers(headers)
