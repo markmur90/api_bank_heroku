@@ -10,16 +10,16 @@ generate_commit_message() {
     FILES_CHANGED=$(git diff --name-only)
     
     # Inicializa el mensaje de commit
-    COMMIT_MESSAGE="Cambios realizados el $(date '+%Y-%m-%d %H:%M:%S'):\n"
+    COMMIT_MESSAGE="Resumen de cambios realizados:\n"
 
     # Detalla los cambios por archivo
     for FILE in $FILES_CHANGED; do
-        # Obtiene el diff detallado para el archivo
-        DIFF_OUTPUT=$(git diff -- "$FILE")
+        # Obtiene un resumen del diff para el archivo
+        DIFF_SUMMARY=$(git diff --stat -- "$FILE")
         
         # Agrega un resumen al mensaje de commit
-        COMMIT_MESSAGE+="\nArchivo: $FILE\nCambios:\n"
-        COMMIT_MESSAGE+="$DIFF_OUTPUT\n"
+        COMMIT_MESSAGE+="\nArchivo: $FILE\nResumen de cambios:\n"
+        COMMIT_MESSAGE+="$DIFF_SUMMARY\n"
     done
 
     echo -e "$COMMIT_MESSAGE"
