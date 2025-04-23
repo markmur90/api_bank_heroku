@@ -41,4 +41,5 @@ GRANT CONNECT ON DATABASE ${DB_NAME} TO ${DB_USER};
 GRANT CREATE ON DATABASE ${DB_NAME} TO ${DB_USER};
 EOF
 
+
 echo "Operaciones en la base de datos completadas."

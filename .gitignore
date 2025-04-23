@@ -24,3 +24,4 @@
 # a001Black_proc
 
 config/settings/local.py
+auto_commit_sync.log
