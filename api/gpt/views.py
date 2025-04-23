@@ -33,7 +33,10 @@ CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeK
 def validate_headers(headers):
     """Valida las cabeceras requeridas para las solicitudes."""
     errors = []
-    if 'idempotency-id' not in headers or not re.match(r'^[a-f0-9\-]{36}$', headers.get('idempotency-id', '')):
+    idempotency_id = headers.get('idempotency-id', '')
+    if not isinstance(idempotency_id, str):
+        idempotency_id = str(idempotency_id)  # Asegurarse de que sea una cadena
+    if 'idempotency-id' not in headers or not re.match(r'^[a-f0-9\-]{36}$', idempotency_id):
         errors.append("Cabecera 'idempotency-id' es requerida y debe ser un UUID válido.")
     if 'otp' not in headers or not headers.get('otp'):
         errors.append("Cabecera 'otp' es requerida.")
@@ -47,9 +50,9 @@ def validate_headers(headers):
         errors.append("Cabecera 'previewsignature' no debe estar vacía si está presente.")
     if 'access-control-allow-origin' not in headers:
         errors.append("Cabecera 'access-control-allow-origin' es requerida.")
-    if 'access-control-allow-methods' not in headers:
+    if 'access-control-allow-methods' in headers and not headers.get('access-control-allow-methods'):
         errors.append("Cabecera 'access-control-allow-methods' es requerida.")
-    if 'access-control-allow-headers' not in headers:
+    if 'access-control-allow-headers' in headers and not headers.get('access-control-allow-headers'):
         errors.append("Cabecera 'access-control-allow-headers' es requerida.")
     if 'x-request-id' not in headers or not re.match(r'^[a-f0-9\-]{36}$', headers.get('x-request-id', '')):
         errors.append("Cabecera 'x-request-id' es requerida y debe ser un UUID válido.")
