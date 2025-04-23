@@ -6,11 +6,14 @@ cd "$REPO_PATH" || exit 1
 
 # Función para generar un mensaje de commit automáticamente con detalles de los cambios
 generate_commit_message() {
+    # Obtener la fecha y hora actual
+    TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
+    
     # Lista de archivos modificados
     FILES_CHANGED=$(git diff --name-only)
     
     # Inicializa el mensaje de commit
-    COMMIT_MESSAGE="Resumen de cambios realizados:\n"
+    COMMIT_MESSAGE="Cambios realizados el $TIMESTAMP:\n"
 
     # Detalla los cambios por archivo
     for FILE in $FILES_CHANGED; do
@@ -18,8 +21,7 @@ generate_commit_message() {
         DIFF_SUMMARY=$(git diff --stat -- "$FILE")
         
         # Agrega un resumen al mensaje de commit
-        COMMIT_MESSAGE+="\nArchivo: $FILE\nResumen de cambios:\n"
-        COMMIT_MESSAGE+="$DIFF_SUMMARY\n"
+        COMMIT_MESSAGE+="\nArchivo: $FILE\n$DIFF_SUMMARY\n"
     done
 
     echo -e "$COMMIT_MESSAGE"
