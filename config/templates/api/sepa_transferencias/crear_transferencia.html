@@ -1,0 +1,9 @@
+{% extends 'base.html' %}
+{% block title %}Nueva Transferencia{% endblock %}
+{% block content %}
+<h1>Crear Transferencia</h1>
+<form method="post">{% csrf_token %}
+  {{ form.as_p }}
+  <button class="btn btn-success">Guardar</button>
+</form>
+{% endblock %}
