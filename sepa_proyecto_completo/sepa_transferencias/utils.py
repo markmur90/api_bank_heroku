@@ -75,19 +75,26 @@ def handle_error_response(response):
     error_code = response.status_code
     return error_messages.get(error_code, f"Error desconocido: {response.text}")
 
+
+
 def generate_transfer_pdf(request, payment_id):
     """Genera un PDF para una transferencia específica"""
     transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
     pdf_path = generar_pdf_transferencia(transfer)
     return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf', as_attachment=True, filename=f"{transfer.payment_id}.pdf")
 
+
+
 OAUTH_CONFIG = {
     'client_id': str(CLIENT_ID),
     'client_secret': str(CLIENT_SECRET),
     'token_url': 'https://api.db.com/gw/oidc/token',
     'authorization_url': 'https://api.db.com/gw/oidc/authorize',
-    'scopes': ['sepa_credit_transfers']
+    'scopes': ['sepa_credit_transfers'],
+    'access_token': str(ACCESS_TOKEN),
 }
+
+
 
 def get_oauth_session(request):
     """Crea sesión OAuth2 utilizando el access_token del entorno"""
@@ -97,6 +104,8 @@ def get_oauth_session(request):
 
     # Crear sesión OAuth2 con el token de acceso
     return OAuth2Session(client_id=OAUTH_CONFIG['client_id'], token={'access_token': ACCESS_TOKEN, 'token_type': 'Bearer'})
+
+
 
 def generate_sepa_json_payload(transfer):
     """Genera el JSON de transferencia SEPA según especificación del banco"""
@@ -231,6 +240,8 @@ def generar_pdf_transferencia(transfers):
     c.save()
     return pdf_path
 
+
+
 def validate_headers(headers):
     """
     Valida las cabeceras requeridas para las solicitudes SEPA.
@@ -260,6 +271,8 @@ def validate_headers(headers):
         errors.append("Cabecera 'x-request-id' es requerida y debe ser un UUID válido.")
     return errors
 
+
+
 def build_headers(request, external_method):
     """
     Construye un diccionario de cabeceras base para la llamada a la API SEPA, 
@@ -269,6 +282,7 @@ def build_headers(request, external_method):
     """
     method = external_method.upper()
     headers = {}
+    
     # Cabecera idempotency-id
     if method in ['POST', 'GET']:
         # Generar nuevo UUID si no se proporciona (p. ej. iniciar transferencia o consultar estado)
@@ -316,19 +330,21 @@ def build_headers(request, external_method):
     headers['X-Requested-With'] = 'XMLHttpRequest'
     return headers
 
+
+
 def attach_common_headers(headers, external_method):
-    """
-    Agrega cabeceras comunes a la petición API, como autenticación y tipo de contenido,
-    según el método HTTP externo especificado.
-    """
     # Autenticación con token Bearer
     headers['Authorization'] = f"Bearer {ACCESS_TOKEN}"
+    
     # Aceptación de respuesta JSON en todos los casos
     headers['Accept'] = 'application/json'
+    
     # En métodos con cuerpo (POST/PATCH), especificar el tipo de contenido JSON
     if external_method.upper() in ['POST', 'PATCH']:
         headers['Content-Type'] = 'application/json'
     return headers
+
+
 
 def validate_parameters(data):
     """Valida los parámetros requeridos en el cuerpo de la solicitud."""
