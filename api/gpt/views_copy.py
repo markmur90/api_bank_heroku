@@ -1,24 +1,21 @@
+import uuid
+import logging
+import re
+
+from datetime import datetime
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.http import FileResponse
+from django.shortcuts import render, redirect
+from django.core.exceptions import ValidationError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
 from django.http import FileResponse, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 
 from api.gpt.views import validate_parameters
-from .models import SepaCreditTransfer, ErrorResponse, PaymentIdentification, PostalAddress, Debtor, Creditor, Account, FinancialInstitution, Amount
-from .forms import SepaCreditTransferForm
-import uuid
-import logging
-from .helpers import generate_payment_id, generate_deterministic_id
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.http import FileResponse
-from .utils import validate_headers, build_headers, attach_common_headers, handle_error_response, generate_sepa_json_payload, get_oauth_session
-from .forms import (
-    AccountForm, AmountForm, FinancialInstitutionForm,
-    PostalAddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm
-)
-from django.shortcuts import render, redirect
-from django.core.exceptions import ValidationError
-import re
-from datetime import datetime
+from api.gpt.models import SepaCreditTransfer, ErrorResponse, PaymentIdentification, PostalAddress, Debtor, Creditor, Account, FinancialInstitution, Amount
+from api.gpt.helpers import generate_payment_id, generate_deterministic_id
+from api.gpt.utils import validate_headers, build_headers, attach_common_headers, handle_error_response, generate_sepa_json_payload, get_oauth_session
+from api.gpt.forms import AccountForm, AmountForm, FinancialInstitutionForm,PostalAddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm, SepaCreditTransferForm
 
 logger = logging.getLogger(__name__)
 
@@ -38,7 +35,7 @@ CLIENT_SECRET = API_CLIENT_SECRET
 @require_http_methods(["GET", "POST"])
 def initiate_sepa_transfer(request):
     if request.method == 'POST':
-        access-control-allow-headers = {
+        headers = {
             'idempotency-id': request.headers.get('idempotency-id', str(uuid.uuid4())),
             'process-id': request.headers.get('process-id'),
             'otp': request.POST.get('otp', 'SEPA_TRANSFER_GRANT'),
@@ -57,13 +54,9 @@ def initiate_sepa_transfer(request):
             'previewsignature': request.headers.get('previewsignature'),
         }
 
-        # Validar cabeceras
-        validation_errors = validate_headers(headers)
-        if validation_errors:
-            return JsonResponse({'errors': validation_errors}, status=400)
-
         # Construir cabeceras adicionales
         headers = build_headers(request, external_method='POST')
+        
         validation_errors = validate_headers(headers)
         if validation_errors:
             return JsonResponse({'errors': validation_errors}, status=400)
