@@ -118,23 +118,49 @@ def enviar_transferencia(request, payment_id):
         return redirect('detalle_transferencia', payment_id=payment_id)
 
     payload = {
-        "creditor": {"creditorName": transferencia.creditor.creditor_name},
-        "creditorAccount": {"iban": transferencia.creditor_account.iban, "currency": transferencia.creditor_account.currency},
-        "creditorAgent": {"financialInstitutionId": transferencia.creditor_agent.financial_institution_id},
-        "debtor": {"debtorName": transferencia.debtor.debtor_name},
-        "debtorAccount": {"iban": transferencia.debtor_account.iban, "currency": transferencia.debtor_account.currency},
-        "paymentIdentification": {
-            "endToEndIdentification": transferencia.payment_identification.end_to_end_id,
-            "instructionId": transferencia.payment_identification.instruction_id
+        "creditor": {
+            "creditorName": transferencia.creditor.creditor_name,
+            "creditorPostalAddress": {
+                "country": transferencia.creditor.postal_address.country,
+                "addressLine": {
+                    "streetAndHouseNumber": transferencia.creditor.postal_address.street_and_house_number,
+                    "zipCodeAndCity": transferencia.creditor.postal_address.zip_code_and_city
+                }
+            }
+        },
+        "creditorAccount": {
+            "iban": transferencia.creditor_account.iban, 
+            "currency": transferencia.creditor_account.currency
+        },
+        "creditorAgent": {
+            "financialInstitutionId": transferencia.creditor_agent.financial_institution_id
+        },
+        "debtor": {
+            "debtorName": transferencia.debtor.debtor_name,
+            "debtorPostalAddress": {
+                "country": transferencia.debtor.postal_address.country,
+                "addressLine": {
+                    "streetAndHouseNumber": transferencia.debtor.postal_address.street_and_house_number,
+                    "zipCodeAndCity": transferencia.debtor.postal_address.zip_code_and_city
+                }
+            }
+        },
+        "debtorAccount": {
+            "iban": transferencia.debtor_account.iban, 
+            "currency": transferencia.debtor_account.currency
         },
         "instructedAmount": {
             "amount": float(transferencia.instructed_amount.amount),
             "currency": transferencia.instructed_amount.currency
         },
+        "paymentIdentification": {
+            "endToEndIdentification": transferencia.payment_identification.end_to_end_id,
+            "instructionId": transferencia.payment_identification.instruction_id
+        },
         "purposeCode": transferencia.purpose_code,
+        "requestedExecutionDate": transferencia.requested_execution_date.strftime('%Y-%m-%d'),
         "remittanceInformationStructured": transferencia.remittance_information_structured,
-        "remittanceInformationUnstructured": transferencia.remittance_information_unstructured,
-        "requestedExecutionDate": transferencia.requested_execution_date.strftime('%Y-%m-%d')
+        "remittanceInformationUnstructured": transferencia.remittance_information_unstructured
     }
 
     try:

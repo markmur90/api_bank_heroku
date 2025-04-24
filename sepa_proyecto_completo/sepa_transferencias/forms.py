@@ -1,4 +1,6 @@
+from datetime import datetime
 from django import forms
+import pytz
 from .models import *
 
 class AddressForm(forms.ModelForm):
@@ -71,18 +73,35 @@ class SepaCreditTransferForm(forms.ModelForm):
         fields = '__all__'
         exclude = ['payment_id', 'auth_id', 'transaction_status', 'payment_identification']
         widgets = {
-            'transaction_status': forms.Select(attrs={'class': 'form-control'}),
-            'purpose_code': forms.TextInput(attrs={'class': 'form-control'}),
-            'requested_execution_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'remittance_information_structured': forms.TextInput(attrs={'class': 'form-control'}),
-            'remittance_information_unstructured': forms.TextInput(attrs={'class': 'form-control'}),
             'debtor': forms.Select(attrs={'class': 'form-control'}),
             'debtor_account': forms.Select(attrs={'class': 'form-control'}),
             'creditor': forms.Select(attrs={'class': 'form-control'}),
             'creditor_account': forms.Select(attrs={'class': 'form-control'}),
             'creditor_agent': forms.Select(attrs={'class': 'form-control'}),
-            'payment_identification': forms.Select(attrs={'class': 'form-control'}),
             'instructed_amount': forms.Select(attrs={'class': 'form-control'}),
+            'purpose_code': forms.TextInput(attrs={'class': 'form-control'}),
+            'requested_execution_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control',
+                'value': datetime.now(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d')
+            }),
+            'purpose_code': forms.TextInput(attrs={
+                'pattern': '.{4}',
+                'class': 'form-control',
+                'placeholder': 'Ingrese un código de 4 caracteres'
+            }),
+            'remittance_information_structured': forms.TextInput(attrs={
+                'maxlength': 60,
+                'class': 'form-control',
+                'rows': 1,
+                'placeholder': 'Ingrese información estructurada (máx. 60 caracteres)'
+            }),
+            'remittance_information_unstructured': forms.TextInput(attrs={
+                'maxlength': 60,
+                'class': 'form-control',
+                'rows': 1,
+                'placeholder': 'Ingrese información no estructurada (máx. 60 caracteres)'
+            }),
         }
 
 # Formularios para modelos masivos
