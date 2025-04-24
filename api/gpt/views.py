@@ -83,7 +83,7 @@ def initiate_sepa_transfer(request):
 
                 # Generar PaymentIdentification automáticamente
                 transfer.payment_identification = PaymentIdentification.objects.create(
-                    end_to_end_id=generate_payment_id("E2E"),
+                    end_to_end_id=generate_payment_id(),
                     instruction_id=generate_deterministic_id(
                         transfer.creditor_account.iban,
                         transfer.instructed_amount.amount,
@@ -116,7 +116,7 @@ def initiate_sepa_transfer(request):
                         'execution_date': transfer.requested_execution_date,
                         'creditor': transfer.creditor.creditor_name,
                         'debtor': transfer.debtor.debtor_name,
-                        'idempotency_key': transfer.idempotency_key
+                        'idempotency_id': transfer.idempotency_key
                     })
                 else:
                     error_message = handle_error_response(response)

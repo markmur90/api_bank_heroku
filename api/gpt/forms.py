@@ -93,8 +93,8 @@ class PaymentIdentificationForm(forms.ModelForm):
         model = PaymentIdentification
         fields = ['end_to_end_id', 'instruction_id']
         widgets = {
-            'end_to_end_id': forms.TextInput(attrs={'pattern': '[a-zA-Z0-9.-]{1,36}', 'class': 'form-control'}),
-            'instruction_id': forms.TextInput(attrs={'pattern': '[a-zA-Z0-9.-]{1,36}', 'class': 'form-control'}),
+            'end_to_end_id': forms.TextInput(attrs={'pattern': '[a-zA-Z0-9.-]{1,35}', 'class': 'form-control'}),
+            'instruction_id': forms.TextInput(attrs={'pattern': '[a-zA-Z0-9.-]{1,35}', 'class': 'form-control'}),
         }
 
 
