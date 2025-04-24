@@ -274,7 +274,7 @@ def check_transfer_status(request, payment_id):
         })
 
 
-@require_http_methods(["POST"])
+@require_http_methods(["DELETE"])
 def cancel_sepa_transfer(request, payment_id):
     headers = {
         'idempotency-id': request.headers.get('idempotency-id'),

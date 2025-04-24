@@ -44,7 +44,7 @@
             <a href="{% url 'generate_transfer_pdf' transfer.payment_id %}" class="btn btn-outline-primary">
                 <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
             </a>
-            <form method="POST" action="{% url 'delete_transfer' transfer.payment_id %}" class="d-inline">
+            <form method="DELETE" action="{% url 'delete_transfer' transfer.payment_id %}" class="d-inline">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-danger" onclick="return confirm('¿Estás seguro de eliminar esta transferencia?');">
                     Eliminar Transferencia
