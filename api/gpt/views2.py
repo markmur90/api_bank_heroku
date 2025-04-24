@@ -1,25 +1,26 @@
-import uuid
-import logging
-import re
-
-from datetime import datetime
-from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-from django.http import FileResponse
-from django.shortcuts import render, redirect
-from django.core.exceptions import ValidationError
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
 from django.http import FileResponse, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
-
-from api.gpt.views import validate_parameters
-from api.gpt.models import SepaCreditTransfer, ErrorResponse, PaymentIdentification, PostalAddress, Debtor, Creditor, Account, FinancialInstitution, Amount
-from api.gpt.helpers import generate_payment_id, generate_deterministic_id
-from api.gpt.utils import validate_headers, build_headers, attach_common_headers, handle_error_response, generate_sepa_json_payload, get_oauth_session
-from api.gpt.forms import AccountForm, AmountForm, FinancialInstitutionForm,PostalAddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm, SepaCreditTransferForm
+from .models import SepaCreditTransfer, ErrorResponse, PaymentIdentification, PostalAddress, Debtor, Creditor, Account, FinancialInstitution, Amount
+from .forms import SepaCreditTransferForm
+from .utils import get_oauth_session, generate_sepa_json_payload
+import uuid
+import logging
+from .helpers import generate_payment_id, generate_deterministic_id
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from django.http import FileResponse
+from .utils import generar_pdf_transferencia
+from .forms import (
+    AccountForm, AmountForm, FinancialInstitutionForm,
+    PostalAddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm
+)
+from django.shortcuts import render, redirect
+from django.core.exceptions import ValidationError
+import re
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-# Token de acceso dummy (debería obtenerse con autenticación OAuth real)
 ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg"
 
 ORIGIN = 'https://api.db.com'
@@ -32,31 +33,151 @@ DEUTSCHE_BANK_CLIENT_SECRET='H858hfhg0ht40588hhfjpfhhd9944940jf'
 CLIENT_ID = API_CLIENT_ID
 CLIENT_SECRET = API_CLIENT_SECRET
 
+def validate_headers(headers):
+    """Valida las cabeceras requeridas para las solicitudes."""
+    errors = []
+    idempotency_id = headers.get('idempotency-id', '')
+    
+    if not isinstance(idempotency_id, str):
+        idempotency_id = str(idempotency_id)  # Asegurarse de que sea una cadena
+        
+    if 'idempotency-id' not in headers or not re.match(r'^[a-f0-9\-]{36}$', idempotency_id):
+        errors.append("Cabecera 'idempotency-id' es requerida y debe ser un UUID válido.")
+        
+    if 'otp' not in headers or not headers.get('otp'):
+        errors.append("Cabecera 'otp' es requerida.")
+        
+    correlation_id = headers.get('Correlation-Id')
+    if correlation_id is not None and len(correlation_id) > 50:
+        errors.append("Cabecera 'Correlation-Id' no debe exceder los 50 caracteres.")
+        
+    if 'apikey' not in headers or not headers.get('apikey'):
+        errors.append("Cabecera 'apikey' es requerida.")
+        
+    if 'process-id' in headers and not headers.get('process-id'):
+        errors.append("Cabecera 'process-id' no debe estar vacía si está presente.")
+        
+    if 'previewsignature' in headers and not headers.get('previewsignature'):
+        errors.append("Cabecera 'previewsignature' no debe estar vacía si está presente.")
+        
+    if 'access-control-allow-origin' not in headers:
+        errors.append("Cabecera 'access-control-allow-origin' es requerida.")
+        
+    if 'access-control-allow-methods' in headers and not headers.get('access-control-allow-methods'):
+        errors.append("Cabecera 'access-control-allow-methods' es requerida.")
+        
+    if 'access-control-allow-headers' in headers and not headers.get('access-control-allow-headers'):
+        errors.append("Cabecera 'access-control-allow-headers' es requerida.")
+        
+    if 'x-request-id' not in headers or not re.match(r'^[a-f0-9\-]{36}$', headers.get('x-request-id', '')):
+        errors.append("Cabecera 'x-request-id' es requerida y debe ser un UUID válido.")
+        
+    return errors
+
+
+def validate_parameters(data):
+    """Valida los parámetros requeridos en el cuerpo de la solicitud."""
+    errors = []
+    if 'iban' in data and not re.match(r'^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$', data['iban']):
+        errors.append("El IBAN proporcionado no es válido.")
+        
+    if 'requestedExecutionDate' in data:
+        try:
+            datetime.strptime(data['requestedExecutionDate'], '%Y-%m-%d')
+        except ValueError:
+            errors.append("El formato de 'requestedExecutionDate' debe ser yyyy-MM-dd.")
+            
+    if 'createDateTime' in data:
+        try:
+            datetime.strptime(data['createDateTime'], '%Y-%m-%dT%H:%M:%S')
+        except ValueError:
+            errors.append("El formato de 'createDateTime' debe ser yyyy-MM-dd'T'HH:mm:ss.")
+            
+    if 'currency' in data and not re.match(r'^[A-Z]{3}$', data['currency']):
+        errors.append("La moneda debe ser un código ISO 4217 válido (ejemplo: EUR).")
+        
+    if 'amount' in data and (not isinstance(data['amount'], (int, float)) or data['amount'] <= 0):
+        errors.append("El monto debe ser un número positivo.")
+        
+    if 'transactionStatus' in data and data['transactionStatus'] not in ['RJCT', 'RCVD', 'ACCP', 'ACTC', 'ACSP', 'ACSC', 'ACWC', 'ACWP', 'ACCC', 'CANC', 'PDNG']:
+        errors.append("El estado de la transacción no es válido.")
+        
+    if 'action' in data and data['action'] not in ['CREATE', 'CANCEL']:
+        errors.append("El valor de 'action' no es válido. Valores permitidos: 'CREATE', 'CANCEL'.")
+        
+    if 'chargeBearer' in data and len(data['chargeBearer']) > 35:
+        errors.append("El valor de 'chargeBearer' no debe exceder los 35 caracteres.")
+        
+    return errors
+
+
+def handle_error_response(response):
+    """Maneja los códigos de error específicos de la API."""
+    error_messages = {
+        2: "Valor inválido para uno de los parámetros.",
+        16: "Respuesta de desafío OTP inválida.",
+        17: "OTP inválido.",
+        114: "No se pudo identificar la transacción por Id.",
+        127: "La fecha de reserva inicial debe preceder a la fecha de reserva final.",
+        131: "Valor inválido para 'sortBy'. Valores válidos: 'bookingDate[ASC]' y 'bookingDate[DESC]'.",
+        132: "No soportado.",
+        138: "Parece que inició un desafío no pushTAN. Use el endpoint PATCH para continuar.",
+        139: "Parece que inició un desafío pushTAN. Use el endpoint GET para continuar.",
+        6500: "Parámetros en la URL o tipo de contenido incorrectos. Por favor, revise y reintente.",
+        6501: "Detalles del banco contratante inválidos o faltantes.",
+        6502: "La moneda aceptada para el monto instruido es EUR. Por favor, corrija su entrada.",
+        6503: "Parámetros enviados son inválidos o faltantes.",
+        6504: "Los parámetros en la solicitud no coinciden con la solicitud inicial.",
+        6505: "Fecha de ejecución inválida.",
+        6506: "El IdempotencyId ya está en uso.",
+        6507: "No se permite la cancelación para esta transacción.",
+        6508: "Pago SEPA no encontrado.",
+        6509: "El parámetro en la solicitud no coincide con el último Auth id.",
+        6510: "El estado actual no permite la actualización del segundo factor con la acción proporcionada.",
+        6511: "Fecha de ejecución inválida.",
+        6515: "El IBAN de origen o el tipo de cuenta son inválidos.",
+        6516: "No se permite la cancelación para esta transacción.",
+        6517: "La moneda aceptada para la cuenta del acreedor es EUR. Por favor, corrija su entrada.",
+        6518: "La fecha de recolección solicitada no debe ser un día festivo o fin de semana. Por favor, intente nuevamente.",
+        6519: "La fecha de ejecución solicitada no debe ser mayor a 90 días en el futuro. Por favor, intente nuevamente.",
+        6520: "El valor de 'requestedExecutionDate' debe coincidir con el formato yyyy-MM-dd.",
+        6521: "La moneda aceptada para la cuenta del deudor es EUR. Por favor, corrija su entrada.",
+        6523: "No hay una entidad legal presente para el IBAN de origen. Por favor, corrija su entrada.",
+        6524: "Ha alcanzado el límite máximo permitido para el día. Espere hasta mañana o reduzca el monto de la transferencia.",
+        6525: "Por el momento, no soportamos photo-tan para pagos masivos.",
+        6526: "El valor de 'createDateTime' debe coincidir con el formato yyyy-MM-dd'T'HH:mm:ss.",
+        401: "La función solicitada requiere un nivel de autenticación SCA.",
+        404: "No se encontró el recurso solicitado.",
+        409: "Conflicto: El recurso ya existe o no se puede procesar la solicitud."
+    }
+    error_code = response.status_code
+    return error_messages.get(error_code, f"Error desconocido: {response.text}")
+
+
+def generate_transfer_pdf(request, payment_id):
+    """Genera un PDF para una transferencia específica"""
+    transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+    pdf_path = generar_pdf_transferencia(transfer)
+    return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf', as_attachment=True, filename=f"{transfer.payment_id}.pdf")
+
+
 @require_http_methods(["GET", "POST"])
 def initiate_sepa_transfer(request):
     if request.method == 'POST':
         headers = {
             'idempotency-id': request.headers.get('idempotency-id', str(uuid.uuid4())),
-            'process-id': request.headers.get('process-id'),
             'otp': request.POST.get('otp', 'SEPA_TRANSFER_GRANT'),
-            'Correlation-ID': request.headers.get('Correlation-ID', str(uuid.uuid4())),
-            'Origin': str(ORIGIN),
-            'Accept': 'application/json',
-            'X-Requested-With': request.headers.get('X-Requested-With'),
-            'Content-Type': 'application/json',
+            'Correlation-Id': request.headers.get('Correlation-Id', str(uuid.uuid4())),
+            'apikey': request.headers.get('apikey'),
             'Access-Control-Request-Method': request.headers.get('Access-Control-Request-Method'),
             'Access-Control-Request-Headers': request.headers.get('Access-Control-Request-Headers'),
-            'Authorization': f"Bearer {ACCESS_TOKEN}",
+            'x-request-id': request.headers.get('x-request-id', str(uuid.uuid4())),
             'Cookie': request.headers.get('Cookie'),
             'X-Frame-Options': request.headers.get('X-Frame-Options'),
             'X-Content-Type-Options': request.headers.get('X-Content-Type-Options'),
             'Strict-Transport-Security': request.headers.get('Strict-Transport-Security'),
-            'previewsignature': request.headers.get('previewsignature'),
+            'Accept': 'application/json'
         }
-
-        # Construir cabeceras adicionales
-        headers = build_headers(request, external_method='POST')
-        
         validation_errors = validate_headers(headers)
         if validation_errors:
             return JsonResponse({'errors': validation_errors}, status=400)
@@ -71,7 +192,7 @@ def initiate_sepa_transfer(request):
                 transfer.payment_id = uuid.uuid4()
                 transfer.auth_id = uuid.uuid4()
                 transfer.transaction_status = 'PDNG'
-
+                
                 # Generar PaymentIdentification automáticamente
                 transfer.payment_identification = PaymentIdentification.objects.create(
                     end_to_end_id=generate_payment_id("E2E"),
@@ -81,8 +202,8 @@ def initiate_sepa_transfer(request):
                         transfer.requested_execution_date
                     )
                 )
-
-                transfer.idempotency_key = headers['idempotency-id']  # Asignar idempotency_key
+                
+                transfer.idempotency_key = headers['idempotency-id']
                 transfer.save()
 
                 payload = generate_sepa_json_payload(transfer)
@@ -90,15 +211,15 @@ def initiate_sepa_transfer(request):
                 headers.update({
                     'Content-Type': 'application/json',
                     'Authorization': f"Bearer {ACCESS_TOKEN}",
-                    'X-Requested-With': 'XMLHttpRequest',  # Cabecera requerida
-                    'Origin': str(ORIGIN),  # Cabecera requerida
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Origin': str(ORIGIN),
                 })
 
-                headers = attach_common_headers(headers, external_method='POST')
                 oauth = get_oauth_session(request)
                 response = oauth.post(
                     'https://api.db.com:443/gw/dbapi/banking/transactions/v2',
-                    json=payload, headers=headers
+                    json=payload,
+                    headers=headers
                 )
 
                 if response.status_code == 201:
@@ -125,12 +246,11 @@ def initiate_sepa_transfer(request):
                     message_id=headers.get('idempotency-id', '')
                 )
                 return HttpResponseServerError("Error interno del servidor")
-        else:
-            return JsonResponse({'errors': form.errors}, status=400)
     else:
         form = SepaCreditTransferForm()
 
     return render(request, 'api/GPT/initiate_transfer.html', {'form': form})
+
 
 def check_transfer_status(request, payment_id):
     try:
@@ -149,7 +269,7 @@ def check_transfer_status(request, payment_id):
         }
 
         # Incluir Correlation-Id si está presente en la solicitud
-        correlation_id = request.headers.get('Correlation-ID', str(uuid.uuid4()))
+        correlation_id = request.headers.get('Correlation-Id')
         if correlation_id:
             headers['Correlation-Id'] = correlation_id
 
@@ -192,64 +312,38 @@ def cancel_sepa_transfer(request, payment_id):
     headers = {
         'idempotency-id': request.headers.get('idempotency-id'),
         'otp': request.headers.get('otp'),
-        'Correlation-Id': request.headers.get('Correlation-ID', str(uuid.uuid4())),
+        'Correlation-Id': request.headers.get('Correlation-Id'),
         'apikey': request.headers.get('apikey'),
         'process-id': request.headers.get('process-id'),
         'previewsignature': request.headers.get('previewsignature'),
-        'Accept-Encoding': request.headers.get('Accept-Encoding'),
-        'Accept-Language': request.headers.get('Accept-Language'),
-        'Connection': request.headers.get('Connection'),
-        'Priority': request.headers.get('Priority'),
-        'Sec-Fetch-Dest': request.headers.get('Sec-Fetch-Dest'),
-        'Sec-Fetch-Mode': request.headers.get('Sec-Fetch-Mode'),
-        'Sec-Fetch-Site': request.headers.get('Sec-Fetch-Site'),
-        'Sec-Fetch-User': request.headers.get('Sec-Fetch-User'),
-        'Upgrade-Insecure-Requests': request.headers.get('Upgrade-Insecure-Requests'),
-        'User-Agent': request.headers.get('User-Agent'),
     }
-
-    # Validar cabeceras iniciales
-    validation_errors = validate_headers(headers)
-    if validation_errors:
-        return JsonResponse({'errors': validation_errors}, status=400)
-
-    # Construir cabeceras adicionales
-    headers = build_headers(request, external_method='DELETE')
     validation_errors = validate_headers(headers)
     if validation_errors:
         return JsonResponse({'errors': validation_errors}, status=400)
 
     try:
-        # Obtener la transferencia SEPA
         transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
 
-        # Obtener sesión OAuth
         oauth = get_oauth_session(request)
-
-        # Actualizar cabeceras con información adicional
         headers.update({
             'Authorization': f"Bearer {ACCESS_TOKEN}",
             'Accept': 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
             'Origin': str(ORIGIN),
         })
-        headers = attach_common_headers(headers, external_method='DELETE')
 
-        # Realizar la solicitud DELETE a la API externa
         response = oauth.delete(
             f'https://api.db.com:443/gw/dbapi/banking/transactions/v2/{payment_id}',
             headers=headers
         )
 
         if response.status_code == 200:
-            # Actualizar el estado de la transferencia a 'CANC'
             transfer.transaction_status = 'CANC'
             transfer.save()
             return render(request, 'api/GPT/cancel_success.html', {
                 'transfer': transfer
             })
         else:
-            # Manejar errores de la API externa
             error_message = handle_error_response(response)
             ErrorResponse.objects.create(
                 code=response.status_code,
@@ -259,7 +353,6 @@ def cancel_sepa_transfer(request, payment_id):
             return HttpResponseBadRequest(error_message)
 
     except Exception as e:
-        # Manejar excepciones generales
         ErrorResponse.objects.create(
             code=500,
             message=f"Error en cancelación: {str(e)}"
@@ -272,7 +365,7 @@ def retry_sepa_transfer_auth(request, payment_id):
     headers = {
         'idempotency-id': request.headers.get('idempotency-id'),
         'otp': request.headers.get('otp'),
-        'Correlation-Id': request.headers.get('Correlation-ID', str(uuid.uuid4())),
+        'Correlation-Id': request.headers.get('Correlation-Id'),
         'apikey': request.headers.get('apikey'),
         'process-id': request.headers.get('process-id'),
         'previewsignature': request.headers.get('previewsignature'),
