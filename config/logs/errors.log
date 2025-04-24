@@ -108,3 +108,25 @@ WARNING 2025-04-24 05:20:28,450 log Method Not Allowed (POST): /app/sct/delete/9
 WARNING 2025-04-24 05:29:38,270 log Bad Request: /app/sct/initiate/
 WARNING 2025-04-24 05:29:38,386 log Not Found: /favicon.ico
 WARNING 2025-04-24 05:29:55,377 log Method Not Allowed (GET): /app/sct/delete/70a84fe3-d967-403a-b5a4-46f1c47e2f66/
+ERROR 2025-04-24 05:30:38,543 middleware Error en /app/sct/generate-pdf/70a84fe3-d967-403a-b5a4-46f1c47e2f66/: 'SepaCreditTransfer' object has no attribute 'creditor_name'
+Traceback (most recent call last):
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/markmur88/Documentos/GitHub/api_bank_heroku/api/sct/process_xml_send2.py", line 503, in generate_transfer_pdf
+    pdf_path = generar_pdf_transferencia(transfer)
+  File "/home/markmur88/Documentos/GitHub/api_bank_heroku/api/sct/generate_pdf.py", line 16, in generar_pdf_transferencia
+    creditor_name = transfers.creditor_name.replace(" ", "_")
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SepaCreditTransfer' object has no attribute 'creditor_name'. Did you mean: 'creditor_agent'?
+ERROR 2025-04-24 05:30:38,574 log Internal Server Error: /app/sct/generate-pdf/70a84fe3-d967-403a-b5a4-46f1c47e2f66/
+Traceback (most recent call last):
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/markmur88/Documentos/GitHub/api_bank_heroku/api/sct/process_xml_send2.py", line 503, in generate_transfer_pdf
+    pdf_path = generar_pdf_transferencia(transfer)
+  File "/home/markmur88/Documentos/GitHub/api_bank_heroku/api/sct/generate_pdf.py", line 16, in generar_pdf_transferencia
+    creditor_name = transfers.creditor_name.replace(" ", "_")
+                    ^^^^^^^^^^^^^^^^^^^^^^^
+AttributeError: 'SepaCreditTransfer' object has no attribute 'creditor_name'. Did you mean: 'creditor_agent'?
