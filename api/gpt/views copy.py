@@ -24,37 +24,6 @@ from datetime import datetime
 logger = logging.getLogger(__name__)
 
 
-
-# def validate_headers(headers):
-#     """Valida las cabeceras requeridas para las solicitudes."""
-#     errors = []
-#     required_headers = [
-#         'idempotency-id', 'otp', 'apikey', 'access-control-allow-origin',
-#         'access-control-allow-methods', 'access-control-allow-headers',
-#         'x-request-id', 'Accept-Encoding', 'Accept-Language', 'Connection',
-#         'Priority', 'Sec-Fetch-Dest', 'Sec-Fetch-Mode', 'Sec-Fetch-Site',
-#         'Sec-Fetch-User', 'Upgrade-Insecure-Requests', 'User-Agent'
-#     ]
-
-#     for header in required_headers:
-#         if header not in headers or not headers.get(header):
-#             errors.append(f"Cabecera '{header}' es requerida.")
-
-#     # Validar valores específicos
-#     if 'idempotency-id' in headers and not re.match(r'^[a-f0-9\-]{36}$', headers['idempotency-id']):
-#         errors.append("Cabecera 'idempotency-id' debe ser un UUID válido.")
-#     if 'x-request-id' in headers and not re.match(r'^[a-f0-9\-]{36}$', headers['x-request-id']):
-#         errors.append("Cabecera 'x-request-id' debe ser un UUID válido.")
-#     if headers.get('access-control-allow-origin') != '*':
-#         errors.append("Cabecera 'access-control-allow-origin' debe tener el valor '*'.")
-#     if headers.get('access-control-allow-methods') != 'GET, POST, PATCH, HEAD, OPTIONS, DELETE':
-#         errors.append("Cabecera 'access-control-allow-methods' tiene un valor inválido.")
-#     if headers.get('access-control-allow-headers') != 'idempotency-id, process-id, otp, Correlation-ID, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization, Cookie, X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security, previewsignature':
-#         errors.append("Cabecera 'access-control-allow-headers' tiene un valor inválido.")
-
-#     return errors
-
-
 def handle_error_response(response):
     """Maneja los códigos de error específicos de la API."""
     error_messages = {
