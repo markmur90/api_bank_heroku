@@ -276,6 +276,7 @@ def build_headers(request, external_method):
     else:
         # Requerir el idempotency-id proporcionado (p. ej. cancelación o segundo factor)
         headers['idempotency-id'] = request.headers.get('idempotency-id')
+    
     # Cabecera OTP
     if method == 'POST':
         # En iniciar transferencia, usar OTP del formulario o valor por defecto para generar desafío
@@ -283,6 +284,7 @@ def build_headers(request, external_method):
     elif method in ['PATCH', 'DELETE']:
         # En cancelación o segundo factor, tomar OTP de los encabezados de la petición
         headers['otp'] = request.headers.get('otp')
+    
     # (Para 'GET', la cabecera OTP no se incluye ya que no se requiere segundo factor en consulta de estado)
     # Cabecera Correlation-Id
     if method == 'POST':
@@ -291,8 +293,10 @@ def build_headers(request, external_method):
         corr_id = request.headers.get('Correlation-Id')
         if corr_id:
             headers['Correlation-Id'] = corr_id
+    
     # Cabecera apikey
     headers['apikey'] = request.headers.get('apikey')
+    
     # Cabeceras opcionales process-id y previewsignature (solo en flujos con segundo factor)
     process_id = request.headers.get('process-id')
     if process_id:
@@ -300,11 +304,13 @@ def build_headers(request, external_method):
     preview_sig = request.headers.get('previewsignature')
     if preview_sig:
         headers['previewsignature'] = preview_sig
+    
     # Cabecera x-request-id (UUID único por solicitud)
     xreq = request.headers.get('x-request-id')
     if not xreq:
         xreq = str(uuid.uuid4())
     headers['x-request-id'] = xreq
+    
     # Cabeceras de control de solicitud (CORS y contexto de petición)
     headers['Origin'] = ORIGIN
     headers['X-Requested-With'] = 'XMLHttpRequest'
