@@ -11,10 +11,12 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
 from django.http import FileResponse, HttpResponseBadRequest, HttpResponseServerError, JsonResponse
 
-from api.gpt.views import validate_parameters
 from api.gpt.models import SepaCreditTransfer, ErrorResponse, PaymentIdentification, PostalAddress, Debtor, Creditor, Account, FinancialInstitution, Amount
+
 from api.gpt.helpers import generate_payment_id, generate_deterministic_id
-from api.gpt.utils import generar_pdf_transferencia, validate_headers, build_headers, attach_common_headers, handle_error_response, generate_sepa_json_payload, get_oauth_session
+
+from api.gpt.utils import generar_pdf_transferencia, validate_headers, build_headers, attach_common_headers, handle_error_response, generate_sepa_json_payload, get_oauth_session, validate_parameters
+
 from api.gpt.forms import AccountForm, AmountForm, FinancialInstitutionForm,PostalAddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm, SepaCreditTransferForm
 
 logger = logging.getLogger(__name__)

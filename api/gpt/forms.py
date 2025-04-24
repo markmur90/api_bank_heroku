@@ -73,7 +73,7 @@ class FinancialInstitutionForm(forms.ModelForm):
         model = FinancialInstitution
         fields = ['financial_institution_id']
         widgets = {
-            'financial_institution_id': forms.TextInput(attrs={'maxlength': 35, 'class': 'form-control'}),
+            'financial_institution_id': forms.TextInput(attrs={'maxlength': 36, 'class': 'form-control'}),
         }
 
 

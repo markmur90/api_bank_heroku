@@ -51,8 +51,8 @@ class Amount(models.Model):
 
 
 class PaymentIdentification(models.Model):
-    end_to_end_id = models.CharField(max_length=35)
-    instruction_id = models.CharField(max_length=35)
+    end_to_end_id = models.CharField(max_length=36)
+    instruction_id = models.CharField(max_length=36)
 
 
 class SepaCreditTransfer(models.Model):
