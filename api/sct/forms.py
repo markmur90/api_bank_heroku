@@ -170,7 +170,7 @@ class SepaCreditTransferForm(forms.ModelForm):
 
     class Meta:
         model = SepaCreditTransfer
-        exclude = ['payment_id', 'auth_id', 'transaction_status', 'created_at', 'updated_at', 'payment_identification', 'requested_execution_date']
+        exclude = ['payment_id', 'auth_id', 'transaction_status', 'created_at', 'updated_at', 'end_to_end_id', 'instruction_id', 'requested_execution_date']
         widgets = {
             'purpose_code': forms.TextInput(attrs={
                 'pattern': '.{4}',
@@ -200,8 +200,8 @@ class SepaCreditTransferForm(forms.ModelForm):
         instance = super().save(commit=False)
 
         # Establecer la fecha y hora actual de Frankfurt
-        frankfurt_tz = pytz.timezone('Europe/Berlin')
-        instance.requested_execution_date = datetime.now(frankfurt_tz)
+        # frankfurt_tz = pytz.timezone('Europe/Berlin')
+        # instance.requested_execution_date = datetime.now(frankfurt_tz)
 
         # # Crear o asociar automáticamente un PaymentIdentification
         # if not instance.payment_identification:

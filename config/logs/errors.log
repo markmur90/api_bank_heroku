@@ -99,3 +99,5 @@ WARNING 2025-04-24 04:56:41,883 log Not Found: /favicon.ico
 ERROR 2025-04-24 04:58:45,726 log Internal Server Error: /app/sct/initiate/
 WARNING 2025-04-24 04:58:45,833 log Not Found: /favicon.ico
 ERROR 2025-04-24 04:59:56,018 log Internal Server Error: /app/sct/initiate/
+ERROR 2025-04-24 05:08:14,319 log Internal Server Error: /app/sct/initiate/
+ERROR 2025-04-24 05:09:06,140 log Internal Server Error: /app/sct/initiate/

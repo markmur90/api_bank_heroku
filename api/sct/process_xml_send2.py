@@ -126,7 +126,7 @@ def generate_pain_001(transfer):
 
         # Información de pago
         pmt_inf = etree.SubElement(cstmr_cdt_trf_initn, 'PmtInf')
-        pmt_inf_id = etree.SubElement(pmt_inf, 'PmtInfId').text = transfer.payment_identification.end_to_end_id
+        pmt_inf_id = etree.SubElement(pmt_inf, 'PmtInfId').text = str(transfer.payment_id)
         pmt_mtd = etree.SubElement(pmt_inf, 'PmtMtd').text = 'TRF'
         btch_bookg = etree.SubElement(pmt_inf, 'BtchBookg').text = 'false'
         nb_of_txs = etree.SubElement(pmt_inf, 'NbOfTxs').text = '1'
@@ -163,7 +163,7 @@ def generate_pain_001(transfer):
         # Instrucciones de pago
         cdt_trf_tx_inf = etree.SubElement(pmt_inf, 'CdtTrfTxInf')
         pmt_id = etree.SubElement(cdt_trf_tx_inf, 'PmtId')
-        etree.SubElement(pmt_id, 'EndToEndId').text = transfer.payment_identification.end_to_end_id
+        etree.SubElement(pmt_id, 'EndToEndId').text = transfer.end_to_end_id
         amt = etree.SubElement(cdt_trf_tx_inf, 'Amt')
         instructed_amt = etree.SubElement(amt, 'InstdAmt', Ccy=transfer.instructed_amount.currency)
         instructed_amt.text = str(transfer.instructed_amount.amount)
@@ -225,13 +225,12 @@ def initiate_sepa_transfer(request):
                 transfer.payment_id = uuid.uuid4()
                 transfer.auth_id = uuid.uuid4()
                 transfer.transaction_status = 'PDNG'
-                transfer.payment_identification__end_to_end_id = generate_payment_id()
-                transfer.payment_identification__instruction_id = generate_deterministic_id(
+                transfer.end_to_end_id = generate_payment_id()
+                transfer.instruction_id = generate_deterministic_id(
                         transfer.creditor_account.iban,
                         transfer.instructed_amount.amount,
                         transfer.requested_execution_date
                     )
-                transfer.payment_identification.save()
                 transfer.save()
                 
                 # Generar XML pain.001

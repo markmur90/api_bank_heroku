@@ -297,7 +297,9 @@ class SepaCreditTransfer(models.Model):
     creditor_account = models.ForeignKey(Account,on_delete=models.CASCADE,related_name='creditor_accounts')
     creditor_agent = models.ForeignKey(CreditorAgent, on_delete=models.CASCADE)
     instructed_amount = models.ForeignKey(InstructedAmount, on_delete=models.CASCADE)
-    payment_identification = models.ForeignKey(PaymentIdentification,on_delete=models.SET_NULL,null=True,blank=True)
+    # payment_identification = models.ForeignKey(PaymentIdentification,on_delete=models.SET_NULL,null=True,blank=True)
+    end_to_end_id = models.CharField(max_length=36,validators=[MinLengthValidator(36), MaxLengthValidator(36)],blank=True)
+    instruction_id = models.CharField(max_length=36,validators=[MinLengthValidator(36), MaxLengthValidator(36)],blank=True)
     
     # Campos opcionales
     purpose_code = models.CharField(max_length=4,validators=[MinLengthValidator(4), MaxLengthValidator(4)],blank=True)
