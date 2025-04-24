@@ -9,6 +9,9 @@ import xml.etree.ElementTree as ET
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 
+from .generate_aml import generar_archivo_aml
+from .generate_xml import generar_xml_pain001
+
 from .models import *
 from .forms import *
 from .utils import (
@@ -16,23 +19,6 @@ from .utils import (
     validate_headers, handle_error_response
 )
 from .helpers import generate_deterministic_id, generate_payment_id, obtener_ruta_log_transferencia, obtener_ruta_schema_transferencia
-
-
-
-
-def generar_archivo_aml(transferencia, payment_id):
-    carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
-    aml_filename = f"aml_{payment_id}.txt"
-    aml_path = os.path.join(carpeta_transferencia, aml_filename)
-    with open(aml_path, 'w', encoding='utf-8') as f:
-        f.write("AML REPORT\n")
-        f.write(f"Payment ID: {payment_id}\n")
-        f.write(f"Debtor: {transferencia.debtor.debtor_name} - IBAN: {transferencia.debtor_account.iban}\n")
-        f.write(f"Creditor: {transferencia.creditor.creditor_name} - IBAN: {transferencia.creditor_account.iban}\n")
-        f.write(f"Amount: {transferencia.instructed_amount.amount} {transferencia.instructed_amount.currency}\n")
-        f.write(f"Execution Date: {transferencia.requested_execution_date}\n")
-        f.write(f"Purpose Code: {transferencia.purpose_code}\n")
-    return aml_path
 
 @login_required
 def descargar_pdf(request, payment_id):

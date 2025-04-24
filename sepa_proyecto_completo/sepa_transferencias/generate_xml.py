@@ -1,10 +1,11 @@
 import logging
+import os
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Optional
 
-from api.sct.models import SepaCreditTransferRequest
-from sepa_proyecto_completo.sepa_transferencias.helpers import obtener_ruta_schema_transferencia
+from .models import SepaCreditTransferRequest
+from .helpers import obtener_ruta_schema_transferencia
 
 logger = logging.getLogger("bank_services")
 

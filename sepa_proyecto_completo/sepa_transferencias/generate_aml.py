@@ -1,6 +1,9 @@
 import logging
+import os
 import xml.etree.ElementTree as ET
 from datetime import datetime
+
+from .helpers import obtener_ruta_schema_transferencia
 
 logger = logging.getLogger("bank_services")
 
@@ -61,3 +64,19 @@ def generate_aml_transaction_report(transfers, file_path):
     except Exception as e:
         logger.error(f"Error al generar el archivo AMLTransactionReport: {str(e)}", exc_info=True)
         return {"error": "Error al generar el archivo AMLTransactionReport"}
+
+
+def generar_archivo_aml(transferencia, payment_id):
+    carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
+    aml_filename = f"aml_{payment_id}.txt"
+    aml_path = os.path.join(carpeta_transferencia, aml_filename)
+    with open(aml_path, 'w', encoding='utf-8') as f:
+        f.write("AML REPORT\n")
+        f.write(f"Payment ID: {payment_id}\n")
+        f.write(f"Debtor: {transferencia.debtor.debtor_name} - IBAN: {transferencia.debtor_account.iban}\n")
+        f.write(f"Creditor: {transferencia.creditor.creditor_name} - IBAN: {transferencia.creditor_account.iban}\n")
+        f.write(f"Amount: {transferencia.instructed_amount.amount} {transferencia.instructed_amount.currency}\n")
+        f.write(f"Execution Date: {transferencia.requested_execution_date}\n")
+        f.write(f"Purpose Code: {transferencia.purpose_code}\n")
+    return aml_path
+
