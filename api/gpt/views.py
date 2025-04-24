@@ -14,7 +14,7 @@ from django.http import FileResponse, HttpResponseBadRequest, HttpResponseServer
 from api.gpt.views import validate_parameters
 from api.gpt.models import SepaCreditTransfer, ErrorResponse, PaymentIdentification, PostalAddress, Debtor, Creditor, Account, FinancialInstitution, Amount
 from api.gpt.helpers import generate_payment_id, generate_deterministic_id
-from api.gpt.utils import validate_headers, build_headers, attach_common_headers, handle_error_response, generate_sepa_json_payload, get_oauth_session
+from api.gpt.utils import generar_pdf_transferencia, validate_headers, build_headers, attach_common_headers, handle_error_response, generate_sepa_json_payload, get_oauth_session
 from api.gpt.forms import AccountForm, AmountForm, FinancialInstitutionForm,PostalAddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm, SepaCreditTransferForm
 
 logger = logging.getLogger(__name__)
@@ -31,6 +31,13 @@ DEUTSCHE_BANK_CLIENT_SECRET='H858hfhg0ht40588hhfjpfhhd9944940jf'
 
 CLIENT_ID = API_CLIENT_ID
 CLIENT_SECRET = API_CLIENT_SECRET
+
+def generate_transfer_pdf(request, payment_id):
+    """Genera un PDF para una transferencia específica"""
+    transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+    pdf_path = generar_pdf_transferencia(transfer)
+    return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf', as_attachment=True, filename=f"{transfer.payment_id}.pdf")
+
 
 @require_http_methods(["GET", "POST"])
 def initiate_sepa_transfer(request):
