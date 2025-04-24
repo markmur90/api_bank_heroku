@@ -73,12 +73,12 @@ def crear_transferencia(request):
             return redirect('listar_transferencias')
     else:
         form = SepaCreditTransferForm()
-    return render(request, 'sepa_transferencias/crear_transferencia.html', {'form': form})
+    return render(request, 'api/GPT3/crear_transferencia.html', {'form': form})
 
 @login_required
 def listar_transferencias(request):
     transferencias = SepaCreditTransfer.objects.all().order_by('-created_at')
-    return render(request, 'sepa_transferencias/listar_transferencias.html', {'transferencias': transferencias})
+    return render(request, 'api/GPT3/listar_transferencias.html', {'transferencias': transferencias})
 
 @login_required
 def detalle_transferencia(request, payment_id):
@@ -100,7 +100,7 @@ def detalle_transferencia(request, payment_id):
         'aml': aml_file if os.path.exists(aml_file) else None
     }
 
-    return render(request, 'sepa_transferencias/detalle_transferencia.html', {
+    return render(request, 'api/GPT3/detalle_transferencia.html', {
         'transferencia': transferencia,
         'log': log_content,
         'archivos': archivos
@@ -245,7 +245,7 @@ class CrearBulkTransferView(View):
         bulk_form = BulkTransferForm()
         group_form = GroupHeaderForm()
         payment_info_form = PaymentInformationForm()
-        return render(request, 'sepa_transferencias/crear_bulk.html', {
+        return render(request, 'api/GPT3/crear_bulk.html', {
             'bulk_form': bulk_form,
             'group_form': group_form,
             'payment_info_form': payment_info_form
@@ -279,7 +279,7 @@ class CrearBulkTransferView(View):
             messages.success(request, "Transferencia masiva creada y archivos generados.")
             return redirect('listar_transferencias')
 
-        return render(request, 'sepa_transferencias/crear_bulk.html', {
+        return render(request, 'api/GPT3/crear_bulk.html', {
             'bulk_form': bulk_form,
             'group_form': group_form,
             'payment_info_form': payment_info_form
@@ -365,7 +365,7 @@ class DetalleBulkTransferView(View):
             'aml': aml_file if os.path.exists(aml_file) else None
         }
 
-        return render(request, 'sepa_transferencias/detalle_bulk.html', {
+        return render(request, 'api/GPT3/detalle_bulk.html', {
             'transferencia': bulk,
             'log': log_content,
             'archivos': archivos
