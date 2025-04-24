@@ -11,7 +11,7 @@ import logging
 from .helpers import generate_payment_id, generate_deterministic_id
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import FileResponse
-from .utils import generar_pdf_transferencia
+from .utils import generar_pdf_transferencia, ACCESS_TOKEN, ORIGIN, validate_headers, build_headers, attach_common_headers
 from .forms import (
     AccountForm, AmountForm, FinancialInstitutionForm,
     PostalAddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm
@@ -23,17 +23,7 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
-ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg"
 
-ORIGIN = 'https://api.db.com'
-
-API_CLIENT_ID = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
-API_CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzsniABTiDYl7QCh6XXEXzgDrjBD4zSvtHbP0Qa707g3eYbmKxO'
-DEUTSCHE_BANK_CLIENT_ID='SE0IWHFHJFHB848R9E0R9FRUFBCJHW0W9FHF008E88W0457338ASKH64880'
-DEUTSCHE_BANK_CLIENT_SECRET='H858hfhg0ht40588hhfjpfhhd9944940jf'
-
-CLIENT_ID = API_CLIENT_ID
-CLIENT_SECRET = API_CLIENT_SECRET
 
 def validate_headers(headers):
     """Valida las cabeceras requeridas para las solicitudes."""
