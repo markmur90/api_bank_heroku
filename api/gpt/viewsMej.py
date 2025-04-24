@@ -4,7 +4,7 @@ from django.http import JsonResponse
 from api.gpt.forms import SepaCreditTransferForm
 from api.gpt.utils import generate_sepa_json_payload, get_oauth_session
 from api.gpt.views import validate_parameters
-from .viewsCab import build_headers, validate_headers, attach_common_headers
+from .utils import build_headers, validate_headers, attach_common_headers
 
 # Eliminar la función validate_headers previamente definida en views.py (ahora centralizada en cabeceras.py)
 def validate_headers(headers):
@@ -35,8 +35,10 @@ def initiate_sepa_transfer(request):
     validation_errors = validate_headers(headers)
     headers = build_headers(request, external_method='POST')
     validation_errors = validate_headers(headers)
+    
         if validation_errors:
             return JsonResponse({'errors': validation_errors}, status=400)
+        
         form = SepaCreditTransferForm(request.POST)
         if form.is_valid():
             validation_errors = validate_parameters(request.POST)
@@ -45,6 +47,9 @@ def initiate_sepa_transfer(request):
             try:
                 transfer = form.save(commit=False)
                 # ... (lógica de guardado de la transferencia)
+                
+                
+                
                 transfer.idempotency_key = headers['idempotency-id']
                 transfer.save()
                 payload = generate_sepa_json_payload(transfer)

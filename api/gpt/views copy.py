@@ -25,34 +25,34 @@ logger = logging.getLogger(__name__)
 
 
 
-def validate_headers(headers):
-    """Valida las cabeceras requeridas para las solicitudes."""
-    errors = []
-    required_headers = [
-        'idempotency-id', 'otp', 'apikey', 'access-control-allow-origin',
-        'access-control-allow-methods', 'access-control-allow-headers',
-        'x-request-id', 'Accept-Encoding', 'Accept-Language', 'Connection',
-        'Priority', 'Sec-Fetch-Dest', 'Sec-Fetch-Mode', 'Sec-Fetch-Site',
-        'Sec-Fetch-User', 'Upgrade-Insecure-Requests', 'User-Agent'
-    ]
+# def validate_headers(headers):
+#     """Valida las cabeceras requeridas para las solicitudes."""
+#     errors = []
+#     required_headers = [
+#         'idempotency-id', 'otp', 'apikey', 'access-control-allow-origin',
+#         'access-control-allow-methods', 'access-control-allow-headers',
+#         'x-request-id', 'Accept-Encoding', 'Accept-Language', 'Connection',
+#         'Priority', 'Sec-Fetch-Dest', 'Sec-Fetch-Mode', 'Sec-Fetch-Site',
+#         'Sec-Fetch-User', 'Upgrade-Insecure-Requests', 'User-Agent'
+#     ]
 
-    for header in required_headers:
-        if header not in headers or not headers.get(header):
-            errors.append(f"Cabecera '{header}' es requerida.")
+#     for header in required_headers:
+#         if header not in headers or not headers.get(header):
+#             errors.append(f"Cabecera '{header}' es requerida.")
 
-    # Validar valores específicos
-    if 'idempotency-id' in headers and not re.match(r'^[a-f0-9\-]{36}$', headers['idempotency-id']):
-        errors.append("Cabecera 'idempotency-id' debe ser un UUID válido.")
-    if 'x-request-id' in headers and not re.match(r'^[a-f0-9\-]{36}$', headers['x-request-id']):
-        errors.append("Cabecera 'x-request-id' debe ser un UUID válido.")
-    if headers.get('access-control-allow-origin') != '*':
-        errors.append("Cabecera 'access-control-allow-origin' debe tener el valor '*'.")
-    if headers.get('access-control-allow-methods') != 'GET, POST, PATCH, HEAD, OPTIONS, DELETE':
-        errors.append("Cabecera 'access-control-allow-methods' tiene un valor inválido.")
-    if headers.get('access-control-allow-headers') != 'idempotency-id, process-id, otp, Correlation-ID, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization, Cookie, X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security, previewsignature':
-        errors.append("Cabecera 'access-control-allow-headers' tiene un valor inválido.")
+#     # Validar valores específicos
+#     if 'idempotency-id' in headers and not re.match(r'^[a-f0-9\-]{36}$', headers['idempotency-id']):
+#         errors.append("Cabecera 'idempotency-id' debe ser un UUID válido.")
+#     if 'x-request-id' in headers and not re.match(r'^[a-f0-9\-]{36}$', headers['x-request-id']):
+#         errors.append("Cabecera 'x-request-id' debe ser un UUID válido.")
+#     if headers.get('access-control-allow-origin') != '*':
+#         errors.append("Cabecera 'access-control-allow-origin' debe tener el valor '*'.")
+#     if headers.get('access-control-allow-methods') != 'GET, POST, PATCH, HEAD, OPTIONS, DELETE':
+#         errors.append("Cabecera 'access-control-allow-methods' tiene un valor inválido.")
+#     if headers.get('access-control-allow-headers') != 'idempotency-id, process-id, otp, Correlation-ID, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization, Cookie, X-Frame-Options, X-Content-Type-Options, Strict-Transport-Security, previewsignature':
+#         errors.append("Cabecera 'access-control-allow-headers' tiene un valor inválido.")
 
-    return errors
+#     return errors
 
 
 def handle_error_response(response):
@@ -122,35 +122,39 @@ def initiate_sepa_transfer(request):
             'Strict-Transport-Security': request.headers.get('Strict-Transport-Security'),
             'Accept': 'application/json'
         }
+        
         validation_errors = validate_headers(headers)
-        if validation_errors:
-            return JsonResponse({'errors': validation_errors}, status=400)
+        headers = build_headers(request, external_method='POST')
+        validation_errors = validate_headers(headers)
 
-        form = SepaCreditTransferForm(request.POST)
-        if form.is_valid():
-            validation_errors = validate_parameters(request.POST)
             if validation_errors:
                 return JsonResponse({'errors': validation_errors}, status=400)
-            try:
-                transfer = form.save(commit=False)
-                transfer.payment_id = uuid.uuid4()
-                transfer.auth_id = uuid.uuid4()
-                transfer.transaction_status = 'PDNG'
-                
-                # Generar PaymentIdentification automáticamente
-                transfer.payment_identification = PaymentIdentification.objects.create(
-                    end_to_end_id=generate_payment_id("E2E"),
-                    instruction_id=generate_deterministic_id(
-                        transfer.creditor_account.iban,
-                        transfer.instructed_amount.amount,
-                        transfer.requested_execution_date
-                    )
-                )
-                
-                transfer.idempotency_key = headers['idempotency-id']  # Asignar idempotency_key
-                transfer.save()
 
-                payload = generate_sepa_json_payload(transfer)
+            form = SepaCreditTransferForm(request.POST)
+            if form.is_valid():
+                validation_errors = validate_parameters(request.POST)
+                if validation_errors:
+                    return JsonResponse({'errors': validation_errors}, status=400)
+                try:
+                    transfer = form.save(commit=False)
+                    transfer.payment_id = uuid.uuid4()
+                    transfer.auth_id = uuid.uuid4()
+                    transfer.transaction_status = 'PDNG'
+                    
+                    # Generar PaymentIdentification automáticamente
+                    transfer.payment_identification = PaymentIdentification.objects.create(
+                        end_to_end_id=generate_payment_id("E2E"),
+                        instruction_id=generate_deterministic_id(
+                            transfer.creditor_account.iban,
+                            transfer.instructed_amount.amount,
+                            transfer.requested_execution_date
+                        )
+                    )
+                    
+                    transfer.idempotency_key = headers['idempotency-id']  # Asignar idempotency_key
+                    transfer.save()
+
+                    payload = generate_sepa_json_payload(transfer)
 
                 headers.update({
                     'Content-Type': 'application/json',
@@ -158,12 +162,12 @@ def initiate_sepa_transfer(request):
                     'X-Requested-With': 'XMLHttpRequest',  # Cabecera requerida
                     'Origin': str(ORIGIN),  # Cabecera requerida
                 })
-
+                
+                headers = attach_common_headers(headers, external_method='POST')
                 oauth = get_oauth_session(request)
                 response = oauth.post(
                     'https://api.db.com:443/gw/dbapi/banking/transactions/v2',
-                    json=payload,
-                    headers=headers
+                    json=payload, headers=headers
                 )
 
                 if response.status_code == 201:
