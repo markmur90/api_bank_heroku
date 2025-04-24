@@ -138,14 +138,27 @@ def listar_transferencias(request):
 @login_required
 def detalle_transferencia(request, payment_id):
     transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
-    log_path = os.path.join(LOG_DIR, f"transferencia_{payment_id}.log")
+    log_path = obtener_ruta_log_transferencia(payment_id)
     log_content = "Log no disponible"
     if os.path.exists(log_path):
         with open(log_path, 'r') as f:
             log_content = f.read()
+
+    carpeta = obtener_ruta_schema_transferencia(payment_id)
+    xml_pain001 = os.path.join(carpeta, f"pain001_{payment_id}.xml")
+    xml_pain002 = os.path.join(carpeta, f"pain002_{payment_id}.xml")
+    aml_file = os.path.join(carpeta, f"aml_{payment_id}.txt")
+
+    archivos = {
+        'pain001': xml_pain001 if os.path.exists(xml_pain001) else None,
+        'pain002': xml_pain002 if os.path.exists(xml_pain002) else None,
+        'aml': aml_file if os.path.exists(aml_file) else None
+    }
+
     return render(request, 'sepa_transferencias/detalle_transferencia.html', {
         'transferencia': transferencia,
-        'log': log_content
+        'log': log_content,
+        'archivos': archivos
     })
 
 @login_required
@@ -272,13 +285,18 @@ class CrearBulkTransferView(View):
         if all([bulk_form.is_valid(), group_form.is_valid(), payment_info_form.is_valid()]):
             group = group_form.save()
             bulk = bulk_form.save(commit=False)
+            bulk.payment_id = generate_payment_id(prefix="BLK")
             bulk.group_header = group
             bulk.save()
+
             info = payment_info_form.save(commit=False)
             info.bulk = bulk
+            info.payment_information_id = generate_deterministic_id(
+                bulk.payment_id, info.control_sum, info.requested_execution_date
+            )
             info.save()
 
-            # Crear carpeta para archivos XML masivos
+            # Crear estructura de archivos asociada
             carpeta = obtener_ruta_schema_transferencia(bulk.payment_id)
             with open(os.path.join(carpeta, f"pain001_bulk_{bulk.payment_id}.xml"), 'w', encoding='utf-8') as f:
                 f.write(f"<BulkTransfer><PaymentID>{bulk.payment_id}</PaymentID></BulkTransfer>")
@@ -301,20 +319,28 @@ class EnviarBulkTransferView(View):
         carpeta = obtener_ruta_schema_transferencia(payment_id)
         log_path = obtener_ruta_log_transferencia(payment_id)
 
-        # Simular envío de datos masivos al banco y registrar
-        with open(log_path, 'a') as log:
-            log.write(f"\nEnvio bulk - {datetime.now()}\nSimulación de envío para transferencia masiva {payment_id}\n")
+        try:
+            # Regenerar XML y AML de prueba para bulk
+            with open(os.path.join(carpeta, f"pain001_bulk_{payment_id}.xml"), 'w', encoding='utf-8') as f:
+                f.write(f"<BulkTransfer><PaymentID>{payment_id}</PaymentID><Status>Pending</Status></BulkTransfer>")
+            with open(os.path.join(carpeta, f"aml_bulk_{payment_id}.txt"), 'w', encoding='utf-8') as f:
+                f.write(f"AML info actualizada para {payment_id}\n")
 
-        xml_path = os.path.join(carpeta, f"pain001_bulk_{payment_id}.xml")
-        if os.path.exists(xml_path):
-            with open(xml_path, 'r', encoding='utf-8') as xml_file:
-                contenido = xml_file.read()
+            # Simular respuesta del banco
+            respuesta_xml = f"<Response><Reference>{payment_id}</Reference><Status>Recibido</Status></Response>"
             with open(os.path.join(carpeta, f"pain002_bulk_{payment_id}.xml"), 'w', encoding='utf-8') as respuesta:
-                respuesta.write(f"<Response><Reference>{payment_id}</Reference><Status>Simulada</Status></Response>")
+                respuesta.write(respuesta_xml)
 
-        bulk.transaction_status = "PDNG"
-        bulk.save()
-        messages.success(request, f"Transferencia masiva {payment_id} enviada y registrada.")
+            with open(log_path, 'a') as log:
+                log.write(f"\nEnvio bulk - {datetime.now()}\nPayload generado y respuesta simulada:\n{respuesta_xml}\n")
+
+            bulk.transaction_status = "PDNG"
+            bulk.save()
+            messages.success(request, f"Transferencia masiva {payment_id} enviada y registrada.")
+
+        except Exception as e:
+            messages.error(request, f"Error al simular envío masivo: {str(e)}")
+
         return redirect('detalle_transferencia_bulk', payment_id=payment_id)
 
 @login_required
@@ -324,32 +350,52 @@ class EstadoBulkTransferView(View):
         log_path = obtener_ruta_log_transferencia(payment_id)
         carpeta = obtener_ruta_schema_transferencia(payment_id)
 
-        # Simular consulta de estado al banco y registrar
-        with open(log_path, 'a') as log:
-            log.write(f"\nConsulta estado bulk - {datetime.now()}\nTransferencia masiva {payment_id} actualizada\n")
+        try:
+            # Simular consulta de estado y respuesta del banco
+            estado_xml = f"<StatusResponse><Reference>{payment_id}</Reference><Status>Procesando</Status></StatusResponse>"
+            estado_path = os.path.join(carpeta, f"pain002_bulk_{payment_id}_estado.xml")
+            with open(estado_path, 'w', encoding='utf-8') as xml:
+                xml.write(estado_xml)
 
-        # Guardar respuesta de estado simulada como XML
-        estado_path = os.path.join(carpeta, f"pain002_bulk_{payment_id}_estado.xml")
-        with open(estado_path, 'w', encoding='utf-8') as xml:
-            xml.write(f"<StatusResponse><Reference>{payment_id}</Reference><Status>Procesando</Status></StatusResponse>")
+            with open(log_path, 'a') as log:
+                log.write(f"\nConsulta estado bulk - {datetime.now()}\nHeaders: Simulados\n\nRespuesta:\n{estado_xml}\n")
 
-        bulk.transaction_status = "ACSP"
-        bulk.save()
-        messages.success(request, f"Estado actualizado para la transferencia masiva {payment_id}.")
+            bulk.transaction_status = "ACSP"
+            bulk.save()
+            messages.success(request, f"Estado actualizado para la transferencia masiva {payment_id}.")
+
+        except Exception as e:
+            messages.error(request, f"Error al consultar estado de la transferencia masiva: {str(e)}")
+
         return redirect('detalle_transferencia_bulk', payment_id=payment_id)
 
 @login_required
 class DetalleBulkTransferView(View):
     def get(self, request, payment_id):
         bulk = get_object_or_404(BulkTransfer, payment_id=payment_id)
-        log_path = os.path.join(LOG_DIR, f"transferencia_bulk_{payment_id}.log")
+        log_path = obtener_ruta_log_transferencia(payment_id)
         log_content = "Log no disponible"
         if os.path.exists(log_path):
             with open(log_path, 'r') as f:
                 log_content = f.read()
+
+        carpeta = obtener_ruta_schema_transferencia(payment_id)
+        xml_pain001 = os.path.join(carpeta, f"pain001_bulk_{payment_id}.xml")
+        xml_pain002 = os.path.join(carpeta, f"pain002_bulk_{payment_id}.xml")
+        xml_estado = os.path.join(carpeta, f"pain002_bulk_{payment_id}_estado.xml")
+        aml_file = os.path.join(carpeta, f"aml_bulk_{payment_id}.txt")
+
+        archivos = {
+            'pain001': xml_pain001 if os.path.exists(xml_pain001) else None,
+            'pain002': xml_pain002 if os.path.exists(xml_pain002) else None,
+            'estado': xml_estado if os.path.exists(xml_estado) else None,
+            'aml': aml_file if os.path.exists(aml_file) else None
+        }
+
         return render(request, 'sepa_transferencias/detalle_bulk.html', {
             'transferencia': bulk,
-            'log': log_content
+            'log': log_content,
+            'archivos': archivos
         })
 
 @csrf_exempt

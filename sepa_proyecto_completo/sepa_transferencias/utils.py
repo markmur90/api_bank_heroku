@@ -1,11 +1,20 @@
+import os
+import re
 import logging
 import uuid
+
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from requests_oauthlib import OAuth2Session
 from django.conf import settings
+from reportlab.lib.pagesizes import letter
+from reportlab.platypus import Table, TableStyle
+from reportlab.lib import colors
+from reportlab.pdfgen import canvas
+from datetime import datetime
 
 from .models import SepaCreditTransfer
+
 logger = logging.getLogger(__name__)
 
 # Token de acceso dummy (debería obtenerse con autenticación OAuth real)
@@ -64,15 +73,12 @@ def handle_error_response(response):
     error_code = response.status_code
     return error_messages.get(error_code, f"Error desconocido: {response.text}")
 
-
 def generate_transfer_pdf(request, payment_id):
     """Genera un PDF para una transferencia específica"""
     transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
     pdf_path = generar_pdf_transferencia(transfer)
     return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf', as_attachment=True, filename=f"{transfer.payment_id}.pdf")
 
-
-# Configuración OAuth2
 OAUTH_CONFIG = {
     'client_id': str(CLIENT_ID),
     'client_secret': str(CLIENT_SECRET),
@@ -89,7 +95,6 @@ def get_oauth_session(request):
 
     # Crear sesión OAuth2 con el token de acceso
     return OAuth2Session(client_id=OAUTH_CONFIG['client_id'], token={'access_token': ACCESS_TOKEN, 'token_type': 'Bearer'})
-
 
 def generate_sepa_json_payload(transfer):
     """Genera el JSON de transferencia SEPA según especificación del banco"""
@@ -132,18 +137,6 @@ def generate_sepa_json_payload(transfer):
         "purposeCode": transfer.purpose_code,
         "priority": "High"  # Agregar prioridad (Instant SEPA Credit Transfer)
     }
-
-
-
-import logging
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import Table, TableStyle
-from reportlab.lib import colors
-from reportlab.pdfgen import canvas
-from datetime import datetime
-import os
-logger = logging.getLogger("bank_services")
-
 
 def generar_pdf_transferencia(transfers):
     """
@@ -271,13 +264,6 @@ def generar_pdf_transferencia(transfers):
 
     return pdf_path
 
-
-import re
-import uuid
-
-# Constantes sensibles (idealmente cargar desde configuración o variables de entorno)
-
-
 def validate_headers(headers):
     """
     Valida las cabeceras requeridas para las solicitudes SEPA.
@@ -306,7 +292,6 @@ def validate_headers(headers):
     if 'x-request-id' not in headers or not re.match(r'^[A-Fa-f0-9\-]{36}$', headers.get('x-request-id', '')):
         errors.append("Cabecera 'x-request-id' es requerida y debe ser un UUID válido.")
     return errors
-
 
 def build_headers(request, external_method):
     """
@@ -371,7 +356,6 @@ def attach_common_headers(headers, external_method):
     if external_method.upper() in ['POST', 'PATCH']:
         headers['Content-Type'] = 'application/json'
     return headers
-
 
 def validate_parameters(data):
     """Valida los parámetros requeridos en el cuerpo de la solicitud."""
