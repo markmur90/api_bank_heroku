@@ -5,6 +5,9 @@ from django.http import FileResponse, HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views import View
+import xml.etree.ElementTree as ET
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 
 from .models import *
 from .forms import *
@@ -12,49 +15,10 @@ from .utils import (
     generar_pdf_transferencia, get_oauth_session, build_headers, attach_common_headers,
     validate_headers, handle_error_response
 )
-from .helpers import generate_deterministic_id, generate_payment_id
-import xml.etree.ElementTree as ET
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
-import xml.etree.ElementTree as ET
-from django.http import JsonResponse
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
+from .helpers import generate_deterministic_id, generate_payment_id, obtener_ruta_log_transferencia, obtener_ruta_schema_transferencia
 
-LOG_DIR = os.path.join("logs", "transferencias")
-SCHEMA_DIR = os.path.join("schemas", "transferencias")
 
-def obtener_ruta_schema_transferencia(payment_id):
-    carpeta = os.path.join(SCHEMA_DIR, payment_id)
-    os.makedirs(carpeta, exist_ok=True)
-    return carpeta
 
-def obtener_ruta_log_transferencia(payment_id):
-    carpeta = os.path.join(LOG_DIR, payment_id)
-    os.makedirs(carpeta, exist_ok=True)
-    return os.path.join(carpeta, f"transferencia_{payment_id}.log")
-
-def generar_xml_pain001(transferencia, payment_id):
-    carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
-    root = ET.Element("Document")
-    CstmrCdtTrfInitn = ET.SubElement(root, "CstmrCdtTrfInitn")
-    PmtInf = ET.SubElement(CstmrCdtTrfInitn, "PmtInf")
-    ET.SubElement(PmtInf, "PmtInfId").text = transferencia.payment_identification.instruction_id
-    ET.SubElement(PmtInf, "ReqdExctnDt").text = transferencia.requested_execution_date.strftime("%Y-%m-%d")
-    Cdtr = ET.SubElement(PmtInf, "Cdtr")
-    ET.SubElement(Cdtr, "Nm").text = transferencia.creditor.creditor_name
-    CdtrAcct = ET.SubElement(PmtInf, "CdtrAcct")
-    ET.SubElement(CdtrAcct, "IBAN").text = transferencia.creditor_account.iban
-    Dbtr = ET.SubElement(PmtInf, "Dbtr")
-    ET.SubElement(Dbtr, "Nm").text = transferencia.debtor.debtor_name
-    DbtrAcct = ET.SubElement(PmtInf, "DbtrAcct")
-    ET.SubElement(DbtrAcct, "IBAN").text = transferencia.debtor_account.iban
-    Amt = ET.SubElement(PmtInf, "Amt")
-    ET.SubElement(Amt, "InstdAmt", Ccy=transferencia.instructed_amount.currency).text = str(transferencia.instructed_amount.amount)
-    xml_filename = f"pain001_{payment_id}.xml"
-    xml_path = os.path.join(carpeta_transferencia, xml_filename)
-    ET.ElementTree(root).write(xml_path, encoding='utf-8', xml_declaration=True)
-    return xml_path
 
 def generar_archivo_aml(transferencia, payment_id):
     carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)

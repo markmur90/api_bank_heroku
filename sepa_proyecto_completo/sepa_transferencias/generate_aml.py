@@ -1,13 +1,10 @@
 import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime
+
 logger = logging.getLogger("bank_services")
 
-
 def generate_aml_transaction_report(transfers, file_path):
-    """
-    Genera un archivo AMLTransactionReport basado en los datos de transferencia proporcionados.
-    """
     try:
         # Crear el elemento raíz
         root = ET.Element("AMLTransactionReport")

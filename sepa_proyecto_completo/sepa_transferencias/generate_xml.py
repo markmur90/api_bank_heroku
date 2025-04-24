@@ -1,34 +1,16 @@
-"""
-XML generation module for SEPA Credit Transfer (SCT) messages.
-Provides functionality to create pain.001.001.03 compliant XML files
-from SCT request data.
-"""
 import logging
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Optional
 
 from api.sct.models import SepaCreditTransferRequest
+from sepa_proyecto_completo.sepa_transferencias.helpers import obtener_ruta_schema_transferencia
 
 logger = logging.getLogger("bank_services")
 
 
-def generate_sepa_xml3(transfers: SepaCreditTransferRequest) -> str:
-    """
-    Generate a SEPA Credit Transfer XML file based on a SepaCreditTransferRequest instance.
-    
-    Creates an XML document according to the ISO 20022 standard pain.001.001.03 format
-    for SEPA Credit Transfers.
-    
-    Args:
-        transfers: The SepaCreditTransferRequest instance containing transfer details
-        
-    Returns:
-        str: The XML content as a string
-        
-    Raises:
-        Exception: If there's an error during XML generation
-    """
+def generate_sepa_xml(transfers: SepaCreditTransferRequest) -> str:
+
     try:
         # Create the root element of the XML
         root = ET.Element("Document", xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.03")
@@ -125,3 +107,25 @@ def generate_sepa_xml3(transfers: SepaCreditTransferRequest) -> str:
     except Exception as e:
         logger.error(f"Error generating XML file: {str(e)}", exc_info=True)
         raise
+
+def generar_xml_pain001(transferencia, payment_id):
+    carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
+    root = ET.Element("Document")
+    CstmrCdtTrfInitn = ET.SubElement(root, "CstmrCdtTrfInitn")
+    PmtInf = ET.SubElement(CstmrCdtTrfInitn, "PmtInf")
+    ET.SubElement(PmtInf, "PmtInfId").text = transferencia.payment_identification.instruction_id
+    ET.SubElement(PmtInf, "ReqdExctnDt").text = transferencia.requested_execution_date.strftime("%Y-%m-%d")
+    Cdtr = ET.SubElement(PmtInf, "Cdtr")
+    ET.SubElement(Cdtr, "Nm").text = transferencia.creditor.creditor_name
+    CdtrAcct = ET.SubElement(PmtInf, "CdtrAcct")
+    ET.SubElement(CdtrAcct, "IBAN").text = transferencia.creditor_account.iban
+    Dbtr = ET.SubElement(PmtInf, "Dbtr")
+    ET.SubElement(Dbtr, "Nm").text = transferencia.debtor.debtor_name
+    DbtrAcct = ET.SubElement(PmtInf, "DbtrAcct")
+    ET.SubElement(DbtrAcct, "IBAN").text = transferencia.debtor_account.iban
+    Amt = ET.SubElement(PmtInf, "Amt")
+    ET.SubElement(Amt, "InstdAmt", Ccy=transferencia.instructed_amount.currency).text = str(transferencia.instructed_amount.amount)
+    xml_filename = f"pain001_{payment_id}.xml"
+    xml_path = os.path.join(carpeta_transferencia, xml_filename)
+    ET.ElementTree(root).write(xml_path, encoding='utf-8', xml_declaration=True)
+    return xml_path
