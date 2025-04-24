@@ -12,19 +12,63 @@ from .utils import (
     generar_pdf_transferencia, get_oauth_session, build_headers, attach_common_headers,
     validate_headers, handle_error_response
 )
-from .helpers import generate_payment_id
+from .helpers import generate_deterministic_id, generate_payment_id
 import xml.etree.ElementTree as ET
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+import xml.etree.ElementTree as ET
+from django.http import JsonResponse
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
 
 LOG_DIR = os.path.join("logs", "transferencias")
-SCHEMA_DIR = os.path.join("schemas")
-os.makedirs(LOG_DIR, exist_ok=True)
-os.makedirs(SCHEMA_DIR, exist_ok=True)
+SCHEMA_DIR = os.path.join("schemas", "transferencias")
 
+def obtener_ruta_schema_transferencia(payment_id):
+    carpeta = os.path.join(SCHEMA_DIR, payment_id)
+    os.makedirs(carpeta, exist_ok=True)
+    return carpeta
 
 def obtener_ruta_log_transferencia(payment_id):
     carpeta = os.path.join(LOG_DIR, payment_id)
     os.makedirs(carpeta, exist_ok=True)
     return os.path.join(carpeta, f"transferencia_{payment_id}.log")
+
+def generar_xml_pain001(transferencia, payment_id):
+    carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
+    root = ET.Element("Document")
+    CstmrCdtTrfInitn = ET.SubElement(root, "CstmrCdtTrfInitn")
+    PmtInf = ET.SubElement(CstmrCdtTrfInitn, "PmtInf")
+    ET.SubElement(PmtInf, "PmtInfId").text = transferencia.payment_identification.instruction_id
+    ET.SubElement(PmtInf, "ReqdExctnDt").text = transferencia.requested_execution_date.strftime("%Y-%m-%d")
+    Cdtr = ET.SubElement(PmtInf, "Cdtr")
+    ET.SubElement(Cdtr, "Nm").text = transferencia.creditor.creditor_name
+    CdtrAcct = ET.SubElement(PmtInf, "CdtrAcct")
+    ET.SubElement(CdtrAcct, "IBAN").text = transferencia.creditor_account.iban
+    Dbtr = ET.SubElement(PmtInf, "Dbtr")
+    ET.SubElement(Dbtr, "Nm").text = transferencia.debtor.debtor_name
+    DbtrAcct = ET.SubElement(PmtInf, "DbtrAcct")
+    ET.SubElement(DbtrAcct, "IBAN").text = transferencia.debtor_account.iban
+    Amt = ET.SubElement(PmtInf, "Amt")
+    ET.SubElement(Amt, "InstdAmt", Ccy=transferencia.instructed_amount.currency).text = str(transferencia.instructed_amount.amount)
+    xml_filename = f"pain001_{payment_id}.xml"
+    xml_path = os.path.join(carpeta_transferencia, xml_filename)
+    ET.ElementTree(root).write(xml_path, encoding='utf-8', xml_declaration=True)
+    return xml_path
+
+def generar_archivo_aml(transferencia, payment_id):
+    carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
+    aml_filename = f"aml_{payment_id}.txt"
+    aml_path = os.path.join(carpeta_transferencia, aml_filename)
+    with open(aml_path, 'w', encoding='utf-8') as f:
+        f.write("AML REPORT\n")
+        f.write(f"Payment ID: {payment_id}\n")
+        f.write(f"Debtor: {transferencia.debtor.debtor_name} - IBAN: {transferencia.debtor_account.iban}\n")
+        f.write(f"Creditor: {transferencia.creditor.creditor_name} - IBAN: {transferencia.creditor_account.iban}\n")
+        f.write(f"Amount: {transferencia.instructed_amount.amount} {transferencia.instructed_amount.currency}\n")
+        f.write(f"Execution Date: {transferencia.requested_execution_date}\n")
+        f.write(f"Purpose Code: {transferencia.purpose_code}\n")
+    return aml_path
 
 @login_required
 def descargar_pdf(request, payment_id):
@@ -50,50 +94,6 @@ def descargar_pdf(request, payment_id):
 
     return FileResponse(open(pdf_final_path, 'rb'), content_type='application/pdf', as_attachment=True, filename=f"{payment_id}.pdf")
 
-def generar_xml_pain001(transferencia, payment_id):
-    carpeta_transferencia = os.path.join(SCHEMA_DIR, "transferencias", payment_id)
-    os.makedirs(carpeta_transferencia, exist_ok=True)
-
-    root = ET.Element("Document")
-    CstmrCdtTrfInitn = ET.SubElement(root, "CstmrCdtTrfInitn")
-    PmtInf = ET.SubElement(CstmrCdtTrfInitn, "PmtInf")
-    ET.SubElement(PmtInf, "PmtInfId").text = transferencia.payment_identification.instruction_id
-    ET.SubElement(PmtInf, "ReqdExctnDt").text = transferencia.requested_execution_date.strftime("%Y-%m-%d")
-    Cdtr = ET.SubElement(PmtInf, "Cdtr")
-    ET.SubElement(Cdtr, "Nm").text = transferencia.creditor.creditor_name
-    CdtrAcct = ET.SubElement(PmtInf, "CdtrAcct")
-    ET.SubElement(CdtrAcct, "IBAN").text = transferencia.creditor_account.iban
-    Dbtr = ET.SubElement(PmtInf, "Dbtr")
-    ET.SubElement(Dbtr, "Nm").text = transferencia.debtor.debtor_name
-    DbtrAcct = ET.SubElement(PmtInf, "DbtrAcct")
-    ET.SubElement(DbtrAcct, "IBAN").text = transferencia.debtor_account.iban
-    Amt = ET.SubElement(PmtInf, "Amt")
-    ET.SubElement(Amt, "InstdAmt", Ccy=transferencia.instructed_amount.currency).text = str(transferencia.instructed_amount.amount)
-
-    xml_filename = f"pain001_{payment_id}.xml"
-    xml_path = os.path.join(carpeta_transferencia, xml_filename)
-    ET.ElementTree(root).write(xml_path, encoding='utf-8', xml_declaration=True)
-    return xml_path
-
-
-def generar_archivo_aml(transferencia, payment_id):
-    carpeta_transferencia = os.path.join(SCHEMA_DIR, "transferencias", payment_id)
-    os.makedirs(carpeta_transferencia, exist_ok=True)
-
-    aml_filename = f"aml_{payment_id}.txt"
-    aml_path = os.path.join(carpeta_transferencia, aml_filename)
-    with open(aml_path, 'w', encoding='utf-8') as f:
-        f.write("AML REPORT\n")
-        f.write(f"Payment ID: {payment_id}\n")
-        f.write(f"Debtor: {transferencia.debtor.debtor_name} - IBAN: {transferencia.debtor_account.iban}\n")
-        f.write(f"Creditor: {transferencia.creditor.creditor_name} - IBAN: {transferencia.creditor_account.iban}\n")
-        f.write(f"Amount: {transferencia.instructed_amount.amount} {transferencia.instructed_amount.currency}\n")
-        f.write(f"Execution Date: {transferencia.requested_execution_date}\n")
-        f.write(f"Purpose Code: {transferencia.purpose_code}\n")
-    return aml_path
-
-
-# Vistas SEPA individuales
 @login_required
 def crear_transferencia(request):
     if request.method == 'POST':
@@ -101,8 +101,30 @@ def crear_transferencia(request):
         if form.is_valid():
             transferencia = form.save(commit=False)
             transferencia.payment_id = generate_payment_id(prefix="TRF")
+
+            # Generar instruction_id determinista sin prefijo
+            transferencia.payment_identification.instruction_id = generate_deterministic_id(
+                transferencia.payment_id,
+                transferencia.creditor_account.iban,
+                transferencia.instructed_amount.amount
+            )
+
+            # Generar end_to_end_id con prefijo E2E
+            transferencia.payment_identification.end_to_end_id = generate_deterministic_id(
+                transferencia.debtor_account.iban,
+                transferencia.creditor_account.iban,
+                transferencia.instructed_amount.amount,
+                transferencia.requested_execution_date,
+                prefix="E2E"
+            )
+
             transferencia.save()
-            messages.success(request, "Transferencia creada.")
+
+            # Guardar archivos directamente al crear (pain.001 + AML)
+            generar_xml_pain001(transferencia, transferencia.payment_id)
+            generar_archivo_aml(transferencia, transferencia.payment_id)
+
+            messages.success(request, "Transferencia creada correctamente.")
             return redirect('listar_transferencias')
     else:
         form = SepaCreditTransferForm()
@@ -158,12 +180,15 @@ def enviar_transferencia(request, payment_id):
     }
 
     try:
+        # Regenerar archivos XML y AML antes de envío
         generar_xml_pain001(transferencia, payment_id)
         generar_archivo_aml(transferencia, payment_id)
+
         res = session.post(
             'https://simulator-api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer/',
             json=payload, headers=headers
         )
+
         log_path = obtener_ruta_log_transferencia(payment_id)
         with open(log_path, 'w') as log_file:
             log_file.write(f"Headers enviados:\n{headers}\n\n")
@@ -175,10 +200,10 @@ def enviar_transferencia(request, payment_id):
             messages.error(request, f"Error al enviar transferencia: {mensaje}")
             return redirect('detalle_transferencia', payment_id=payment_id)
 
+        # Guardar respuesta XML pain.002 si es proporcionada
         content_type = res.headers.get("Content-Type", "")
         if "xml" in content_type:
-            carpeta_xml = os.path.join(SCHEMA_DIR, "transferencias", payment_id)
-            os.makedirs(carpeta_xml, exist_ok=True)
+            carpeta_xml = obtener_ruta_schema_transferencia(payment_id)
             xml_response_path = os.path.join(carpeta_xml, f"pain002_{payment_id}.xml")
             with open(xml_response_path, "w", encoding="utf-8") as xmlfile:
                 xmlfile.write(res.text)
@@ -190,7 +215,7 @@ def enviar_transferencia(request, payment_id):
 
     except Exception as e:
         messages.error(request, f"Error inesperado: {str(e)}")
-        return redirect('detalle_transferencia', payment_id=payment_id)    
+        return redirect('detalle_transferencia', payment_id=payment_id)  
 
 @login_required
 def estado_transferencia(request, payment_id):
@@ -199,22 +224,36 @@ def estado_transferencia(request, payment_id):
     headers = build_headers(request, 'GET')
     attach_common_headers(headers, 'GET')
     url = f"https://simulator-api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer/{payment_id}/status"
-    res = session.get(url, headers=headers)
-    log_path = obtener_ruta_log_transferencia(payment_id)
-    with open(log_path, 'a') as log_file:
-        log_file.write(f"\nConsulta de estado - {datetime.now()}\nHeaders:\n{headers}\n\nRespuesta:\n{res.text}\n")
 
-    if res.status_code == 200:
-        transferencia.transaction_status = res.json().get("transactionStatus", transferencia.transaction_status)
-        transferencia.save()
-        messages.success(request, "Estado actualizado desde el banco.")
-    else:
-        mensaje = handle_error_response(res)
-        messages.error(request, f"Error al consultar estado: {mensaje}")
+    try:
+        res = session.get(url, headers=headers)
+
+        log_path = obtener_ruta_log_transferencia(payment_id)
+        with open(log_path, 'a') as log_file:
+            log_file.write(f"\nConsulta de estado - {datetime.now()}\nHeaders:\n{headers}\n\nRespuesta:\n{res.text}\n")
+
+        if res.status_code == 200:
+            # Guardar XML de respuesta si aplica
+            content_type = res.headers.get("Content-Type", "")
+            if "xml" in content_type:
+                carpeta_xml = obtener_ruta_schema_transferencia(payment_id)
+                xml_response_path = os.path.join(carpeta_xml, f"pain002_{payment_id}_estado.xml")
+                with open(xml_response_path, "w", encoding="utf-8") as xmlfile:
+                    xmlfile.write(res.text)
+
+            transferencia.transaction_status = res.json().get("transactionStatus", transferencia.transaction_status)
+            transferencia.save()
+            messages.success(request, "Estado actualizado desde el banco.")
+        else:
+            mensaje = handle_error_response(res)
+            messages.error(request, f"Error al consultar estado: {mensaje}")
+
+    except Exception as e:
+        messages.error(request, f"Error al consultar estado: {str(e)}")
 
     return redirect('detalle_transferencia', payment_id=payment_id)
 
-# Vistas para transferencias masivas (crear, enviar, estado, detalle) también incluidas en el proyecto
+@login_required
 class CrearBulkTransferView(View):
     def get(self, request):
         bulk_form = BulkTransferForm()
@@ -238,36 +277,68 @@ class CrearBulkTransferView(View):
             info = payment_info_form.save(commit=False)
             info.bulk = bulk
             info.save()
-            messages.success(request, "Transferencia masiva creada.")
+
+            # Crear carpeta para archivos XML masivos
+            carpeta = obtener_ruta_schema_transferencia(bulk.payment_id)
+            with open(os.path.join(carpeta, f"pain001_bulk_{bulk.payment_id}.xml"), 'w', encoding='utf-8') as f:
+                f.write(f"<BulkTransfer><PaymentID>{bulk.payment_id}</PaymentID></BulkTransfer>")
+            with open(os.path.join(carpeta, f"aml_bulk_{bulk.payment_id}.txt"), 'w', encoding='utf-8') as f:
+                f.write(f"Bulk AML info for {bulk.payment_id}\n")
+
+            messages.success(request, "Transferencia masiva creada y archivos generados.")
             return redirect('listar_transferencias')
+
         return render(request, 'sepa_transferencias/crear_bulk.html', {
             'bulk_form': bulk_form,
             'group_form': group_form,
             'payment_info_form': payment_info_form
         })
 
+@login_required
 class EnviarBulkTransferView(View):
     def get(self, request, payment_id):
         bulk = get_object_or_404(BulkTransfer, payment_id=payment_id)
-        log_path = os.path.join(LOG_DIR, f"transferencia_bulk_{payment_id}.log")
-        schema_path = os.path.join(SCHEMA_DIR, f"pain001_bulk_{payment_id}.xml")
-        with open(log_path, 'w') as log:
-            log.write(f"Simulando envío de transferencia masiva {payment_id}\n")
-        with open(schema_path, 'w') as schema:
-            schema.write(f"<BulkTransfer><PaymentID>{payment_id}</PaymentID></BulkTransfer>")
-        messages.success(request, f"Transferencia masiva {payment_id} enviada.")
+        carpeta = obtener_ruta_schema_transferencia(payment_id)
+        log_path = obtener_ruta_log_transferencia(payment_id)
+
+        # Simular envío de datos masivos al banco y registrar
+        with open(log_path, 'a') as log:
+            log.write(f"\nEnvio bulk - {datetime.now()}\nSimulación de envío para transferencia masiva {payment_id}\n")
+
+        xml_path = os.path.join(carpeta, f"pain001_bulk_{payment_id}.xml")
+        if os.path.exists(xml_path):
+            with open(xml_path, 'r', encoding='utf-8') as xml_file:
+                contenido = xml_file.read()
+            with open(os.path.join(carpeta, f"pain002_bulk_{payment_id}.xml"), 'w', encoding='utf-8') as respuesta:
+                respuesta.write(f"<Response><Reference>{payment_id}</Reference><Status>Simulada</Status></Response>")
+
+        bulk.transaction_status = "PDNG"
+        bulk.save()
+        messages.success(request, f"Transferencia masiva {payment_id} enviada y registrada.")
         return redirect('detalle_transferencia_bulk', payment_id=payment_id)
 
+@login_required
 class EstadoBulkTransferView(View):
     def get(self, request, payment_id):
         bulk = get_object_or_404(BulkTransfer, payment_id=payment_id)
+        log_path = obtener_ruta_log_transferencia(payment_id)
+        carpeta = obtener_ruta_schema_transferencia(payment_id)
+
+        # Simular consulta de estado al banco y registrar
+        with open(log_path, 'a') as log:
+            log.write(f"\nConsulta estado bulk - {datetime.now()}\nTransferencia masiva {payment_id} actualizada\n")
+
+        # Guardar respuesta de estado simulada como XML
+        estado_path = os.path.join(carpeta, f"pain002_bulk_{payment_id}_estado.xml")
+        with open(estado_path, 'w', encoding='utf-8') as xml:
+            xml.write(f"<StatusResponse><Reference>{payment_id}</Reference><Status>Procesando</Status></StatusResponse>")
+
         bulk.transaction_status = "ACSP"
         bulk.save()
-        log_path = os.path.join(LOG_DIR, f"transferencia_bulk_{payment_id}.log")
-        with open(log_path, 'a') as log:
-            log.write(f"Consulta de estado simulada para {payment_id} en {datetime.now()}\n")
+        messages.success(request, f"Estado actualizado para la transferencia masiva {payment_id}.")
         return redirect('detalle_transferencia_bulk', payment_id=payment_id)
 
+@login_required
 class DetalleBulkTransferView(View):
     def get(self, request, payment_id):
         bulk = get_object_or_404(BulkTransfer, payment_id=payment_id)
@@ -280,9 +351,6 @@ class DetalleBulkTransferView(View):
             'transferencia': bulk,
             'log': log_content
         })
-
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -298,57 +366,29 @@ def retry_second_factor(request, payment_id):
     }
 
     url = f"https://simulator-api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer/{payment_id}"
-    res = session.patch(url, json=data, headers=headers)
-
-    log_path = os.path.join(LOG_DIR, f"transferencia_{payment_id}.log")
-    with open(log_path, 'a') as log:
-        log.write(f"\nPATCH OTP Retry:\nHeaders: {headers}\n\nBody: {data}\n\nResponse: {res.text}\n")
-
-    if res.status_code == 200:
-        messages.success(request, "OTP actualizado correctamente.")
-        return redirect('detalle_transferencia', payment_id=payment_id)
-    else:
-        mensaje = handle_error_response(res)
-        messages.error(request, f"Error al reintentar OTP: {mensaje}")
-        return redirect('detalle_transferencia', payment_id=payment_id)
-
-
-# Agregado parser de XML pain.002 y PATCH second factor
-# utils.py o views.py puede incluir esto
-
-import xml.etree.ElementTree as ET
-from django.http import JsonResponse
-
-def parse_pain_002(xml_content):
     try:
-        root = ET.fromstring(xml_content)
-        # Esto depende del namespace y estructura exacta
-        # Supongamos que hay un nodo <TransactionStatus>
-        status = root.findtext('.//TransactionStatus')
-        return status or "PDNG"
-    except ET.ParseError:
-        return "PDNG"
+        res = session.patch(url, json=data, headers=headers)
 
-# PATCH para segundo factor
-from django.views.decorators.http import require_http_methods
-from django.views.decorators.csrf import csrf_exempt
+        log_path = obtener_ruta_log_transferencia(payment_id)
+        with open(log_path, 'a') as log:
+            log.write(f"\nPATCH OTP Retry - {datetime.now()}\nHeaders: {headers}\n\nBody: {data}\n\nResponse: {res.text}\n")
 
-@csrf_exempt
-@require_http_methods(["POST"])
-def retry_second_factor(request, payment_id):
-    session = get_oauth_session(request)
-    headers = build_headers(request, 'PATCH')
-    attach_common_headers(headers, 'PATCH')
-    data = {
-        "action": request.POST.get("action", "CREATE"),
-        "authId": request.POST.get("authId")
-    }
-    url = f"https://simulator-api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer/{payment_id}"
-    res = session.patch(url, json=data, headers=headers)
-    log_path = os.path.join(LOG_DIR, f"transferencia_{payment_id}.log")
-    with open(log_path, 'a') as log:
-        log.write(f"\nPATCH OTP Retry:\nHeaders: {headers}\n\nBody: {data}\n\nResponse: {res.text}\n")
-    if res.status_code == 200:
-        return JsonResponse(res.json())
-    return HttpResponse(handle_error_response(res), status=res.status_code)
+        if res.status_code == 200:
+            # Guardar XML de respuesta OTP si viene en formato XML
+            content_type = res.headers.get("Content-Type", "")
+            if "xml" in content_type:
+                carpeta = obtener_ruta_schema_transferencia(payment_id)
+                otp_xml_path = os.path.join(carpeta, f"otp_patch_{payment_id}.xml")
+                with open(otp_xml_path, 'w', encoding='utf-8') as xmlfile:
+                    xmlfile.write(res.text)
+
+            messages.success(request, "OTP actualizado correctamente.")
+        else:
+            mensaje = handle_error_response(res)
+            messages.error(request, f"Error al reintentar OTP: {mensaje}")
+
+    except Exception as e:
+        messages.error(request, f"Error inesperado al aplicar segundo factor: {str(e)}")
+
+    return redirect('detalle_transferencia', payment_id=payment_id)
 

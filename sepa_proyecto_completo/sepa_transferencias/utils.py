@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 from requests_oauthlib import OAuth2Session
 from django.conf import settings
 
-from api.gpt.models import SepaCreditTransfer
+from .models import SepaCreditTransfer
 logger = logging.getLogger(__name__)
 
 # Token de acceso dummy (debería obtenerse con autenticación OAuth real)
