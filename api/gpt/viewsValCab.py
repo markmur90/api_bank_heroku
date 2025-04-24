@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.views.decorators.http import require_http_methods
 from django.http import FileResponse, HttpResponseBadRequest, JsonResponse
 from .models import SepaCreditTransfer, ErrorResponse
-from .utils import get_oauth_session
+from .utils import generar_pdf_transferencia, get_oauth_session
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 import uuid
 import re
