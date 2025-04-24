@@ -1,7 +1,7 @@
 import hashlib
 from datetime import datetime
 
-def generate_payment_id(prefix="TX"):
+def generate_payment_id(prefix="E2E"):
     """
     Genera un ID único basado en la fecha y hora actual con un prefijo opcional.
     Máximo 35 caracteres.

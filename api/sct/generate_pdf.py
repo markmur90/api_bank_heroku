@@ -13,7 +13,7 @@ def generar_pdf_transferencia(transfers):
     Generates a well-organized PDF with SEPA transfer details.
     """
     # PDF file name
-    creditor_name = transfers.creditor_name.replace(" ", "_")
+    creditor_name = transfers.creditor.creditor_name.replace(" ", "_")
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     payment_reference = transfers.payment_id
     pdf_filename = f"{creditor_name}_{timestamp}_{payment_reference}.pdf"
