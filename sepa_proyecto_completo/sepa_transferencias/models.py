@@ -12,6 +12,7 @@ class Address(models.Model):
 class Debtor(models.Model):
     debtor_name = models.CharField(max_length=140)
     postal_address = models.ForeignKey(Address, on_delete=models.CASCADE)
+    customer_id = models.CharField(max_length=35, unique=True)
 
     def __str__(self):
         return self.debtor_name

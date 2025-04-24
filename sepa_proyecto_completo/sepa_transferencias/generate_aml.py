@@ -26,9 +26,8 @@ def generar_archivo_aml(transferencia, payment_id):
     debtor = ET.SubElement(transaction, "Debtor")
     ET.SubElement(debtor, "Name").text = transferencia.debtor.debtor_name
     ET.SubElement(debtor, "IBAN").text = transferencia.debtor_account.iban
-    ET.SubElement(debtor, "BIC").text = transferencia.debtor_account.currency
     ET.SubElement(debtor, "Country").text = transferencia.debtor.postal_address.country
-    ET.SubElement(debtor, "CustomerID").text = transferencia.payment_id
+    ET.SubElement(debtor, "CustomerID").text = transferencia.debtor.customer_id
     ET.SubElement(debtor, "KYCVerified").text = "true"
 
     creditor = ET.SubElement(transaction, "Creditor")
