@@ -2,6 +2,7 @@ import os
 import re
 import logging
 import uuid
+from django.conf import settings
 
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
@@ -22,7 +23,7 @@ logger = logging.getLogger(__name__)
 # Token de acceso dummy (debería obtenerse con autenticación OAuth real)
 ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg"
 
-ORIGIN = 'https://api.db.com'
+ORIGIN = "https://api.db.com"
 
 API_CLIENT_ID = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
 API_CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzsniABTiDYl7QCh6XXEXzgDrjBD4zSvtHbP0Qa707g3eYbmKxO'
@@ -31,6 +32,37 @@ DEUTSCHE_BANK_CLIENT_SECRET='H858hfhg0ht40588hhfjpfhhd9944940jf'
 
 CLIENT_ID = API_CLIENT_ID
 CLIENT_SECRET = API_CLIENT_SECRET
+
+DEFAULT_APIKEY = getattr(settings, "APIKEY", "MI_API_KEY")
+
+
+
+def build_complete_sepa_headers(request, method: str):
+    method = method.upper()
+    headers = {}
+    headers['idempotency-id'] = request.headers.get('idempotency-id', str(uuid.uuid4()))
+    headers['otp'] = (
+        request.POST.get('otp') if method == 'POST'
+        else request.headers.get('otp', 'PUSHTAN') if method in ['PATCH', 'DELETE']
+        else None
+    )
+    headers['Correlation-Id'] = request.headers.get('Correlation-Id', str(uuid.uuid4()))
+    headers['apikey'] = request.headers.get('apikey', DEFAULT_APIKEY)
+    headers['x-request-id'] = request.headers.get('x-request-id', str(uuid.uuid4()))
+    headers['Origin'] = request.headers.get('Origin', ORIGIN)
+    headers['X-Requested-With'] = "XMLHttpRequest"
+    headers['Authorization'] = f"Bearer {ACCESS_TOKEN}"
+    headers['Accept'] = "application/json"
+    if method in ['POST', 'PATCH']:
+        headers['Content-Type'] = "application/json"
+    process_id = request.headers.get('process-id')
+    if process_id:
+        headers['process-id'] = process_id
+    preview_sig = request.headers.get('previewsignature')
+    if preview_sig:
+        headers['previewsignature'] = preview_sig
+    return {k: v for k, v in headers.items() if v is not None}
+
 
 
 def handle_error_response(response):
