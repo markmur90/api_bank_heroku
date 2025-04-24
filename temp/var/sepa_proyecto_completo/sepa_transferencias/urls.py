@@ -1,0 +1,1 @@
+# Incluye rutas para individuales, bulk, login/logout

@@ -1,0 +1,1 @@
+# Aquí están las vistas completas incluyendo envío, estado, bulk y OTP
