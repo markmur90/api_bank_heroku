@@ -3,6 +3,7 @@ from django import forms
 import pytz
 from .models import *
 
+
 class AddressForm(forms.ModelForm):
     class Meta:
         model = Address
@@ -12,6 +13,7 @@ class AddressForm(forms.ModelForm):
             'street_and_house_number': forms.TextInput(attrs={'class': 'form-control'}),
             'zip_code_and_city': forms.TextInput(attrs={'class': 'form-control'})
         }
+
 
 class DebtorForm(forms.ModelForm):
     class Meta:
@@ -23,6 +25,7 @@ class DebtorForm(forms.ModelForm):
             'postal_address': forms.Select(attrs={'class': 'form-control'})
         }
 
+
 class CreditorForm(forms.ModelForm):
     class Meta:
         model = Creditor
@@ -31,6 +34,7 @@ class CreditorForm(forms.ModelForm):
             'creditor_name': forms.TextInput(attrs={'class': 'form-control'}),
             'postal_address': forms.Select(attrs={'class': 'form-control'})
         }
+
 
 class AccountForm(forms.ModelForm):
     class Meta:
@@ -41,6 +45,7 @@ class AccountForm(forms.ModelForm):
             'currency': forms.TextInput(attrs={'class': 'form-control'})
         }
 
+
 class FinancialInstitutionForm(forms.ModelForm):
     class Meta:
         model = FinancialInstitution
@@ -48,6 +53,7 @@ class FinancialInstitutionForm(forms.ModelForm):
         widgets = {
             'financial_institution_id': forms.TextInput(attrs={'class': 'form-control'})
         }
+
 
 class PaymentIdentificationForm(forms.ModelForm):
     class Meta:
@@ -58,6 +64,7 @@ class PaymentIdentificationForm(forms.ModelForm):
             'instruction_id': forms.TextInput(attrs={'class': 'form-control'})
         }
 
+
 class InstructedAmountForm(forms.ModelForm):
     class Meta:
         model = InstructedAmount
@@ -66,6 +73,7 @@ class InstructedAmountForm(forms.ModelForm):
             'amount': forms.NumberInput(attrs={'class': 'form-control'}),
             'currency': forms.TextInput(attrs={'class': 'form-control'})
         }
+
 
 class SepaCreditTransferForm(forms.ModelForm):
     class Meta:
@@ -104,7 +112,6 @@ class SepaCreditTransferForm(forms.ModelForm):
             }),
         }
 
-# Formularios para modelos masivos
 
 class GroupHeaderForm(forms.ModelForm):
     class Meta:
@@ -118,6 +125,7 @@ class GroupHeaderForm(forms.ModelForm):
             'create_date_time': forms.DateTimeInput(attrs={'class': 'form-control', 'type': 'datetime-local'})
         }
 
+
 class BulkTransferForm(forms.ModelForm):
     class Meta:
         model = BulkTransfer
@@ -127,6 +135,7 @@ class BulkTransferForm(forms.ModelForm):
             'group_header': forms.Select(attrs={'class': 'form-control'}),
             'transaction_status': forms.Select(attrs={'class': 'form-control'})
         }
+
 
 class PaymentInformationForm(forms.ModelForm):
     class Meta:
@@ -145,6 +154,7 @@ class PaymentInformationForm(forms.ModelForm):
             'charge_bearer': forms.TextInput(attrs={'class': 'form-control'})
         }
 
+
 class CreditTransfersDetailsForm(forms.ModelForm):
     class Meta:
         model = CreditTransfersDetails
@@ -158,3 +168,4 @@ class CreditTransfersDetailsForm(forms.ModelForm):
             'creditor_agent': forms.Select(attrs={'class': 'form-control'}),
             'remittance_information_unstructured': forms.TextInput(attrs={'class': 'form-control'})
         }
+

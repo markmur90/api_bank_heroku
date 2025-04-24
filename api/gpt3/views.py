@@ -20,6 +20,7 @@ from .utils import (
 )
 from .helpers import generate_deterministic_id, generate_payment_id, obtener_ruta_log_transferencia, obtener_ruta_schema_transferencia
 
+
 @login_required
 def descargar_pdf(request, payment_id):
     transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
@@ -75,10 +76,12 @@ def crear_transferencia(request):
         form = SepaCreditTransferForm()
     return render(request, 'api/GPT3/crear_transferencia.html', {'form': form})
 
+
 @login_required
 def listar_transferencias(request):
     transferencias = SepaCreditTransfer.objects.all().order_by('-created_at')
     return render(request, 'api/GPT3/listar_transferencias.html', {'transferencias': transferencias})
+
 
 @login_required
 def detalle_transferencia(request, payment_id):
@@ -105,6 +108,7 @@ def detalle_transferencia(request, payment_id):
         'log': log_content,
         'archivos': archivos
     })
+
 
 @login_required
 def enviar_transferencia(request, payment_id):
@@ -200,6 +204,7 @@ def enviar_transferencia(request, payment_id):
         messages.error(request, f"Error inesperado: {str(e)}")
         return redirect('detalle_transferencia', payment_id=payment_id)  
 
+
 @login_required
 def estado_transferencia(request, payment_id):
     transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
@@ -238,6 +243,7 @@ def estado_transferencia(request, payment_id):
         messages.error(request, f"Error al consultar estado: {str(e)}")
 
     return redirect('detalle_transferencia', payment_id=payment_id)
+
 
 @login_required
 class CrearBulkTransferView(View):
@@ -285,6 +291,7 @@ class CrearBulkTransferView(View):
             'payment_info_form': payment_info_form
         })
 
+
 @login_required
 class EnviarBulkTransferView(View):
     def get(self, request, payment_id):
@@ -316,6 +323,7 @@ class EnviarBulkTransferView(View):
 
         return redirect('detalle_transferencia_bulk', payment_id=payment_id)
 
+
 @login_required
 class EstadoBulkTransferView(View):
     def get(self, request, payment_id):
@@ -341,6 +349,7 @@ class EstadoBulkTransferView(View):
             messages.error(request, f"Error al consultar estado de la transferencia masiva: {str(e)}")
 
         return redirect('detalle_transferencia_bulk', payment_id=payment_id)
+
 
 @login_required
 class DetalleBulkTransferView(View):
@@ -370,6 +379,7 @@ class DetalleBulkTransferView(View):
             'log': log_content,
             'archivos': archivos
         })
+
 
 @csrf_exempt
 @require_http_methods(["POST"])

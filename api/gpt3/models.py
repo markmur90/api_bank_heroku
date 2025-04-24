@@ -1,6 +1,7 @@
 from django.db import models
 import uuid
 
+
 class Address(models.Model):
     country = models.CharField(max_length=2)
     street_and_house_number = models.CharField(max_length=70)
@@ -8,6 +9,7 @@ class Address(models.Model):
 
     def __str__(self):
         return f"{self.street_and_house_number}, {self.zip_code_and_city}, {self.country}"
+
 
 class Debtor(models.Model):
     debtor_name = models.CharField(max_length=140)
@@ -17,12 +19,14 @@ class Debtor(models.Model):
     def __str__(self):
         return self.debtor_name
 
+
 class Creditor(models.Model):
     creditor_name = models.CharField(max_length=70)
     postal_address = models.ForeignKey(Address, on_delete=models.CASCADE)
 
     def __str__(self):
         return self.creditor_name
+
 
 class Account(models.Model):
     iban = models.CharField(max_length=34)
@@ -31,11 +35,13 @@ class Account(models.Model):
     def __str__(self):
         return f"{self.iban} ({self.currency})"
 
+
 class FinancialInstitution(models.Model):
     financial_institution_id = models.CharField(max_length=35)
 
     def __str__(self):
         return self.financial_institution_id
+
 
 class PaymentIdentification(models.Model):
     end_to_end_id = models.CharField(max_length=35)
@@ -44,12 +50,14 @@ class PaymentIdentification(models.Model):
     def __str__(self):
         return self.end_to_end_id
 
+
 class InstructedAmount(models.Model):
     amount = models.DecimalField(max_digits=12, decimal_places=2)
     currency = models.CharField(max_length=3)
 
     def __str__(self):
         return f"{self.amount} {self.currency}"
+
 
 class SepaCreditTransfer(models.Model):
     payment_id = models.CharField(max_length=35, unique=True)
@@ -85,7 +93,6 @@ class SepaCreditTransfer(models.Model):
     def __str__(self):
         return f"Transferencia {self.payment_id}"
 
-# Modelos para transferencias masivas
 
 class GroupHeader(models.Model):
     message_id = models.CharField(max_length=35)
@@ -96,6 +103,7 @@ class GroupHeader(models.Model):
 
     def __str__(self):
         return self.message_id
+
 
 class BulkTransfer(models.Model):
     payment_id = models.CharField(max_length=35, unique=True)
@@ -118,6 +126,7 @@ class BulkTransfer(models.Model):
     def __str__(self):
         return f"Bulk {self.payment_id}"
 
+
 class PaymentInformation(models.Model):
     bulk = models.ForeignKey(BulkTransfer, on_delete=models.CASCADE, related_name="payment_informations")
     payment_information_id = models.CharField(max_length=35)
@@ -133,6 +142,7 @@ class PaymentInformation(models.Model):
 
     def __str__(self):
         return self.payment_information_id
+
 
 class CreditTransfersDetails(models.Model):
     payment_information = models.ForeignKey(PaymentInformation, on_delete=models.CASCADE, related_name='credit_transfers')

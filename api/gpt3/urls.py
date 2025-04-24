@@ -19,8 +19,4 @@ urlpatterns = [
 
     # OTP Retry
     path('<str:payment_id>/otp/', views.retry_second_factor, name='retry_second_factor'),
-
-    # Autenticación admin
-    path('login/', LoginView.as_view(template_name='sepa_transferencias/login.html'), name='login'),
-    path('logout/', LogoutView.as_view(next_page='/login/'), name='logout'),
 ]

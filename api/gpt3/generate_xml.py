@@ -4,10 +4,10 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Optional
 
-from .models import SepaCreditTransferRequest
 from .helpers import obtener_ruta_schema_transferencia
 
 logger = logging.getLogger("bank_services")
+
 
 def generar_xml_pain001(transferencia, payment_id):
     carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
@@ -77,3 +77,4 @@ def generar_xml_pain001(transferencia, payment_id):
     xml_path = os.path.join(carpeta_transferencia, xml_filename)
     ET.ElementTree(root).write(xml_path, encoding='utf-8', xml_declaration=True)
     return xml_path
+

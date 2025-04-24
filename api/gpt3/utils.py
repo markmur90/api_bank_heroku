@@ -64,7 +64,6 @@ def build_complete_sepa_headers(request, method: str):
     return {k: v for k, v in headers.items() if v is not None}
 
 
-
 def handle_error_response(response):
     """Maneja los códigos de error específicos de la API."""
     error_messages = {
@@ -108,7 +107,6 @@ def handle_error_response(response):
     return error_messages.get(error_code, f"Error desconocido: {response.text}")
 
 
-
 OAUTH_CONFIG = {
     'client_id': str(CLIENT_ID),
     'client_secret': str(CLIENT_SECRET),
@@ -119,7 +117,6 @@ OAUTH_CONFIG = {
 }
 
 
-
 def get_oauth_session(request):
     """Crea sesión OAuth2 utilizando el access_token del entorno"""
     if not ACCESS_TOKEN:
@@ -128,7 +125,6 @@ def get_oauth_session(request):
 
     # Crear sesión OAuth2 con el token de acceso
     return OAuth2Session(client_id=OAUTH_CONFIG['client_id'], token={'access_token': ACCESS_TOKEN, 'token_type': 'Bearer'})
-
 
 
 def generate_sepa_json_payload(transfer):
@@ -172,7 +168,6 @@ def generate_sepa_json_payload(transfer):
         "purposeCode": transfer.purpose_code,
         "priority": "High"  # Agregar prioridad (Instant SEPA Credit Transfer)
     }
-
 
 
 def generar_pdf_transferencia(transfers):
@@ -266,7 +261,6 @@ def generar_pdf_transferencia(transfers):
     return pdf_path
 
 
-
 def validate_headers(headers):
     """
     Valida las cabeceras requeridas para las solicitudes SEPA.
@@ -295,7 +289,6 @@ def validate_headers(headers):
     if 'x-request-id' not in headers or not re.match(r'^[A-Fa-f0-9\-]{36}$', headers.get('x-request-id', '')):
         errors.append("Cabecera 'x-request-id' es requerida y debe ser un UUID válido.")
     return errors
-
 
 
 def build_headers(request, external_method):
@@ -356,7 +349,6 @@ def build_headers(request, external_method):
     return headers
 
 
-
 def attach_common_headers(headers, external_method):
     # Autenticación con token Bearer
     headers['Authorization'] = f"Bearer {ACCESS_TOKEN}"
@@ -368,7 +360,6 @@ def attach_common_headers(headers, external_method):
     if external_method.upper() in ['POST', 'PATCH']:
         headers['Content-Type'] = 'application/json'
     return headers
-
 
 
 def validate_parameters(data):

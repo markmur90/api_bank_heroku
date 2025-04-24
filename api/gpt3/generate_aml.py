@@ -2,10 +2,10 @@ import logging
 import os
 import xml.etree.ElementTree as ET
 from datetime import datetime
-
 from .helpers import obtener_ruta_schema_transferencia
 
 logger = logging.getLogger("bank_services")
+
 
 def generar_archivo_aml(transferencia, payment_id):
     carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
@@ -50,4 +50,5 @@ def generar_archivo_aml(transferencia, payment_id):
 
     ET.ElementTree(root).write(aml_path, encoding="utf-8", xml_declaration=True)
     return aml_path
+
 
