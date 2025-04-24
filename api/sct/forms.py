@@ -200,8 +200,8 @@ class SepaCreditTransferForm(forms.ModelForm):
         instance = super().save(commit=False)
 
         # Establecer la fecha y hora actual de Frankfurt
-        # frankfurt_tz = pytz.timezone('Europe/Berlin')
-        # instance.requested_execution_date = datetime.now(frankfurt_tz)
+        frankfurt_tz = pytz.timezone('Europe/Berlin')
+        instance.requested_execution_date = datetime.now(frankfurt_tz)
 
         # # Crear o asociar automáticamente un PaymentIdentification
         # if not instance.payment_identification:
