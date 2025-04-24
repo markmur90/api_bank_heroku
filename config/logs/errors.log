@@ -88,3 +88,7 @@ TypeError: object of type 'NoneType' has no len()
 WARNING 2025-04-23 22:44:26,684 log Not Found: /favicon.ico
 WARNING 2025-04-23 22:45:56,715 log Bad Request: /app/gpt/transfer/initiate/
 WARNING 2025-04-23 22:45:56,823 log Not Found: /favicon.ico
+WARNING 2025-04-24 03:32:34,510 log Bad Request: /app/gpt/transfer/initiate/
+WARNING 2025-04-24 03:32:34,676 log Not Found: /favicon.ico
+ERROR 2025-04-24 03:33:12,686 log Internal Server Error: /app/sct/initiate/
+WARNING 2025-04-24 03:33:12,770 log Not Found: /favicon.ico

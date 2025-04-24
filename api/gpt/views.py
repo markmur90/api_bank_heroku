@@ -203,7 +203,7 @@ def initiate_sepa_transfer(request):
                     )
                 )
                 
-                transfer.idempotency_key = headers['idempotency-id']  # Asignar idempotency_key
+                transfer.idempotency_key = headers['idempotency-id']
                 transfer.save()
 
                 payload = generate_sepa_json_payload(transfer)
@@ -211,8 +211,8 @@ def initiate_sepa_transfer(request):
                 headers.update({
                     'Content-Type': 'application/json',
                     'Authorization': f"Bearer {ACCESS_TOKEN}",
-                    'X-Requested-With': 'XMLHttpRequest',  # Cabecera requerida
-                    'Origin': str(ORIGIN),  # Cabecera requerida
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Origin': str(ORIGIN),
                 })
 
                 oauth = get_oauth_session(request)
