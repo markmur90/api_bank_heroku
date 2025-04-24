@@ -5,13 +5,12 @@ from django.http import FileResponse, HttpResponseBadRequest, HttpResponseServer
 from api.gpt.views import validate_parameters
 from .models import SepaCreditTransfer, ErrorResponse, PaymentIdentification, PostalAddress, Debtor, Creditor, Account, FinancialInstitution, Amount
 from .forms import SepaCreditTransferForm
-from .utils import get_oauth_session, generate_sepa_json_payload
 import uuid
 import logging
 from .helpers import generate_payment_id, generate_deterministic_id
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.http import FileResponse
-from .utils import generar_pdf_transferencia, ACCESS_TOKEN, ORIGIN, validate_headers, build_headers, attach_common_headers
+from .utils import validate_headers, build_headers, attach_common_headers, handle_error_response, generate_sepa_json_payload, get_oauth_session
 from .forms import (
     AccountForm, AmountForm, FinancialInstitutionForm,
     PostalAddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm
@@ -23,73 +22,39 @@ from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
+# Token de acceso dummy (debería obtenerse con autenticación OAuth real)
+ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg"
 
-def handle_error_response(response):
-    """Maneja los códigos de error específicos de la API."""
-    error_messages = {
-        2: "Valor inválido para uno de los parámetros.",
-        16: "Respuesta de desafío OTP inválida.",
-        17: "OTP inválido.",
-        114: "No se pudo identificar la transacción por Id.",
-        127: "La fecha de reserva inicial debe preceder a la fecha de reserva final.",
-        131: "Valor inválido para 'sortBy'. Valores válidos: 'bookingDate[ASC]' y 'bookingDate[DESC]'.",
-        132: "No soportado.",
-        138: "Parece que inició un desafío no pushTAN. Use el endpoint PATCH para continuar.",
-        139: "Parece que inició un desafío pushTAN. Use el endpoint GET para continuar.",
-        6500: "Parámetros en la URL o tipo de contenido incorrectos. Por favor, revise y reintente.",
-        6501: "Detalles del banco contratante inválidos o faltantes.",
-        6502: "La moneda aceptada para el monto instruido es EUR. Por favor, corrija su entrada.",
-        6503: "Parámetros enviados son inválidos o faltantes.",
-        6504: "Los parámetros en la solicitud no coinciden con la solicitud inicial.",
-        6505: "Fecha de ejecución inválida.",
-        6506: "El IdempotencyId ya está en uso.",
-        6507: "No se permite la cancelación para esta transacción.",
-        6508: "Pago SEPA no encontrado.",
-        6509: "El parámetro en la solicitud no coincide con el último Auth id.",
-        6510: "El estado actual no permite la actualización del segundo factor con la acción proporcionada.",
-        6511: "Fecha de ejecución inválida.",
-        6515: "El IBAN de origen o el tipo de cuenta son inválidos.",
-        6516: "No se permite la cancelación para esta transacción.",
-        6517: "La moneda aceptada para la cuenta del acreedor es EUR. Por favor, corrija su entrada.",
-        6518: "La fecha de recolección solicitada no debe ser un día festivo o fin de semana. Por favor, intente nuevamente.",
-        6519: "La fecha de ejecución solicitada no debe ser mayor a 90 días en el futuro. Por favor, intente nuevamente.",
-        6520: "El valor de 'requestedExecutionDate' debe coincidir con el formato yyyy-MM-dd.",
-        6521: "La moneda aceptada para la cuenta del deudor es EUR. Por favor, corrija su entrada.",
-        6523: "No hay una entidad legal presente para el IBAN de origen. Por favor, corrija su entrada.",
-        6524: "Ha alcanzado el límite máximo permitido para el día. Espere hasta mañana o reduzca el monto de la transferencia.",
-        6525: "Por el momento, no soportamos photo-tan para pagos masivos.",
-        6526: "El valor de 'createDateTime' debe coincidir con el formato yyyy-MM-dd'T'HH:mm:ss.",
-        401: "La función solicitada requiere un nivel de autenticación SCA.",
-        404: "No se encontró el recurso solicitado.",
-        409: "Conflicto: El recurso ya existe o no se puede procesar la solicitud."
-    }
-    error_code = response.status_code
-    return error_messages.get(error_code, f"Error desconocido: {response.text}")
+ORIGIN = 'https://api.db.com'
 
+API_CLIENT_ID = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
+API_CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzsniABTiDYl7QCh6XXEXzgDrjBD4zSvtHbP0Qa707g3eYbmKxO'
+DEUTSCHE_BANK_CLIENT_ID='SE0IWHFHJFHB848R9E0R9FRUFBCJHW0W9FHF008E88W0457338ASKH64880'
+DEUTSCHE_BANK_CLIENT_SECRET='H858hfhg0ht40588hhfjpfhhd9944940jf'
 
-def generate_transfer_pdf(request, payment_id):
-    """Genera un PDF para una transferencia específica"""
-    transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
-    pdf_path = generar_pdf_transferencia(transfer)
-    return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf', as_attachment=True, filename=f"{transfer.payment_id}.pdf")
-
+CLIENT_ID = API_CLIENT_ID
+CLIENT_SECRET = API_CLIENT_SECRET
 
 @require_http_methods(["GET", "POST"])
 def initiate_sepa_transfer(request):
     if request.method == 'POST':
-        headers = {
+        access-control-allow-headers = {
             'idempotency-id': request.headers.get('idempotency-id', str(uuid.uuid4())),
+            'process-id': request.headers.get('process-id'),
             'otp': request.POST.get('otp', 'SEPA_TRANSFER_GRANT'),
-            'Correlation-Id': request.headers.get('Correlation-Id', str(uuid.uuid4())),
-            'apikey': request.headers.get('apikey'),
+            'Correlation-ID': request.headers.get('Correlation-ID', str(uuid.uuid4())),
+            'Origin': str(ORIGIN),
+            'Accept': 'application/json',
+            'X-Requested-With': request.headers.get('X-Requested-With'),
+            'Content-Type': 'application/json',
             'Access-Control-Request-Method': request.headers.get('Access-Control-Request-Method'),
             'Access-Control-Request-Headers': request.headers.get('Access-Control-Request-Headers'),
-            'x-request-id': request.headers.get('x-request-id', str(uuid.uuid4())),
+            'Authorization': f"Bearer {ACCESS_TOKEN}",
             'Cookie': request.headers.get('Cookie'),
             'X-Frame-Options': request.headers.get('X-Frame-Options'),
             'X-Content-Type-Options': request.headers.get('X-Content-Type-Options'),
             'Strict-Transport-Security': request.headers.get('Strict-Transport-Security'),
-            'Accept': 'application/json'
+            'previewsignature': request.headers.get('previewsignature'),
         }
 
         # Validar cabeceras
