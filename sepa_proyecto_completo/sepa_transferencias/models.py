@@ -54,7 +54,7 @@ class InstructedAmount(models.Model):
 class SepaCreditTransfer(models.Model):
     payment_id = models.CharField(max_length=35, unique=True)
     auth_id = models.CharField(max_length=70, blank=True, null=True)
-    transaction_status = models.CharField(max_length=10, choices=[
+    transaction_status = models.CharField(max_length=10, default='PDNG', choices=[
         ('RJCT', 'Rechazada'),
         ('RCVD', 'Recibida'),
         ('ACCP', 'Aceptada'),

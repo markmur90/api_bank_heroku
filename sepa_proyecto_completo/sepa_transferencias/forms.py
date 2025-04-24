@@ -69,9 +69,8 @@ class SepaCreditTransferForm(forms.ModelForm):
     class Meta:
         model = SepaCreditTransfer
         fields = '__all__'
+        exclude = ['payment_id', 'auth_id', 'transaction_status', 'payment_identification']
         widgets = {
-            'payment_id': forms.TextInput(attrs={'class': 'form-control'}),
-            'auth_id': forms.TextInput(attrs={'class': 'form-control'}),
             'transaction_status': forms.Select(attrs={'class': 'form-control'}),
             'purpose_code': forms.TextInput(attrs={'class': 'form-control'}),
             'requested_execution_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
