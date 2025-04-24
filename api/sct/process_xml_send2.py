@@ -225,8 +225,8 @@ def initiate_sepa_transfer(request):
                 transfer.payment_id = uuid.uuid4()
                 transfer.auth_id = uuid.uuid4()
                 transfer.transaction_status = 'PDNG'
-                transfer.payment_identification.end_to_end_id = generate_payment_id("E2E")
-                transfer.payment_identification.instruction_id = generate_deterministic_id(
+                transfer.payment_identification__end_to_end_id = generate_payment_id()
+                transfer.payment_identification__instruction_id = generate_deterministic_id(
                         transfer.creditor_account.iban,
                         transfer.instructed_amount.amount,
                         transfer.requested_execution_date

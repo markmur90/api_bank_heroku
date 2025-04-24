@@ -203,12 +203,12 @@ class SepaCreditTransferForm(forms.ModelForm):
         frankfurt_tz = pytz.timezone('Europe/Berlin')
         instance.requested_execution_date = datetime.now(frankfurt_tz)
 
-        # Crear o asociar automáticamente un PaymentIdentification
-        if not instance.payment_identification:
-            instance.payment_identification, _ = PaymentIdentification.objects.get_or_create(
-                end_to_end_id=uuid.uuid4().hex[:36],
-                instruction_id=uuid.uuid4().hex[:36]
-            )
+        # # Crear o asociar automáticamente un PaymentIdentification
+        # if not instance.payment_identification:
+        #     instance.payment_identification, _ = PaymentIdentification.objects.get_or_create(
+        #         end_to_end_id=uuid.uuid4().hex[:36],
+        #         instruction_id=uuid.uuid4().hex[:36]
+        #     )
 
         if commit:
             instance.save()

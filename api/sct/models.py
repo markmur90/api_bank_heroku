@@ -242,8 +242,8 @@ class Account(models.Model):
         return f"{self.iban} - {self.currency}"
 
 class PaymentIdentification(models.Model):
-    end_to_end_id = models.CharField(max_length=36, validators=[RegexValidator(regex='^[a-zA-Z0-9.-]{1,36}$')], blank=True, default=uuid.uuid4)
-    instruction_id = models.CharField(max_length=36, validators=[RegexValidator(regex='^[a-zA-Z0-9.-]{1,36}$')], blank=True, default=uuid.uuid4)
+    end_to_end_id = models.CharField(max_length=36)
+    instruction_id = models.CharField(max_length=36)
 
     def __str__(self):
         return f"EtEid {self.end_to_end_id} - InstId {self.instruction_id}"
