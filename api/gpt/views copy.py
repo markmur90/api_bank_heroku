@@ -122,39 +122,43 @@ def initiate_sepa_transfer(request):
             'Strict-Transport-Security': request.headers.get('Strict-Transport-Security'),
             'Accept': 'application/json'
         }
-        
+
+        # Validar cabeceras
         validation_errors = validate_headers(headers)
+        if validation_errors:
+            return JsonResponse({'errors': validation_errors}, status=400)
+
+        # Construir cabeceras adicionales
         headers = build_headers(request, external_method='POST')
         validation_errors = validate_headers(headers)
+        if validation_errors:
+            return JsonResponse({'errors': validation_errors}, status=400)
 
+        form = SepaCreditTransferForm(request.POST)
+        if form.is_valid():
+            validation_errors = validate_parameters(request.POST)
             if validation_errors:
                 return JsonResponse({'errors': validation_errors}, status=400)
+            try:
+                transfer = form.save(commit=False)
+                transfer.payment_id = uuid.uuid4()
+                transfer.auth_id = uuid.uuid4()
+                transfer.transaction_status = 'PDNG'
 
-            form = SepaCreditTransferForm(request.POST)
-            if form.is_valid():
-                validation_errors = validate_parameters(request.POST)
-                if validation_errors:
-                    return JsonResponse({'errors': validation_errors}, status=400)
-                try:
-                    transfer = form.save(commit=False)
-                    transfer.payment_id = uuid.uuid4()
-                    transfer.auth_id = uuid.uuid4()
-                    transfer.transaction_status = 'PDNG'
-                    
-                    # Generar PaymentIdentification automáticamente
-                    transfer.payment_identification = PaymentIdentification.objects.create(
-                        end_to_end_id=generate_payment_id("E2E"),
-                        instruction_id=generate_deterministic_id(
-                            transfer.creditor_account.iban,
-                            transfer.instructed_amount.amount,
-                            transfer.requested_execution_date
-                        )
+                # Generar PaymentIdentification automáticamente
+                transfer.payment_identification = PaymentIdentification.objects.create(
+                    end_to_end_id=generate_payment_id("E2E"),
+                    instruction_id=generate_deterministic_id(
+                        transfer.creditor_account.iban,
+                        transfer.instructed_amount.amount,
+                        transfer.requested_execution_date
                     )
-                    
-                    transfer.idempotency_key = headers['idempotency-id']  # Asignar idempotency_key
-                    transfer.save()
+                )
 
-                    payload = generate_sepa_json_payload(transfer)
+                transfer.idempotency_key = headers['idempotency-id']  # Asignar idempotency_key
+                transfer.save()
+
+                payload = generate_sepa_json_payload(transfer)
 
                 headers.update({
                     'Content-Type': 'application/json',
@@ -162,7 +166,7 @@ def initiate_sepa_transfer(request):
                     'X-Requested-With': 'XMLHttpRequest',  # Cabecera requerida
                     'Origin': str(ORIGIN),  # Cabecera requerida
                 })
-                
+
                 headers = attach_common_headers(headers, external_method='POST')
                 oauth = get_oauth_session(request)
                 response = oauth.post(
@@ -194,11 +198,12 @@ def initiate_sepa_transfer(request):
                     message_id=headers.get('idempotency-id', '')
                 )
                 return HttpResponseServerError("Error interno del servidor")
+        else:
+            return JsonResponse({'errors': form.errors}, status=400)
     else:
         form = SepaCreditTransferForm()
 
     return render(request, 'api/GPT/initiate_transfer.html', {'form': form})
-
 
 def check_transfer_status(request, payment_id):
     try:
@@ -275,26 +280,49 @@ def cancel_sepa_transfer(request, payment_id):
         'Upgrade-Insecure-Requests': request.headers.get('Upgrade-Insecure-Requests'),
         'User-Agent': request.headers.get('User-Agent'),
     }
+
+    # Validar cabeceras iniciales
+    validation_errors = validate_headers(headers)
+    if validation_errors:
+        return JsonResponse({'errors': validation_errors}, status=400)
+
+    # Construir cabeceras adicionales
+    headers = build_headers(request, external_method='DELETE')
     validation_errors = validate_headers(headers)
     if validation_errors:
         return JsonResponse({'errors': validation_errors}, status=400)
 
     try:
-        transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)        
-        
+        # Obtener la transferencia SEPA
+        transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+
+        # Obtener sesión OAuth
         oauth = get_oauth_session(request)
+
+        # Actualizar cabeceras con información adicional
+        headers.update({
+            'Authorization': f"Bearer {ACCESS_TOKEN}",
+            'Accept': 'application/json',
+            'X-Requested-With': 'XMLHttpRequest',
+            'Origin': str(ORIGIN),
+        })
+        headers = attach_common_headers(headers, external_method='DELETE')
+
+        # Realizar la solicitud DELETE a la API externa
         response = oauth.delete(
             f'https://api.db.com:443/gw/dbapi/banking/transactions/v2/{payment_id}',
             headers=headers
         )
 
         if response.status_code == 200:
+            # Actualizar el estado de la transferencia a 'CANC'
             transfer.transaction_status = 'CANC'
             transfer.save()
             return render(request, 'api/GPT/cancel_success.html', {
                 'transfer': transfer
             })
         else:
+            # Manejar errores de la API externa
             error_message = handle_error_response(response)
             ErrorResponse.objects.create(
                 code=response.status_code,
@@ -304,6 +332,7 @@ def cancel_sepa_transfer(request, payment_id):
             return HttpResponseBadRequest(error_message)
 
     except Exception as e:
+        # Manejar excepciones generales
         ErrorResponse.objects.create(
             code=500,
             message=f"Error en cancelación: {str(e)}"
