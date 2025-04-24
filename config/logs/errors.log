@@ -104,3 +104,4 @@ ERROR 2025-04-24 05:09:06,140 log Internal Server Error: /app/sct/initiate/
 ERROR 2025-04-24 05:10:50,426 log Internal Server Error: /app/sct/initiate/
 WARNING 2025-04-24 05:12:03,660 log Bad Request: /app/sct/initiate/
 WARNING 2025-04-24 05:12:44,929 log Method Not Allowed (POST): /app/sct/delete/9a2286f3-780b-40d2-bcd9-7d47593a50d2/
+WARNING 2025-04-24 05:20:28,450 log Method Not Allowed (POST): /app/sct/delete/9a2286f3-780b-40d2-bcd9-7d47593a50d2/
