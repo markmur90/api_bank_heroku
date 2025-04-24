@@ -23,26 +23,21 @@ from .helpers import generate_deterministic_id, generate_payment_id, obtener_rut
 @login_required
 def descargar_pdf(request, payment_id):
     transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
-    pdf_path = generar_pdf_transferencia(transferencia)
+    generar_pdf_transferencia(transferencia)  # Siempre asegura que se genera el PDF más reciente
+    carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
 
-    # Nueva ruta para los archivos asociados a la transferencia
-    carpeta_transferencia = os.path.join("schemas", "transferencias", payment_id)
-    os.makedirs(carpeta_transferencia, exist_ok=True)
+    pdf_archivo = next(
+        (os.path.join(carpeta_transferencia, f) for f in os.listdir(carpeta_transferencia)
+         if f.endswith(".pdf") and payment_id in f),
+        None
+    )
 
-    # Mover PDF a su carpeta específica
-    pdf_final_path = os.path.join(carpeta_transferencia, os.path.basename(pdf_path))
-    os.replace(pdf_path, pdf_final_path)
+    if not pdf_archivo or not os.path.exists(pdf_archivo):
+        messages.error(request, "El archivo PDF no se encuentra disponible.")
+        return redirect('detalle_transferencia', payment_id=payment_id)
 
-    # Incluir contenido XML pain.002 si existe
-    xml_path = os.path.join(carpeta_transferencia, f"pain002_{payment_id}.xml")
-    if os.path.exists(xml_path):
-        with open(xml_path, "r", encoding="utf-8") as xml_file:
-            contenido_xml = xml_file.read()
-        # Adjuntar XML como texto en el PDF (si fuera texto plano o log)
-        with open(pdf_final_path, "a", encoding="utf-8") as pdf_texto:
-            pdf_texto.write(f"\n\n--- XML Respuesta pain.002 ---\n{contenido_xml}")
+    return FileResponse(open(pdf_archivo, 'rb'), content_type='application/pdf', as_attachment=True, filename=os.path.basename(pdf_archivo))
 
-    return FileResponse(open(pdf_final_path, 'rb'), content_type='application/pdf', as_attachment=True, filename=f"{payment_id}.pdf")
 
 @login_required
 def crear_transferencia(request):
