@@ -84,11 +84,17 @@ def cancel_sepa_transfer(request, payment_id):
             f'https://api.db.com:443/gw/dbapi/banking/transactions/v2/{payment_id}',
             headers=headers
         )
+        
+        
+        
         if response.status_code == 204:
             return JsonResponse({'message': 'Transferencia cancelada exitosamente.'}, status=204)
         else:
             error_message = handle_error_response(response)
             return JsonResponse({'error': error_message}, status=response.status_code)
+        
+        
+        
     except Exception as e:
         logger.error(f"Error al cancelar transferencia: {str(e)}")
         return JsonResponse({'error': 'Error interno del servidor.'}, status=500)
