@@ -77,14 +77,6 @@ def handle_error_response(response):
 
 
 
-def generate_transfer_pdf(request, payment_id):
-    """Genera un PDF para una transferencia específica"""
-    transfer = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
-    pdf_path = generar_pdf_transferencia(transfer)
-    return FileResponse(open(pdf_path, 'rb'), content_type='application/pdf', as_attachment=True, filename=f"{transfer.payment_id}.pdf")
-
-
-
 OAUTH_CONFIG = {
     'client_id': str(CLIENT_ID),
     'client_secret': str(CLIENT_SECRET),
@@ -148,6 +140,7 @@ def generate_sepa_json_payload(transfer):
         "purposeCode": transfer.purpose_code,
         "priority": "High"  # Agregar prioridad (Instant SEPA Credit Transfer)
     }
+
 
 
 def generar_pdf_transferencia(transfers):
