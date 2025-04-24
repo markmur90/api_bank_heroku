@@ -407,3 +407,6 @@ def validate_parameters(data):
         errors.append("El valor de 'chargeBearer' no debe exceder los 35 caracteres.")
         
     return errors
+
+
+

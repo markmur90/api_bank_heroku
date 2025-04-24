@@ -259,3 +259,42 @@ def retry_second_factor(request, payment_id):
         messages.error(request, f"Error al reintentar OTP: {mensaje}")
         return redirect('detalle_transferencia', payment_id=payment_id)
 
+
+# Agregado parser de XML pain.002 y PATCH second factor
+# utils.py o views.py puede incluir esto
+
+import xml.etree.ElementTree as ET
+from django.http import JsonResponse
+
+def parse_pain_002(xml_content):
+    try:
+        root = ET.fromstring(xml_content)
+        # Esto depende del namespace y estructura exacta
+        # Supongamos que hay un nodo <TransactionStatus>
+        status = root.findtext('.//TransactionStatus')
+        return status or "PDNG"
+    except ET.ParseError:
+        return "PDNG"
+
+# PATCH para segundo factor
+from django.views.decorators.http import require_http_methods
+from django.views.decorators.csrf import csrf_exempt
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def retry_second_factor(request, payment_id):
+    session = get_oauth_session(request)
+    headers = build_headers(request, 'PATCH')
+    attach_common_headers(headers, 'PATCH')
+    data = {
+        "action": request.POST.get("action", "CREATE"),
+        "authId": request.POST.get("authId")
+    }
+    url = f"https://simulator-api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer/{payment_id}"
+    res = session.patch(url, json=data, headers=headers)
+    log_path = os.path.join(LOG_DIR, f"transferencia_{payment_id}.log")
+    with open(log_path, 'a') as log:
+        log.write(f"\nPATCH OTP Retry:\nHeaders: {headers}\n\nBody: {data}\n\nResponse: {res.text}\n")
+    if res.status_code == 200:
+        return JsonResponse(res.json())
+    return HttpResponse(handle_error_response(res), status=res.status_code)
