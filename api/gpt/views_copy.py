@@ -149,7 +149,7 @@ def check_transfer_status(request, payment_id):
         }
 
         # Incluir Correlation-Id si está presente en la solicitud
-        correlation_id = request.headers.get('Correlation-Id')
+        correlation_id = request.headers.get('Correlation-ID', str(uuid.uuid4()))
         if correlation_id:
             headers['Correlation-Id'] = correlation_id
 
@@ -192,7 +192,7 @@ def cancel_sepa_transfer(request, payment_id):
     headers = {
         'idempotency-id': request.headers.get('idempotency-id'),
         'otp': request.headers.get('otp'),
-        'Correlation-Id': request.headers.get('Correlation-Id'),
+        'Correlation-Id': request.headers.get('Correlation-ID', str(uuid.uuid4())),
         'apikey': request.headers.get('apikey'),
         'process-id': request.headers.get('process-id'),
         'previewsignature': request.headers.get('previewsignature'),
@@ -272,7 +272,7 @@ def retry_sepa_transfer_auth(request, payment_id):
     headers = {
         'idempotency-id': request.headers.get('idempotency-id'),
         'otp': request.headers.get('otp'),
-        'Correlation-Id': request.headers.get('Correlation-Id'),
+        'Correlation-Id': request.headers.get('Correlation-ID', str(uuid.uuid4())),
         'apikey': request.headers.get('apikey'),
         'process-id': request.headers.get('process-id'),
         'previewsignature': request.headers.get('previewsignature'),

@@ -174,7 +174,7 @@ def generar_pdf_transferencia(transfers):
     header_data = [
         ["Creation Date", datetime.now().strftime('%d/%m/%Y %H:%M:%S')],
         ["Payment Reference", transfers.payment_id],
-        ["Idempotency Key", transfers.idempotency_key]
+        ["Idempotency Key", transfers.idempotency_id]
     ]
     header_table = Table(header_data, colWidths=[150, 300])
     header_table.setStyle(TableStyle([
