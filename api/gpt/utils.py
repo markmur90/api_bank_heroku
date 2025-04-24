@@ -253,6 +253,7 @@ def validate_headers(headers):
         errors.append("Cabecera 'x-request-id' es requerida y debe ser un UUID válido.")
     return errors
 
+
 def build_headers(request, external_method):
     """
     Construye un diccionario de cabeceras base para la llamada a la API SEPA, 
