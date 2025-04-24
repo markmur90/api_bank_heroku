@@ -33,13 +33,13 @@ class SepaCreditTransferForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Ingrese un código de 4 caracteres'
             }),
-            'remittance_information_structured': forms.Textarea(attrs={
+            'remittance_information_structured': forms.TextInput(attrs={
                 'maxlength': 60,
                 'class': 'form-control',
                 'rows': 1,
                 'placeholder': 'Ingrese información estructurada (máx. 60 caracteres)'
             }),
-            'remittance_information_unstructured': forms.Textarea(attrs={
+            'remittance_information_unstructured': forms.TextInput(attrs={
                 'maxlength': 60,
                 'class': 'form-control',
                 'rows': 1,
