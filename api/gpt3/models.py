@@ -38,7 +38,7 @@ class Amount(models.Model):
 
 class Account(models.Model):
     iban = models.CharField(max_length=34)
-    currency = models.CharField(max_length=3)
+    currency = models.CharField(max_length=3, default='EUR')
 
     def __str__(self):
         return f"{self.iban} ({self.currency})"

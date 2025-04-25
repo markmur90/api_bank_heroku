@@ -3212,11 +3212,19 @@
   }
 },
 {
+  "model": "sessions.session",
+  "pk": "4uekcpk8hor9eqw4fn82vf8yf24nl773",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQRe_C2hBgKIhL9z0DGQZGqoYmpV0Z765NutDtf-_9l4i4rTVuvSxxyuIitDj9bgnpUdoO8h3bbZY0t3WZktwVedAuxzmX5_Vw_w4q9vqt0Try6ApYy4iJlPfWWEgILntmIg5-GDibYIhAAybLAeCMWiUFTOL9Af3OOII:1u8F1Z:uH-RG_MBL5UMpLyR8rxtmZ4HIIip87o8BhEyGKImc6s",
+    "expire_date": "2025-04-25T09:37:09.251Z"
+  }
+},
+{
   "model": "authentication.customuser",
   "pk": 1,
   "fields": {
-    "password": "pbkdf2_sha256$1000000$Y8RkIHHOB5dtCOE0SKA9ur$iAyaYU5OAJd7mtMoU8ZZ5mkC16xFp0REmZV2dk+JJws=",
-    "last_login": null,
+    "password": "pbkdf2_sha256$1000000$53OD5evhiw2DqlwHsRm0GL$NNzxZcZ4f5ULFDTmbLVOEr7hZg8tqft9ybr3CwBhAgA=",
+    "last_login": "2025-04-25T09:12:08.649Z",
     "is_superuser": true,
     "email": "j.moltke@db.com",
     "username": "493069k1",
@@ -3225,6 +3233,72 @@
     "is_staff": true,
     "groups": [],
     "user_permissions": []
+  }
+},
+{
+  "model": "gpt3.address",
+  "pk": 1,
+  "fields": {
+    "country": "DE",
+    "street_and_house_number": "TAUNUSANLAGE 12",
+    "zip_code_and_city": "60325 FRANKFURT"
+  }
+},
+{
+  "model": "gpt3.address",
+  "pk": 2,
+  "fields": {
+    "country": "DE",
+    "street_and_house_number": "WESELER STRABE 230",
+    "zip_code_and_city": "48151 MÜNSTER"
+  }
+},
+{
+  "model": "gpt3.debtor",
+  "pk": 1,
+  "fields": {
+    "debtor_name": "MIRYA TRADING CO LTD",
+    "postal_address": 1,
+    "customer_id": "09512DEUTDEFFXXX886479"
+  }
+},
+{
+  "model": "gpt3.creditor",
+  "pk": 1,
+  "fields": {
+    "creditor_name": "MOHAMMAD REZA NAJAFI KALASHI",
+    "postal_address": 2
+  }
+},
+{
+  "model": "gpt3.amount",
+  "pk": 1,
+  "fields": {
+    "amount": "618.25",
+    "currency": "EUR"
+  }
+},
+{
+  "model": "gpt3.account",
+  "pk": 1,
+  "fields": {
+    "iban": "DE41400501500154813455",
+    "currency": "EUR"
+  }
+},
+{
+  "model": "gpt3.account",
+  "pk": 2,
+  "fields": {
+    "iban": "DE86500700100925993805",
+    "currency": "EUR"
+  }
+},
+{
+  "model": "gpt3.financialinstitution",
+  "pk": 1,
+  "fields": {
+    "financial_institution_id": "WELADED1MST"
   }
 }
 ]
