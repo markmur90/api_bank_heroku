@@ -12,10 +12,10 @@ urlpatterns = [
     path('<str:payment_id>/pdf/', views.descargar_pdf, name='descargar_pdf'),
 
     # Transferencias masivas
-    path('bulk/crear/', views.CrearBulkTransferView.as_view(), name='crear_bulk_transferencia'),
-    path('bulk/<str:payment_id>/enviar/', views.EnviarBulkTransferView.as_view(), name='enviar_bulk_transferencia'),
-    path('bulk/<str:payment_id>/estado/', views.EstadoBulkTransferView.as_view(), name='estado_bulk_transferencia'),
-    path('bulk/<str:payment_id>/', views.DetalleBulkTransferView.as_view(), name='detalle_transferencia_bulk'),
+    path('bulk/crear/', views.CrearBulkTransferView, name='crear_bulk_transferencia'),
+    path('bulk/<str:payment_id>/enviar/', views.EnviarBulkTransferView, name='enviar_bulk_transferencia'),
+    path('bulk/<str:payment_id>/estado/', views.EstadoBulkTransferView, name='estado_bulk_transferencia'),
+    path('bulk/<str:payment_id>/', views.DetalleBulkTransferView, name='detalle_transferencia_bulk'),
 
     # OTP Retry
     path('<str:payment_id>/otp/', views.retry_second_factor, name='retry_second_factor'),
