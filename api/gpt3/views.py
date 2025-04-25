@@ -37,7 +37,7 @@ def descargar_pdf(request, payment_id):
 
     if not pdf_archivo or not os.path.exists(pdf_archivo):
         messages.error(request, "El archivo PDF no se encuentra disponible.")
-        return redirect('detalle_transferencia', payment_id=payment_id)
+        return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
 
     return FileResponse(open(pdf_archivo, 'rb'), content_type='application/pdf', as_attachment=True, filename=os.path.basename(pdf_archivo))
 
@@ -73,7 +73,7 @@ def crear_transferencia(request):
             generar_archivo_aml(transferencia, transferencia.payment_id)
 
             messages.success(request, "Transferencia creada correctamente.")
-            return redirect('listar_transferencias')
+            return redirect('listar_transferenciasGPT3')
     else:
         form = SepaCreditTransferForm()
     return render(request, 'api/GPT3/crear_transferencia.html', {'form': form})
@@ -198,7 +198,7 @@ def enviar_transferencia(request, payment_id):
         if res.status_code not in [200, 201]:
             mensaje = handle_error_response(res)
             messages.error(request, f"Error al enviar transferencia: {mensaje}")
-            return redirect('detalle_transferencia', payment_id=payment_id)
+            return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
 
         # Guardar respuesta XML pain.002 si es proporcionada
         content_type = res.headers.get("Content-Type", "")
@@ -211,11 +211,11 @@ def enviar_transferencia(request, payment_id):
         transferencia.transaction_status = "PDNG"
         transferencia.save()
         messages.success(request, "Transferencia enviada, registrada y respuesta XML guardada.")
-        return redirect('detalle_transferencia', payment_id=payment_id)
+        return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
 
     except Exception as e:
         messages.error(request, f"Error inesperado: {str(e)}")
-        return redirect('detalle_transferencia', payment_id=payment_id)  
+        return redirect('detalle_transferenciaGPT3', payment_id=payment_id)  
 
 
 @login_required
@@ -306,7 +306,7 @@ class CrearBulkTransferView(View):
                 f.write(f"Bulk AML info for {bulk.payment_id}\n")
 
             messages.success(request, "Transferencia masiva creada y archivos generados.")
-            return redirect('listar_transferencias')
+            return redirect('listar_transferenciasGPT3')
 
         return render(request, 'api/GPT3/crear_bulk.html', {
             'bulk_form': bulk_form,
@@ -344,7 +344,7 @@ class EnviarBulkTransferView(View):
         except Exception as e:
             messages.error(request, f"Error al simular envío masivo: {str(e)}")
 
-        return redirect('detalle_transferencia_bulk', payment_id=payment_id)
+        return redirect('detalle_transferencia_bulkGPT3', payment_id=payment_id)
 
 
 @login_required
@@ -371,7 +371,7 @@ class EstadoBulkTransferView(View):
         except Exception as e:
             messages.error(request, f"Error al consultar estado de la transferencia masiva: {str(e)}")
 
-        return redirect('detalle_transferencia_bulk', payment_id=payment_id)
+        return redirect('detalle_transferencia_bulkGPT3', payment_id=payment_id)
 
 
 @login_required
@@ -442,7 +442,7 @@ def retry_second_factor(request, payment_id):
     except Exception as e:
         messages.error(request, f"Error inesperado al aplicar segundo factor: {str(e)}")
 
-    return redirect('detalle_transferencia', payment_id=payment_id)
+    return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
 
 
 def postal_address_list_view(request):
@@ -515,10 +515,10 @@ def create_account(request):
         form = AccountForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('account_listGPT')
+            return redirect('account_listGPT3')
     else:
         form = AccountForm()
-    return render(request, 'api/GPT/create_account.html', {'form': form})
+    return render(request, 'api/GPT3/create_account.html', {'form': form})
 
 
 def create_amount(request):
@@ -526,10 +526,10 @@ def create_amount(request):
         form = AmountForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('amount_listGPT')
+            return redirect('amount_listGPT3')
     else:
         form = AmountForm()
-    return render(request, 'api/GPT/create_amount.html', {'form': form})
+    return render(request, 'api/GPT3/create_amount.html', {'form': form})
 
 
 def create_financial_institution(request):
@@ -537,10 +537,10 @@ def create_financial_institution(request):
         form = FinancialInstitutionForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('financial_institution_listGPT')
+            return redirect('financial_institution_listGPT3')
     else:
         form = FinancialInstitutionForm()
-    return render(request, 'api/GPT/create_financial_institution.html', {'form': form})
+    return render(request, 'api/GPT3/create_financial_institution.html', {'form': form})
 
 
 def create_postal_address(request):
@@ -548,10 +548,10 @@ def create_postal_address(request):
         form = AddressForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('postal_address_listGPT')
+            return redirect('postal_address_listGPT3')
     else:
         form = AddressForm()
-    return render(request, 'api/GPT/create_postal_address.html', {'form': form})
+    return render(request, 'api/GPT3/create_postal_address.html', {'form': form})
 
 
 def create_payment_identification(request):
@@ -559,10 +559,10 @@ def create_payment_identification(request):
         form = PaymentIdentificationForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('initiate_transferGPT')
+            return redirect('initiate_transferGPT3')
     else:
         form = PaymentIdentificationForm()
-    return render(request, 'api/GPT/create_payment_identification.html', {'form': form})
+    return render(request, 'api/GPT3/create_payment_identification.html', {'form': form})
 
 
 def create_debtor(request):
@@ -570,10 +570,10 @@ def create_debtor(request):
         form = DebtorForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('debtor_listGPT')
+            return redirect('debtor_listGPT3')
     else:
         form = DebtorForm()
-    return render(request, 'api/GPT/create_debtor.html', {'form': form})
+    return render(request, 'api/GPT3/create_debtor.html', {'form': form})
 
 
 def create_creditor(request):
@@ -581,9 +581,9 @@ def create_creditor(request):
         form = CreditorForm(request.POST)
         if form.is_valid():
             form.save()
-            return redirect('creditor_listGPT')
+            return redirect('creditor_listGPT3')
     else:
         form = CreditorForm()
-    return render(request, 'api/GPT/create_creditor.html', {'form': form})
+    return render(request, 'api/GPT3/create_creditor.html', {'form': form})
 
 
