@@ -31,7 +31,7 @@ def generar_xml_pain001(transferencia, payment_id):
 
     pmt_tp_inf = ET.SubElement(pmt_inf, "PmtTpInf")
     svc_lvl = ET.SubElement(pmt_tp_inf, "SvcLvl")
-    ET.SubElement(svc_lvl, "Cd").text = "SEPA"
+    ET.SubElement(svc_lvl, "Cd").text = "INST"
 
     dbtr = ET.SubElement(pmt_inf, "Dbtr")
     ET.SubElement(dbtr, "Nm").text = transferencia.debtor.debtor_name

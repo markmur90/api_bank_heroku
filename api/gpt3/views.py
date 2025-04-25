@@ -169,9 +169,14 @@ def enviar_transferencia(request, payment_id):
         "paymentTypeInformation": {
             "serviceLevel": {
                 "serviceLevelCode": "INST"
+            },
+            "localInstrument": {
+                "localInstrumentCode": "INST"
+            },
+            "categoryPurpose": {
+                "categoryPurposeCode": "SALA"
             }
-        },
-
+        }
     }
 
     try:

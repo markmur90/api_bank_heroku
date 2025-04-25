@@ -59,6 +59,50 @@ class InstructedAmount(models.Model):
         return f"{self.amount} {self.currency}"
 
 
+SERVICE_LEVEL_CHOICES = [
+    ('SEPA', 'SEPA estándar'),
+    ('URGENT', 'Urgente'),
+    ('INST', 'SEPA Instantánea'),
+]
+
+LOCAL_INSTRUMENT_CHOICES = [
+    ('INST', 'SEPA Instantáneo'),
+    ('CORE', 'Adeudo Directo SEPA CORE'),
+    ('B2B', 'Adeudo Directo SEPA B2B'),
+    ('URGP', 'Pago Urgente Europeo'),
+]
+
+CATEGORY_PURPOSE_CHOICES = [
+    ('SALA', 'Salario'),
+    ('TAXS', 'Impuestos'),
+    ('SUPP', 'Proveedores'),
+    ('CORT', 'Pago de préstamo'),
+    ('GDSV', 'Bienes y servicios'),
+]
+
+class PaymentTypeInformation(models.Model):
+    service_level_code = models.CharField(
+        max_length=10,
+        choices=SERVICE_LEVEL_CHOICES,
+        default='INST'
+    )
+    local_instrument_code = models.CharField(
+        max_length=35,
+        choices=LOCAL_INSTRUMENT_CHOICES,
+        default='INST',
+        blank=True,
+        null=True
+    )
+    category_purpose_code = models.CharField(
+        max_length=35,
+        choices=CATEGORY_PURPOSE_CHOICES,
+        default='GDSV',
+        blank=True,
+        null=True
+    )
+
+    
+
 class SepaCreditTransfer(models.Model):
     payment_id = models.CharField(max_length=35, unique=True)
     auth_id = models.CharField(max_length=70, blank=True, null=True)
@@ -75,7 +119,7 @@ class SepaCreditTransfer(models.Model):
         ('CANC', 'Cancelada'),
         ('PDNG', 'Pendiente')
     ])
-    purpose_code = models.CharField(max_length=4)
+    purpose_code = models.CharField(max_length=4, default='GDSV')
     requested_execution_date = models.DateField()
     remittance_information_structured = models.CharField(max_length=140, blank=True, null=True)
     remittance_information_unstructured = models.CharField(max_length=140, blank=True, null=True)
@@ -88,7 +132,23 @@ class SepaCreditTransfer(models.Model):
     payment_identification = models.ForeignKey(PaymentIdentification, on_delete=models.CASCADE)
     instructed_amount = models.ForeignKey(InstructedAmount, on_delete=models.CASCADE)
 
+    payment_type_information = models.OneToOneField(
+        PaymentTypeInformation,
+        on_delete=models.CASCADE,
+        default=None,
+        null=True,
+        blank=True
+    )
+
+    def save(self, *args, **kwargs):
+        # Asignar automáticamente servicio INST si no se especifica
+        if not self.payment_type_information:
+            pti = PaymentTypeInformation.objects.create(service_level_code='INST')
+            self.payment_type_information = pti
+        super().save(*args, **kwargs)
+        
     created_at = models.DateTimeField(auto_now_add=True)
+    
     def get_status_color(self):
         return {
             'PDNG': 'warning',

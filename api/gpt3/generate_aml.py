@@ -16,7 +16,7 @@ def generar_archivo_aml(transferencia, payment_id):
     transaction = ET.SubElement(root, "Transaction")
 
     ET.SubElement(transaction, "TransactionID").text = transferencia.payment_id
-    ET.SubElement(transaction, "TransactionType").text = "SEPA"
+    ET.SubElement(transaction, "TransactionType").text = "INST"
     ET.SubElement(transaction, "ExecutionDate").text = transferencia.requested_execution_date.strftime("%Y-%m-%dT%H:%M:%S")
 
     amount = ET.SubElement(transaction, "Amount")
