@@ -2556,6 +2556,78 @@
   }
 },
 {
+  "model": "auth.permission",
+  "pk": 285,
+  "fields": {
+    "name": "Can add amount",
+    "content_type": 72,
+    "codename": "add_amount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 286,
+  "fields": {
+    "name": "Can change amount",
+    "content_type": 72,
+    "codename": "change_amount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 287,
+  "fields": {
+    "name": "Can delete amount",
+    "content_type": 72,
+    "codename": "delete_amount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 288,
+  "fields": {
+    "name": "Can view amount",
+    "content_type": 72,
+    "codename": "view_amount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 289,
+  "fields": {
+    "name": "Can add payment type information",
+    "content_type": 73,
+    "codename": "add_paymenttypeinformation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 290,
+  "fields": {
+    "name": "Can change payment type information",
+    "content_type": 73,
+    "codename": "change_paymenttypeinformation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 291,
+  "fields": {
+    "name": "Can delete payment type information",
+    "content_type": 73,
+    "codename": "delete_paymenttypeinformation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 292,
+  "fields": {
+    "name": "Can view payment type information",
+    "content_type": 73,
+    "codename": "view_paymenttypeinformation"
+  }
+},
+{
   "model": "contenttypes.contenttype",
   "pk": 1,
   "fields": {
@@ -3124,11 +3196,27 @@
   }
 },
 {
+  "model": "contenttypes.contenttype",
+  "pk": 72,
+  "fields": {
+    "app_label": "gpt3",
+    "model": "amount"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 73,
+  "fields": {
+    "app_label": "gpt3",
+    "model": "paymenttypeinformation"
+  }
+},
+{
   "model": "authentication.customuser",
   "pk": 1,
   "fields": {
-    "password": "pbkdf2_sha256$1000000$M9mBk48t5ZDexM6nFqDnsW$XvnLt8SMBfTQMdP9DmrUbxu4RC8g0Wn0CHaCha9/n4o=",
-    "last_login": "2025-04-25T03:18:44.253Z",
+    "password": "pbkdf2_sha256$1000000$Y8RkIHHOB5dtCOE0SKA9ur$iAyaYU5OAJd7mtMoU8ZZ5mkC16xFp0REmZV2dk+JJws=",
+    "last_login": null,
     "is_superuser": true,
     "email": "j.moltke@db.com",
     "username": "493069k1",
@@ -3137,136 +3225,6 @@
     "is_staff": true,
     "groups": [],
     "user_permissions": []
-  }
-},
-{
-  "model": "sct.address",
-  "pk": 1,
-  "fields": {
-    "country": "DE",
-    "street_and_house_number": "TAUNUSANLAGE 12",
-    "zip_code_and_city": "60325 FRANKFURT"
-  }
-},
-{
-  "model": "sct.address",
-  "pk": 2,
-  "fields": {
-    "country": "DE",
-    "street_and_house_number": "WESELER STRABE 230",
-    "zip_code_and_city": "48151 MÜNSTER"
-  }
-},
-{
-  "model": "sct.debtor",
-  "pk": 1,
-  "fields": {
-    "debtor_name": "MIRYA TRADING CO LTD",
-    "debtor_postal_address": 1
-  }
-},
-{
-  "model": "sct.creditor",
-  "pk": 1,
-  "fields": {
-    "creditor_name": "MOHAMMAD REZA NAJAFI KALASHI",
-    "creditor_postal_address": 2
-  }
-},
-{
-  "model": "sct.account",
-  "pk": 1,
-  "fields": {
-    "iban": "DE86500700100925993805",
-    "currency": "EUR"
-  }
-},
-{
-  "model": "sct.account",
-  "pk": 2,
-  "fields": {
-    "iban": "DE41400501500154813455",
-    "currency": "EUR"
-  }
-},
-{
-  "model": "sct.instructedamount",
-  "pk": 1,
-  "fields": {
-    "amount": "618.25",
-    "currency": "EUR"
-  }
-},
-{
-  "model": "sct.creditoragent",
-  "pk": 1,
-  "fields": {
-    "financial_institution_id": "WELADED1MST"
-  }
-},
-{
-  "model": "gpt.postaladdress",
-  "pk": 1,
-  "fields": {
-    "country": "DE",
-    "zip_code_and_city": "60325 FRANKFURT",
-    "street_and_house_number": "TAUNUSANLAGE 12"
-  }
-},
-{
-  "model": "gpt.postaladdress",
-  "pk": 2,
-  "fields": {
-    "country": "DE",
-    "zip_code_and_city": "48151 MÜNSTER",
-    "street_and_house_number": "WESELER STRABE 230"
-  }
-},
-{
-  "model": "gpt.debtor",
-  "pk": 1,
-  "fields": {
-    "debtor_name": "MIRYA TRADING CO LTD",
-    "postal_address": 1
-  }
-},
-{
-  "model": "gpt.creditor",
-  "pk": 1,
-  "fields": {
-    "creditor_name": "MOHAMMAD REZA NAJAFI KALASHI",
-    "postal_address": 2
-  }
-},
-{
-  "model": "gpt.account",
-  "pk": 1,
-  "fields": {
-    "iban": "DE41400501500154813455",
-    "currency": "EUR"
-  }
-},
-{
-  "model": "gpt.account",
-  "pk": 2,
-  "fields": {
-    "iban": "DE86500700100925993805",
-    "currency": "EUR"
-  }
-},
-{
-  "model": "gpt.financialinstitution",
-  "pk": 1,
-  "fields": {
-    "financial_institution_id": "WELADED1MST"
-  }
-},
-{
-  "model": "gpt.amount",
-  "pk": 1,
-  "fields": {
-    "amount": "618.25",
-    "currency": "EUR"
   }
 }
 ]
