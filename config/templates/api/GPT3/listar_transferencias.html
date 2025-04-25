@@ -1,24 +1,120 @@
 {% extends 'base.html' %}
-{% block title %}Lista de Transferencias{% endblock %}
+
 {% block content %}
-<h1>Transferencias Realizadas</h1>
-<table class="table table-striped">
-  <thead>
-    <tr><th>ID</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr>
-  </thead>
-  <tbody>
-    {% for t in transferencias %}
-    <tr>
-      <td>{{ t.payment_id }}</td>
-      <td>{{ t.get_transaction_status_display }}</td>
-      <td>{{ t.created_at }}</td>
-      <td>
-        <a href="/{{ t.payment_id }}/" class="btn btn-sm btn-info">Ver</a>
-        <a href="/{{ t.payment_id }}/enviar/" class="btn btn-sm btn-primary">Enviar</a>
-        <a href="/{{ t.payment_id }}/estado/" class="btn btn-sm btn-warning">Estado</a>
-      </td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
+<div class="d-flex justify-content-between mb-4">
+    <h2>Transferencias SEPA JSON</h2>
+    <a href="{% url 'initiate_transferGPT' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nueva Transferencia
+    </a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Deudor</th>
+                <th>Beneficiario</th>
+                <th>Monto</th>
+                <th>Estado</th>
+                <th>Fecha Creación</th>
+                <th>Acciones</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in transferencias %}
+            <tr>
+                <td class="text-muted">{{ t.payment_id|truncatechars:12 }}</td>
+                <td>{{ t.debtor.debtor_name }}</td>
+                <td>{{ t.creditor.creditor_name }}</td>
+                <td class="fw-bold">
+                    {{ t.instructed_amount.amount }} {{ t.instructed_amount.currency }}
+                </td>
+                <td>
+                    <span class="badge bg-{{ t.status_color }}">
+                        {{ t.get_transaction_status_display }}
+                    </span>
+                </td>
+                <td>{{ t.created_at|date:"d/m/Y H:i" }}</td>
+
+                <td class="text-end">
+                  <a href="/{{ t.payment_id }}/" class="btn btn-sm btn-info">Ver</a>
+                  <a href="/{{ t.payment_id }}/enviar/" class="btn btn-sm btn-primary">Enviar</a>
+                  <a href="/{{ t.payment_id }}/estado/" class="btn btn-sm btn-warning">Estado</a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center py-4">
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No se encontraron transferencias
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mt-4">
+    <div>
+        Mostrando {{ transferencias.start_index }} - {{ transferencias.end_index }} de {{ transferencias.paginator.count }} transferencias
+    </div>
+    <nav>
+        <ul class="pagination mb-0">
+            {% if transferencias.has_previous %}
+            <li class="page-item">
+                <a class="page-link" href="?page=1" aria-label="Primera">
+                    <span aria-hidden="true">&laquo;&laquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ transferencias.previous_page_number }}" aria-label="Anterior">
+                    <span aria-hidden="true">&laquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&laquo;&laquo;</span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">&laquo;</span>
+            </li>
+            {% endif %}
+
+            {% for num in transferencias.paginator.page_range %}
+            {% if transferencias.number == num %}
+            <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num > transferencias.number|add:'-3' and num < transferencias.number|add:'3' %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+
+            {% if transferencias.has_next %}
+            <li class="page-item">
+                <a class="page-link" href="?page={{ transferencias.next_page_number }}" aria-label="Siguiente">
+                    <span aria-hidden="true">&raquo;</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link" href="?page={{ transferencias.paginator.num_pages }}" aria-label="Última">
+                    <span aria-hidden="true">&raquo;&raquo;</span>
+                </a>
+            </li>
+            {% else %}
+            <li class="page-item disabled">
+                <span class="page-link">&raquo;</span>
+            </li>
+            <li class="page-item disabled">
+                <span class="page-link">&raquo;&raquo;</span>
+            </li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
 {% endblock %}
