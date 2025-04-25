@@ -31,7 +31,13 @@ def generar_xml_pain001(transferencia, payment_id):
 
     pmt_tp_inf = ET.SubElement(pmt_inf, "PmtTpInf")
     svc_lvl = ET.SubElement(pmt_tp_inf, "SvcLvl")
-    ET.SubElement(svc_lvl, "Cd").text = "INST"
+    ET.SubElement(svc_lvl, "Cd").text = transferencia.payment_type_information.service_level_code or "INST"
+    if transferencia.payment_type_information.local_instrument_code:
+        lcl_instrm = ET.SubElement(pmt_tp_inf, "LclInstrm")
+        ET.SubElement(lcl_instrm, "Cd").text = transferencia.payment_type_information.local_instrument_code
+    if transferencia.payment_type_information.category_purpose_code:
+        ctgy_purp = ET.SubElement(pmt_tp_inf, "CtgyPurp")
+        ET.SubElement(ctgy_purp, "Cd").text = transferencia.payment_type_information.category_purpose_code
 
     dbtr = ET.SubElement(pmt_inf, "Dbtr")
     ET.SubElement(dbtr, "Nm").text = transferencia.debtor.debtor_name
