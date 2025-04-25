@@ -587,12 +587,3 @@ def create_creditor(request):
     return render(request, 'api/GPT/create_creditor.html', {'form': form})
 
 
-def postal_address_list_view(request):
-    addresses = PostalAddress.objects.all().order_by('-id')
-    paginator = Paginator(addresses, 10)
-    page = request.GET.get('page', 1)
-    try:
-        addresses_paginated = paginator.page(page)
-    except (EmptyPage, PageNotAnInteger):
-        addresses_paginated = paginator.page(1)
-    return render(request, 'api/GPT/postal_address_list.html', {'addresses': addresses_paginated})
