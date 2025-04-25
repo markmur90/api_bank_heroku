@@ -11,16 +11,16 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from .generate_aml import generar_archivo_aml
-from .generate_xml import generar_xml_pain001
+from api.gpt3.generate_aml import generar_archivo_aml
+from api.gpt3.generate_xml import generar_xml_pain001
 
-from .models import *
-from .forms import *
-from .utils import (
+from api.gpt3.models import *
+from api.gpt3.forms import *
+from api.gpt3.utils import (
     build_complete_sepa_headers, generar_pdf_transferencia, get_oauth_session, build_headers, attach_common_headers,
     validate_headers, handle_error_response
 )
-from .helpers import generate_deterministic_id, generate_payment_id, obtener_ruta_log_transferencia, obtener_ruta_schema_transferencia
+from api.gpt3.helpers import generate_deterministic_id, generate_payment_id, obtener_ruta_log_transferencia, obtener_ruta_schema_transferencia
 
 
 @login_required

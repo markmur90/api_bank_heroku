@@ -2,7 +2,7 @@ import logging
 import os
 import xml.etree.ElementTree as ET
 from datetime import datetime
-from .helpers import obtener_ruta_schema_transferencia
+from api.gpt3.helpers import obtener_ruta_schema_transferencia
 
 logger = logging.getLogger("bank_services")
 

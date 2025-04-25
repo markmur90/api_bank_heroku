@@ -4,7 +4,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from typing import Optional
 
-from .helpers import obtener_ruta_schema_transferencia
+from api.gpt3.helpers import obtener_ruta_schema_transferencia
 
 logger = logging.getLogger("bank_services")
 
@@ -16,7 +16,7 @@ def generar_xml_pain001(transferencia, payment_id):
 
     grp_hdr = ET.SubElement(cstmr_cdt_trf_initn, "GrpHdr")
     ET.SubElement(grp_hdr, "MsgId").text = transferencia.payment_id
-    ET.SubElement(grp_hdr, "CreDtTm").text = datetime.utcnow().isoformat()
+    ET.SubElement(grp_hdr, "CreDtTm").text = transferencia.requested_execution_date.strftime("%Y-%m-%dT%H:%M:%S")
     ET.SubElement(grp_hdr, "NbOfTxs").text = "1"
     ET.SubElement(grp_hdr, "CtrlSum").text = str(transferencia.instructed_amount.amount)
     initg_pty = ET.SubElement(grp_hdr, "InitgPty")

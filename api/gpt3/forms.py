@@ -1,7 +1,7 @@
 from datetime import datetime
 from django import forms
 import pytz
-from .models import *
+from api.gpt3.models import *
 
 
 class AddressForm(forms.ModelForm):

@@ -14,9 +14,9 @@ from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 from datetime import datetime
 
-from .helpers import obtener_ruta_schema_transferencia
+from api.gpt3.helpers import obtener_ruta_schema_transferencia
 
-from .models import SepaCreditTransfer
+from api.gpt3.models import SepaCreditTransfer
 
 logger = logging.getLogger(__name__)
 
@@ -40,10 +40,11 @@ DEFAULT_APIKEY = getattr(settings, "APIKEY", "MI_API_KEY")
 def build_complete_sepa_headers(request, method: str):
     method = method.upper()
     headers = {}
+    
     headers['idempotency-id'] = request.headers.get('idempotency-id', str(uuid.uuid4()))
     headers['otp'] = (
         request.POST.get('otp') if method == 'POST'
-        else request.headers.get('otp', 'PUSHTAN') if method in ['PATCH', 'DELETE']
+        else request.headers.get('otp', 'SEPA_TRANSFER_GRANT') if method in ['PATCH', 'DELETE']
         else None
     )
     headers['Correlation-Id'] = request.headers.get('Correlation-Id', str(uuid.uuid4()))
@@ -127,53 +128,10 @@ def get_oauth_session(request):
     return OAuth2Session(client_id=OAUTH_CONFIG['client_id'], token={'access_token': ACCESS_TOKEN, 'token_type': 'Bearer'})
 
 
-def generate_sepa_json_payload(transfer):
-    """Genera el JSON de transferencia SEPA según especificación del banco"""
-    return {
-        "creditor": {
-            "name": transfer.creditor.creditor_name,
-            "account": {
-                "iban": transfer.creditor_account.iban,
-                "currency": transfer.creditor_account.currency
-            },
-            "agent": {
-                "bic": transfer.creditor_agent.financial_institution_id if transfer.creditor_agent else None
-            },
-            "address": {
-                "country": transfer.creditor.postal_address.country,
-                "zipCodeAndCity": transfer.creditor.postal_address.zip_code_and_city,
-                "streetAndHouseNumber": transfer.creditor.postal_address.street_and_house_number
-            }
-        },
-        "debtor": {
-            "name": transfer.debtor.debtor_name,
-            "account": {
-                "iban": transfer.debtor_account.iban,
-                "currency": transfer.debtor_account.currency
-            },
-            "address": {
-                "country": transfer.debtor.postal_address.country,
-                "zipCodeAndCity": transfer.debtor.postal_address.zip_code_and_city,
-                "streetAndHouseNumber": transfer.debtor.postal_address.street_and_house_number
-            }
-        },
-        "amount": {
-            "currency": transfer.instructed_amount.currency,
-            "amount": str(transfer.instructed_amount.amount)
-        },
-        "remittanceInformationUnstructured": transfer.remittance_information_unstructured,
-        "requestedExecutionDate": transfer.requested_execution_date.strftime('%Y-%m-%d'),
-        "endToEndId": transfer.payment_identification.end_to_end_id,
-        "instructionId": transfer.payment_identification.instruction_id,
-        "purposeCode": transfer.purpose_code,
-        "priority": "High"  # Agregar prioridad (Instant SEPA Credit Transfer)
-    }
-
-
-def generar_pdf_transferencia(transfers):
-    creditor_name = transfers.creditor.creditor_name.replace(" ", "_")
+def generar_pdf_transferencia(transferencia):
+    creditor_name = transferencia.creditor.creditor_name.replace(" ", "_")
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    payment_reference = transfers.payment_id
+    payment_reference = transferencia.payment_id
     carpeta_transferencia = obtener_ruta_schema_transferencia(payment_reference)
     pdf_filename = f"{creditor_name}_{timestamp}_{payment_reference}.pdf"
     pdf_path = os.path.join(carpeta_transferencia, pdf_filename)
@@ -185,7 +143,7 @@ def generar_pdf_transferencia(transfers):
     current_y = 650
 
     header_data = [["Creation Date", datetime.now().strftime('%d/%m/%Y %H:%M:%S')],
-                   ["Payment Reference", transfers.payment_id]]
+                   ["Payment Reference", transferencia.payment_id]]
     header_table = Table(header_data, colWidths=[150, 300])
     header_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
@@ -196,9 +154,10 @@ def generar_pdf_transferencia(transfers):
     current_y -= 120
 
     debtor_data = [["Debtor Information", ""],
-                   ["Name", transfers.debtor.debtor_name],
-                   ["IBAN", transfers.debtor_account.iban],
-                   ["Address", f"{transfers.debtor.postal_address.street_and_house_number}, {transfers.debtor.postal_address.zip_code_and_city}, {transfers.debtor.postal_address.country}"]]
+                   ["Name", transferencia.debtor.debtor_name],
+                   ["IBAN", transferencia.debtor_account.iban],
+                   ["CUSROMER ID", transferencia.debtor_account.customer_id],
+                   ["Address", f"{transferencia.debtor.postal_address.street_and_house_number}, {transferencia.debtor.postal_address.zip_code_and_city}, {transferencia.debtor.postal_address.country}"]]
     debtor_table = Table(debtor_data, colWidths=[150, 300])
     debtor_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
@@ -209,10 +168,10 @@ def generar_pdf_transferencia(transfers):
     current_y -= 120
 
     creditor_data = [["Creditor Information", ""],
-                     ["Name", transfers.creditor.creditor_name],
-                     ["IBAN", transfers.creditor_account.iban],
-                     ["BIC", transfers.creditor_agent.financial_institution_id],
-                     ["Address", f"{transfers.creditor.postal_address.street_and_house_number}, {transfers.creditor.postal_address.zip_code_and_city}, {transfers.creditor.postal_address.country}"]]
+                     ["Name", transferencia.creditor.creditor_name],
+                     ["IBAN", transferencia.creditor_account.iban],
+                     ["BIC", transferencia.creditor_agent.financial_institution_id],
+                     ["Address", f"{transferencia.creditor.postal_address.street_and_house_number}, {transferencia.creditor.postal_address.zip_code_and_city}, {transferencia.creditor.postal_address.country}"]]
     creditor_table = Table(creditor_data, colWidths=[150, 300])
     creditor_table.setStyle(TableStyle([
         ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
@@ -223,13 +182,13 @@ def generar_pdf_transferencia(transfers):
     current_y -= 200
 
     transfer_data = [["Transfer Details", ""],
-                     ["Amount", f"{transfers.instructed_amount.amount} {transfers.instructed_amount.currency}"],
-                     ["Requested Execution Date", transfers.requested_execution_date.strftime('%d/%m/%Y')],
-                     ["Purpose Code", transfers.purpose_code],
-                     ["Remittance Info (Structured)", transfers.remittance_information_structured or 'N/A'],
-                     ["Remittance Info (Unstructured)", transfers.remittance_information_unstructured or 'N/A'],
-                     ["Auth ID", transfers.auth_id],
-                     ["Transaction Status", transfers.transaction_status],
+                     ["Amount", f"{transferencia.instructed_amount.amount} {transferencia.instructed_amount.currency}"],
+                     ["Requested Execution Date", transferencia.requested_execution_date.strftime('%d/%m/%Y')],
+                     ["Purpose Code", transferencia.purpose_code],
+                     ["Remittance Info (Structured)", transferencia.remittance_information_structured or 'N/A'],
+                     ["Remittance Info (Unstructured)", transferencia.remittance_information_unstructured or 'N/A'],
+                     ["Auth ID", transferencia.auth_id],
+                     ["Transaction Status", transferencia.transaction_status],
                      ["Priority", "High (Instant SEPA Credit Transfer)"]]
     transfer_table = Table(transfer_data, colWidths=[200, 250])
     transfer_table.setStyle(TableStyle([
@@ -262,62 +221,56 @@ def generar_pdf_transferencia(transfers):
 
 
 def validate_headers(headers):
-    """
-    Valida las cabeceras requeridas para las solicitudes SEPA.
-    Retorna una lista de mensajes de error si alguna cabecera obligatoria falta 
-    o no cumple el formato esperado.
-    """
     errors = []
     idempotency_id = headers.get('idempotency-id', '')
     if not isinstance(idempotency_id, str):
-        idempotency_id = str(idempotency_id)  # Normalizar a cadena
+        idempotency_id = str(idempotency_id)
+        
     if 'idempotency-id' not in headers or not re.match(r'^[A-Fa-f0-9\-]{36}$', idempotency_id):
         errors.append("Cabecera 'idempotency-id' es requerida y debe ser un UUID válido.")
+        
     if 'otp' not in headers or not headers.get('otp'):
         errors.append("Cabecera 'otp' es requerida.")
+        
     correlation_id = headers.get('Correlation-Id')
     if correlation_id is not None and len(correlation_id) > 50:
         errors.append("Cabecera 'Correlation-Id' no debe exceder los 50 caracteres.")
+        
     if 'apikey' not in headers or not headers.get('apikey'):
         errors.append("Cabecera 'apikey' es requerida.")
+        
     if 'process-id' in headers and not headers.get('process-id'):
         errors.append("Cabecera 'process-id' no debe estar vacía si está presente.")
+        
     if 'previewsignature' in headers and not headers.get('previewsignature'):
         errors.append("Cabecera 'previewsignature' no debe estar vacía si está presente.")
+        
     if 'Origin' not in headers or not headers.get('Origin'):
         errors.append("Cabecera 'Origin' es requerida.")
+        
     if 'x-request-id' not in headers or not re.match(r'^[A-Fa-f0-9\-]{36}$', headers.get('x-request-id', '')):
         errors.append("Cabecera 'x-request-id' es requerida y debe ser un UUID válido.")
+        
     return errors
 
 
 def build_headers(request, external_method):
-    """
-    Construye un diccionario de cabeceras base para la llamada a la API SEPA, 
-    tomando los valores de la solicitud Django (`request`). El parámetro 
-    `external_method` indica el método HTTP que usará la API externa 
-    (por ejemplo: 'POST', 'GET', 'PATCH', 'DELETE').
-    """
+
     method = external_method.upper()
     headers = {}
     
     # Cabecera idempotency-id
     if method in ['POST', 'GET']:
-        # Generar nuevo UUID si no se proporciona (p. ej. iniciar transferencia o consultar estado)
         headers['idempotency-id'] = request.headers.get('idempotency-id', str(uuid.uuid4()))
     else:
-        # Requerir el idempotency-id proporcionado (p. ej. cancelación o segundo factor)
         headers['idempotency-id'] = request.headers.get('idempotency-id')
     
     # Cabecera OTP
     if method == 'POST':
-        # En iniciar transferencia, usar OTP del formulario o valor por defecto para generar desafío
         headers['otp'] = request.POST.get('otp', 'SEPA_TRANSFER_GRANT')
     elif method in ['PATCH', 'DELETE']:
-        # En cancelación o segundo factor, tomar OTP de los encabezados de la petición
         headers['otp'] = request.headers.get('otp')
     
-    # (Para 'GET', la cabecera OTP no se incluye ya que no se requiere segundo factor en consulta de estado)
     # Cabecera Correlation-Id
     if method == 'POST':
         headers['Correlation-Id'] = request.headers.get('Correlation-Id', str(uuid.uuid4()))
@@ -350,20 +303,14 @@ def build_headers(request, external_method):
 
 
 def attach_common_headers(headers, external_method):
-    # Autenticación con token Bearer
     headers['Authorization'] = f"Bearer {ACCESS_TOKEN}"
-    
-    # Aceptación de respuesta JSON en todos los casos
     headers['Accept'] = 'application/json'
-    
-    # En métodos con cuerpo (POST/PATCH), especificar el tipo de contenido JSON
     if external_method.upper() in ['POST', 'PATCH']:
         headers['Content-Type'] = 'application/json'
     return headers
 
 
 def validate_parameters(data):
-    """Valida los parámetros requeridos en el cuerpo de la solicitud."""
     errors = []
     if 'iban' in data and not re.match(r'^[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}$', data['iban']):
         errors.append("El IBAN proporcionado no es válido.")
