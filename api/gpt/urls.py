@@ -26,25 +26,13 @@ urlpatterns = [
     # Éxito de cancelación
     path('transfer/<uuid:payment_id>/cancel-success/', views.cancel_success_view, name='cancel_successGPT'),
 
-    # Crear Account
+    # Crear
     path('create/account/', views.create_account, name='create_accountGPT'),
-
-    # Crear Amount
     path('create/amount/', views.create_amount, name='create_amountGPT'),
-
-    # Crear Financial Institution
     path('create/financial-institution/', views.create_financial_institution, name='create_financial_institutionGPT'),
-
-    # Crear Postal Address
     path('create/postal-address/', views.create_postal_address, name='create_postal_addressGPT'),
-
-    # Crear Payment Identification
     path('create/payment-identification/', views.create_payment_identification, name='create_payment_identificationGPT'),
-
-    # Crear Debtor
     path('create/debtor/', views.create_debtor, name='create_debtorGPT'),
-
-    # Crear Creditor
     path('create/creditor/', views.create_creditor, name='create_creditorGPT'),
 
     # Listados
