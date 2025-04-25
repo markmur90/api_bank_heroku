@@ -1,6 +1,7 @@
 import hashlib
 from datetime import datetime
 import os
+import uuid
 
 LOG_DIR = os.path.join("logs", "transferencias")
 SCHEMA_DIR = os.path.join("schemas", "transferencias")
@@ -8,6 +9,10 @@ SCHEMA_DIR = os.path.join("schemas", "transferencias")
 
 def generate_payment_id(prefix=""):
     return f"{prefix}{datetime.utcnow().strftime('%Y%m%d%H%M%S%f')}"[:35]
+
+
+def generate_payment_id_uuid() -> str:
+    return uuid.uuid4()
 
 
 def generate_deterministic_id(*args, prefix=""):

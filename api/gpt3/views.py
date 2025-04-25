@@ -20,7 +20,7 @@ from api.gpt3.utils import (
     build_complete_sepa_headers, generar_pdf_transferencia, get_oauth_session, build_headers, attach_common_headers,
     validate_headers, handle_error_response
 )
-from api.gpt3.helpers import generate_deterministic_id, generate_payment_id, obtener_ruta_log_transferencia, obtener_ruta_schema_transferencia
+from api.gpt3.helpers import generate_deterministic_id, generate_payment_id, generate_payment_id_uuid, obtener_ruta_log_transferencia, obtener_ruta_schema_transferencia
 
 
 @login_required
@@ -48,7 +48,7 @@ def crear_transferencia(request):
         form = SepaCreditTransferForm(request.POST)
         if form.is_valid():
             transferencia = form.save(commit=False)
-            transferencia.payment_id = generate_payment_id(prefix="TRF")
+            transferencia.payment_id = generate_payment_id_uuid()
 
             # Generar instruction_id determinista sin prefijo
             transferencia.payment_identification.instruction_id = generate_deterministic_id(
