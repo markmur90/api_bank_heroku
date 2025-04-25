@@ -545,12 +545,12 @@ def create_financial_institution(request):
 
 def create_postal_address(request):
     if request.method == 'POST':
-        form = PostalAddressForm(request.POST)
+        form = AddressForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect('postal_address_listGPT')
     else:
-        form = PostalAddressForm()
+        form = AddressForm()
     return render(request, 'api/GPT/create_postal_address.html', {'form': form})
 
 

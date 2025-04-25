@@ -28,6 +28,14 @@ class Creditor(models.Model):
         return self.creditor_name
 
 
+class Amount(models.Model):
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    currency = models.CharField(max_length=3, default='EUR')
+
+    def __str__(self):
+        return f"{self.currency} - {self.amount}"
+
+
 class Account(models.Model):
     iban = models.CharField(max_length=34)
     currency = models.CharField(max_length=3)
@@ -130,7 +138,7 @@ class SepaCreditTransfer(models.Model):
     creditor_account = models.ForeignKey(Account, related_name='creditor_account', on_delete=models.CASCADE)
     creditor_agent = models.ForeignKey(FinancialInstitution, on_delete=models.CASCADE)
     payment_identification = models.ForeignKey(PaymentIdentification, on_delete=models.CASCADE)
-    instructed_amount = models.ForeignKey(InstructedAmount, on_delete=models.CASCADE)
+    instructed_amount = models.ForeignKey(Amount, on_delete=models.CASCADE)
 
     payment_type_information = models.OneToOneField(
         PaymentTypeInformation,

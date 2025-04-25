@@ -45,6 +45,15 @@ class AccountForm(forms.ModelForm):
             'currency': forms.TextInput(attrs={'class': 'form-control'})
         }
 
+class AmountForm(forms.ModelForm):
+    class Meta:
+        model = Amount
+        fields = ['amount', 'currency']
+        widgets = {
+            'amount': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),
+            'currency': forms.TextInput(attrs={'pattern': '[A-Z]{3}', 'class': 'form-control'}),
+        }
+        
 
 class FinancialInstitutionForm(forms.ModelForm):
     class Meta:
