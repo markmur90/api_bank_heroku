@@ -8,6 +8,7 @@ from django.views import View
 import xml.etree.ElementTree as ET
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from .generate_aml import generar_archivo_aml
 from .generate_xml import generar_xml_pain001
@@ -420,4 +421,70 @@ def retry_second_factor(request, payment_id):
         messages.error(request, f"Error inesperado al aplicar segundo factor: {str(e)}")
 
     return redirect('detalle_transferencia', payment_id=payment_id)
+
+
+def postal_address_list_view(request):
+    addresses = Address.objects.all().order_by('-id')
+    paginator = Paginator(addresses, 10)
+    page = request.GET.get('page', 1)
+    try:
+        addresses_paginated = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        addresses_paginated = paginator.page(1)
+    return render(request, 'api/GPT3/postal_address_list.html', {'addresses': addresses_paginated})
+
+
+def debtor_list_view(request):
+    debtors = Debtor.objects.all().order_by('-id')
+    paginator = Paginator(debtors, 10)
+    page = request.GET.get('page', 1)
+    try:
+        debtors_paginated = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        debtors_paginated = paginator.page(1)
+    return render(request, 'api/GPT3/debtor_list.html', {'debtors': debtors_paginated})
+
+
+def creditor_list_view(request):
+    creditors = Creditor.objects.all().order_by('-id')
+    paginator = Paginator(creditors, 10)
+    page = request.GET.get('page', 1)
+    try:
+        creditors_paginated = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        creditors_paginated = paginator.page(1)
+    return render(request, 'api/GPT3/creditor_list.html', {'creditors': creditors_paginated})
+
+
+def account_list_view(request):
+    accounts = Account.objects.all().order_by('-id')
+    paginator = Paginator(accounts, 10)
+    page = request.GET.get('page', 1)
+    try:
+        accounts_paginated = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        accounts_paginated = paginator.page(1)
+    return render(request, 'api/GPT3/account_list.html', {'accounts': accounts_paginated})
+
+
+def financial_institution_list_view(request):
+    institutions = FinancialInstitution.objects.all().order_by('-id')
+    paginator = Paginator(institutions, 10)
+    page = request.GET.get('page', 1)
+    try:
+        institutions_paginated = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        institutions_paginated = paginator.page(1)
+    return render(request, 'api/GPT3/financial_institution_list.html', {'institutions': institutions_paginated})
+
+
+def amount_list_view(request):
+    amounts = InstructedAmount.objects.all().order_by('-id')
+    paginator = Paginator(amounts, 10)
+    page = request.GET.get('page', 1)
+    try:
+        amounts_paginated = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        amounts_paginated = paginator.page(1)
+    return render(request, 'api/GPT3/amount_list.html', {'amounts': amounts_paginated})
 
