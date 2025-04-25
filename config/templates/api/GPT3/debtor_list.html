@@ -3,7 +3,7 @@
 {% block content %}
 <div class="d-flex justify-content-between mb-4">
     <h2>Deudores</h2>
-    <a href="{% url 'create_debtorGPT' %}" class="btn btn-primary">
+    <a href="{% url 'create_debtorGPT3' %}" class="btn btn-primary">
         <i class="bi bi-plus-circle"></i> Nuevo Deudor
     </a>
 </div>
@@ -14,6 +14,7 @@
             <tr>
                 <th>ID</th>
                 <th>Nombre</th>
+                <th>Customer ID</th>
                 <th>Dirección Postal</th>
             </tr>
         </thead>
@@ -22,6 +23,7 @@
             <tr>
                 <td>{{ debtor.id }}</td>
                 <td>{{ debtor.debtor_name }}</td>
+                <td>{{ debtor.customer_id }}</td>
                 <td>{{ debtor.postal_address }}</td>
             </tr>
             {% empty %}
