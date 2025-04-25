@@ -89,7 +89,18 @@ class SepaCreditTransfer(models.Model):
     instructed_amount = models.ForeignKey(InstructedAmount, on_delete=models.CASCADE)
 
     created_at = models.DateTimeField(auto_now_add=True)
+    def get_status_color(self):
+        return {
+            'PDNG': 'warning',
+            'ACSC': 'success',
+            'RJCT': 'danger',
+            'CANC': 'secondary'
+        }.get(self.transaction_status, 'dark')
 
+    def get_absolute_url(self):
+        from django.urls import reverse
+        return reverse('check_statusGPT3', args=[str(self.payment_id)])
+    
     def __str__(self):
         return f"Transferencia {self.payment_id}"
 

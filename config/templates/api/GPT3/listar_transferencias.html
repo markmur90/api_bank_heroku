@@ -32,14 +32,14 @@
                     {{ t.instructed_amount.amount }} {{ t.instructed_amount.currency }}
                 </td>
                 <td>
-                    <span class="badge bg-{{ t.status_color }}">
+                    <span class="badge bg-{{ t.get_status_color }}">
                         {{ t.get_transaction_status_display }}
                     </span>
                 </td>
                 <td>{{ t.created_at|date:"d/m/Y H:i" }}</td>
 
                 <td class="text-end">
-                  <a href="/{{ t.payment_id }}/" class="btn btn-sm btn-info">Ver</a>
+                  <a href="{{ transfer.get_absolute_url }}" class="btn btn-sm btn-info">Ver</a>
                   <a href="/{{ t.payment_id }}/enviar/" class="btn btn-sm btn-primary">Enviar</a>
                   <a href="/{{ t.payment_id }}/estado/" class="btn btn-sm btn-warning">Estado</a>
                 </td>

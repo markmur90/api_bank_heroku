@@ -239,6 +239,15 @@ def estado_transferencia(request, payment_id):
         else:
             mensaje = handle_error_response(res)
             messages.error(request, f"Error al consultar estado: {mensaje}")
+        return render(request, 'api/GPT3/detalle_transferencia.html', {
+            'transferencia': transferencia,
+            'log': "Log no disponible",
+            'archivos': {
+                'pain001': os.path.join(obtener_ruta_schema_transferencia(payment_id), f"pain001_{payment_id}.xml"),
+                'pain002': os.path.join(obtener_ruta_schema_transferencia(payment_id), f"pain002_{payment_id}.xml"),
+                'aml': os.path.join(obtener_ruta_schema_transferencia(payment_id), f"aml_{payment_id}.txt")
+            }
+        })
 
     except Exception as e:
         messages.error(request, f"Error al consultar estado: {str(e)}")
