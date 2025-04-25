@@ -21,7 +21,7 @@ class DebtorForm(forms.ModelForm):
         fields = '__all__'
         widgets = {
             'debtor_name': forms.TextInput(attrs={'class': 'form-control'}),
-            'customer_id': forms.Select(attrs={'class': 'form-control'}),
+            'customer_id': forms.TextInput(attrs={'class': 'form-control'}),
             'postal_address': forms.Select(attrs={'class': 'form-control'})
         }
 
