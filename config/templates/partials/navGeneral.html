@@ -38,11 +38,11 @@
                 <!-- SEPA Transfers Dropdown -->
                 <li class="nav-item dropdown">
                     <a class="btn btn-outline-light dropdown-toggle me-2" href="#" id="sepa3Dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        SEPA JSON 3
+                        SEPA Instant
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="sepa3Dropdown">
-                        <li><a class="dropdown-item" href="{% url 'listar_transferencias' %}">Transferencias</a></li>
-                        <li><a class="dropdown-item" href="{% url 'crear_transferencia' %}">Nueva Transferencia</a></li>
+                        <li><a class="dropdown-item" href="{% url 'listar_transferenciasGPT3' %}">Transferencias</a></li>
+                        <li><a class="dropdown-item" href="{% url 'crear_transferenciaGPT3' %}">Nueva Transferencia</a></li>
                         <li><a class="dropdown-item" href="{% url 'postal_address_listGPT3' %}">Direcciones Postales</a></li>
                         <li><a class="dropdown-item" href="{% url 'account_listGPT3' %}">Cuentas</a></li>
                         <li><a class="dropdown-item" href="{% url 'financial_institution_listGPT3' %}">Instituciones Financieras</a></li>
