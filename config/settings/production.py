@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'api.sct',
     'api.sepa_payment',
     'api.gpt',
+    'api.gpt3',
 ]
 
 # Middleware
