@@ -1,5 +1,6 @@
 import os
 from datetime import datetime
+from urllib import response
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, HttpResponse, JsonResponse
 from django.contrib import messages
@@ -245,7 +246,8 @@ def estado_transferencia(request, payment_id):
             'archivos': {
                 'pain001': os.path.join(obtener_ruta_schema_transferencia(payment_id), f"pain001_{payment_id}.xml"),
                 'pain002': os.path.join(obtener_ruta_schema_transferencia(payment_id), f"pain002_{payment_id}.xml"),
-                'aml': os.path.join(obtener_ruta_schema_transferencia(payment_id), f"aml_{payment_id}.txt")
+                'aml': os.path.join(obtener_ruta_schema_transferencia(payment_id), f"aml_{payment_id}.txt"),
+            'bank_response': res.json() if res.ok else None
             }
         })
 
