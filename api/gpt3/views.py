@@ -488,3 +488,89 @@ def amount_list_view(request):
         amounts_paginated = paginator.page(1)
     return render(request, 'api/GPT3/amount_list.html', {'amounts': amounts_paginated})
 
+def create_account(request):
+    if request.method == 'POST':
+        form = AccountForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('account_listGPT')
+    else:
+        form = AccountForm()
+    return render(request, 'api/GPT/create_account.html', {'form': form})
+
+
+def create_amount(request):
+    if request.method == 'POST':
+        form = AmountForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('amount_listGPT')
+    else:
+        form = AmountForm()
+    return render(request, 'api/GPT/create_amount.html', {'form': form})
+
+
+def create_financial_institution(request):
+    if request.method == 'POST':
+        form = FinancialInstitutionForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('financial_institution_listGPT')
+    else:
+        form = FinancialInstitutionForm()
+    return render(request, 'api/GPT/create_financial_institution.html', {'form': form})
+
+
+def create_postal_address(request):
+    if request.method == 'POST':
+        form = PostalAddressForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('postal_address_listGPT')
+    else:
+        form = PostalAddressForm()
+    return render(request, 'api/GPT/create_postal_address.html', {'form': form})
+
+
+def create_payment_identification(request):
+    if request.method == 'POST':
+        form = PaymentIdentificationForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('initiate_transferGPT')
+    else:
+        form = PaymentIdentificationForm()
+    return render(request, 'api/GPT/create_payment_identification.html', {'form': form})
+
+
+def create_debtor(request):
+    if request.method == 'POST':
+        form = DebtorForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('debtor_listGPT')
+    else:
+        form = DebtorForm()
+    return render(request, 'api/GPT/create_debtor.html', {'form': form})
+
+
+def create_creditor(request):
+    if request.method == 'POST':
+        form = CreditorForm(request.POST)
+        if form.is_valid():
+            form.save()
+            return redirect('creditor_listGPT')
+    else:
+        form = CreditorForm()
+    return render(request, 'api/GPT/create_creditor.html', {'form': form})
+
+
+def postal_address_list_view(request):
+    addresses = PostalAddress.objects.all().order_by('-id')
+    paginator = Paginator(addresses, 10)
+    page = request.GET.get('page', 1)
+    try:
+        addresses_paginated = paginator.page(page)
+    except (EmptyPage, PageNotAnInteger):
+        addresses_paginated = paginator.page(1)
+    return render(request, 'api/GPT/postal_address_list.html', {'addresses': addresses_paginated})
