@@ -309,3 +309,34 @@ Traceback (most recent call last):
     raise NoReverseMatch(msg)
 django.urls.exceptions.NoReverseMatch: Reverse for 'listar_transferencias' not found. 'listar_transferencias' is not a valid view function or pattern name.
 WARNING 2025-04-25 08:56:44,599 log Not Found: /favicon.ico
+ERROR 2025-04-25 09:20:49,776 middleware Error en /app/gpt3/crear/: SepaCreditTransfer has no payment_identification.
+Traceback (most recent call last):
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/home/markmur88/Documentos/GitHub/api_bank_heroku/api/gpt3/views.py", line 54, in crear_transferencia
+    transferencia.payment_identification.instruction_id = generate_deterministic_id(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/db/models/fields/related_descriptors.py", line 268, in __get__
+    raise self.RelatedObjectDoesNotExist(
+        "%s has no %s." % (self.field.model.__name__, self.field.name)
+    )
+api.gpt3.models.SepaCreditTransfer.payment_identification.RelatedObjectDoesNotExist: SepaCreditTransfer has no payment_identification.. Did you mean: 'payment_identification_id'?
+ERROR 2025-04-25 09:20:49,832 log Internal Server Error: /app/gpt3/crear/
+Traceback (most recent call last):
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/core/handlers/exception.py", line 55, in inner
+    response = get_response(request)
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/core/handlers/base.py", line 197, in _get_response
+    response = wrapped_callback(request, *callback_args, **callback_kwargs)
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/contrib/auth/decorators.py", line 59, in _view_wrapper
+    return view_func(request, *args, **kwargs)
+  File "/home/markmur88/Documentos/GitHub/api_bank_heroku/api/gpt3/views.py", line 54, in crear_transferencia
+    transferencia.payment_identification.instruction_id = generate_deterministic_id(
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/markmur88/Documentos/Entorno/venvAPI/lib/python3.13/site-packages/django/db/models/fields/related_descriptors.py", line 268, in __get__
+    raise self.RelatedObjectDoesNotExist(
+        "%s has no %s." % (self.field.model.__name__, self.field.name)
+    )
+api.gpt3.models.SepaCreditTransfer.payment_identification.RelatedObjectDoesNotExist: SepaCreditTransfer has no payment_identification.. Did you mean: 'payment_identification_id'?
+WARNING 2025-04-25 09:20:49,925 log Not Found: /favicon.ico
