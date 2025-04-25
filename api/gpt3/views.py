@@ -165,7 +165,13 @@ def enviar_transferencia(request, payment_id):
         "purposeCode": transferencia.purpose_code,
         "requestedExecutionDate": transferencia.requested_execution_date.strftime('%Y-%m-%d'),
         "remittanceInformationStructured": transferencia.remittance_information_structured,
-        "remittanceInformationUnstructured": transferencia.remittance_information_unstructured
+        "remittanceInformationUnstructured": transferencia.remittance_information_unstructured,
+        "paymentTypeInformation": {
+            "serviceLevel": {
+                "serviceLevelCode": "INST"
+            }
+        },
+
     }
 
     try:
