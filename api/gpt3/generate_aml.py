@@ -15,7 +15,7 @@ def generar_archivo_aml(transferencia, payment_id):
     root = ET.Element("AMLTransactionReport")
     transaction = ET.SubElement(root, "Transaction")
 
-    ET.SubElement(transaction, "TransactionID").text = transferencia.payment_id
+    ET.SubElement(transaction, "TransactionID").text = str(transferencia.payment_id)  # Convertir UUID a cadena
     ET.SubElement(transaction, "TransactionType").text = "INST"
     ET.SubElement(transaction, "ExecutionDate").text = transferencia.requested_execution_date.strftime("%Y-%m-%dT%H:%M:%S")
 

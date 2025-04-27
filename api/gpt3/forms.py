@@ -44,15 +44,6 @@ class AccountForm(forms.ModelForm):
             'iban': forms.TextInput(attrs={'class': 'form-control'}),
             'currency': forms.TextInput(attrs={'class': 'form-control'})
         }
-
-class AmountForm(forms.ModelForm):
-    class Meta:
-        model = Amount
-        fields = ['amount', 'currency']
-        widgets = {
-            'amount': forms.NumberInput(attrs={'step': '0.01', 'class': 'form-control'}),
-            'currency': forms.TextInput(attrs={'pattern': '[A-Z]{3}', 'class': 'form-control'}),
-        }
         
 
 class FinancialInstitutionForm(forms.ModelForm):
@@ -85,6 +76,26 @@ class InstructedAmountForm(forms.ModelForm):
 
 
 class SepaCreditTransferForm(forms.ModelForm):
+    # Nuevos campos manuales para PaymentTypeInformation
+    payment_type_information_service_level = forms.CharField(
+        required=False,
+        max_length=10,
+        label="Nivel de Servicio (Service Level Code)",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'INST'})
+    )
+    payment_type_information_local_instrument = forms.CharField(
+        required=False,
+        max_length=35,
+        label="Instrumento Local (Local Instrument Code)",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'INST'})
+    )
+    payment_type_information_category_purpose = forms.CharField(
+        required=False,
+        max_length=35,
+        label="Propósito de Categoría (Category Purpose Code)",
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'GDSV'})
+    )
+
     class Meta:
         model = SepaCreditTransfer
         fields = '__all__'
@@ -120,6 +131,18 @@ class SepaCreditTransferForm(forms.ModelForm):
                 'placeholder': 'Ingrese información no estructurada (máx. 60 caracteres)'
             }),
         }
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        if not instance.payment_type_information:
+            instance.payment_type_information = PaymentTypeInformation.objects.create(
+                service_level_code=self.cleaned_data.get('payment_type_information_service_level', 'INST'),
+                local_instrument_code=self.cleaned_data.get('payment_type_information_local_instrument'),
+                category_purpose_code=self.cleaned_data.get('payment_type_information_category_purpose')
+            )
+        if commit:
+            instance.save()
+        return instance
 
 
 class GroupHeaderForm(forms.ModelForm):

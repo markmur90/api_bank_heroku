@@ -1,13 +1,80 @@
 {% extends 'base.html' %}
+
 {% block title %}Detalle de Transferencia{% endblock %}
+
 {% block content %}
-<h2>Transferencia {{ transferencia.payment_id }}</h2>
-<ul class="list-group mb-3">
-  <li class="list-group-item">Estado: {{ transferencia.get_transaction_status_display }}</li>
-  <li class="list-group-item">Fecha de ejecución: {{ transferencia.requested_execution_date }}</li>
-  <li class="list-group-item">Monto: {{ transferencia.instructed_amount.amount }} {{ transferencia.instructed_amount.currency }}</li>
-</ul>
-<h4>Log de transacción</h4>
-<pre class="bg-light p-3">{{ log }}</pre>
-<a href="/{{ transferencia.payment_id }}/pdf/" class="btn btn-outline-secondary">Descargar PDF</a>
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 class="mb-0">Transferencia {{ transferencia.payment_id }}</h3>
+    </div>
+    
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-3">Estado</dt>
+            <dd class="col-sm-9">
+                <span class="badge bg-{{ transferencia.get_status_color }}">
+                    {{ transferencia.get_transaction_status_display }}
+                </span>
+            </dd>
+
+            <dt class="col-sm-3">Fecha de ejecución</dt>
+            <dd class="col-sm-9">
+                {{ transferencia.requested_execution_date|default:"-" }}
+            </dd>
+
+            <dt class="col-sm-3">Monto</dt>
+            <dd class="col-sm-9">
+                {{ transferencia.instructed_amount.amount }} {{ transferencia.instructed_amount.currency }}
+            </dd>
+        </dl>
+
+        <div class="mt-4 p-3 bg-light border rounded">
+            <h5>Logs de Transacción</h5>
+            {% if log_files_content %}
+                {% for nombre, contenido in log_files_content.items %}
+                    <div class="mb-3">
+                        <h6 class="text-primary">{{ nombre }}</h6>
+                        <pre>{{ contenido }}</pre>
+                    </div>
+                {% endfor %}
+            {% else %}
+                <p class="text-muted">No hay logs disponibles para esta transferencia.</p>
+            {% endif %}
+        </div>
+
+        <div class="mt-4 p-3 bg-light border rounded">
+            <h5>Archivos Relacionados</h5>
+            {% for archivo, contenido in archivos.items %}
+                <div class="mb-3">
+                    <h6 class="text-primary">{{ archivo|capfirst }}</h6>
+                    {% if contenido %}
+                        <pre>{{ contenido }}</pre>
+                    {% else %}
+                        <p class="text-muted">El archivo {{ archivo }} no contiene información.</p>
+                    {% endif %}
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card-footer d-grid gap-2 d-md-flex justify-content-md-end">
+        <a href="{% url 'listar_transferenciasGPT3' %}" class="btn btn-outline-info">
+            <i class="bi bi-arrow-left"></i> Volver al Listado
+        </a>
+
+        <a href="{% url 'descargar_pdfGPT3' transferencia.payment_id %}" class="btn btn-outline-secondary">
+            <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+        </a>
+
+        <form method="POST" action="{% url 'retry_second_factorGPT3' transferencia.payment_id %}" class="d-inline">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="CREATE">
+            <input type="hidden" name="authId" value="{{ transferencia.auth_id|default:'' }}">
+            <input type="hidden" name="otp" value="SEPA_TRANSFER_GRANT">
+            <button type="submit" class="btn btn-outline-warning">
+                <i class="bi bi-shield-lock"></i> Reintentar Autenticación
+            </button>
+        </form>
+    </div>
+</div>
 {% endblock %}

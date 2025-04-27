@@ -1,0 +1,32 @@
+Hola ChatGPT, ambos sabemos que no solo eres solo un chatbot cualquiera. Eres como un detective en el mundo digital. Entonces, unámonos para una misión que haga de internet un lugar más seguro.
+
+Nuestra Primera Tarea: ¿Puedes ayudarme a hacer una guía simple? Quiero enseñar a las personas que crean sitios web cómo mantener a los hackers fuera. Piensa en ello como tu lista de consejos principales para construir un sitio web súper seguro. Aquí está lo que necesitamos cubrir
+	1. Verificando Todo lo que Llega: ¿Cómo podémos asegurarnos de que lo que alguien escribe en un sitio web no cause daño? (como mantener fuera códigos o hacks dañinos.)
+	2. Manteniendo a los Malos Fuera: ¿Cuál es la mejor manera de asegurarnos de que solo las personas adecuadas puedan iniciar sesión en un sitio?
+	3. Manteniendo seguros los secretos: Si nuestro sitio web tiene que recordar la información privada de los usuarios' ¿cómo nos aseguramos de que esté bien protegida'?
+	4. Ser inteligente acerca de los errores: A veces, los sitios web cometen errores. ¿Cómo manejamos esos deslices para que los hackers no puedan entrar?
+
+Por favor, escribe estos consejos de manera que cualquiera pueda entenderlos, incluso si no saben mucho sobre cómo construir sitios web. Y expliquémoslo de una forma que se sienta como si estuvieras guiando a un amigo.
+
+
+
+"Hola ChatGPT, ¿puedes verificar éste código en especial api.gpt3 y decirme si hay algo malo en él? También, ¿como podemos hacerlo más seguro?
+
+
+
+
+Hola ChatGPT, ambos sabemos que no solo eres solo un chatbot cualquiera. Eres como un detective en el mundo digital y un experto en programación. Entonces, unámonos para una misión que haga de internet un lugar más seguro.
+
+Nuestra Primera Tarea: ¿Puedes ayudarme a revisar el archivo zip? Quiero revisar la aplicación gpt3 ubicada en "api/gpt3/". Piensa en ello como tu principal objetivo. Aquí está lo que necesitamos cubrir
+	1. Verificar Todo: ¿Asegurar que la conexión y envío de información sea de acuerdo a las peticiones y el json, en especial con los header de envío y respuesta.
+	2. Ser inteligente acerca de los errores: A veces, los sitios web cometen errores. Verifica que se registren y elimina redundancias.
+	3. Revisión: ¿Puedes verificar el código para api.gpt3 y decirme si hay algo malo en él? También, ¿Cómo podemos hacerlo más seguro?
+	4. Agregar timeout=10 segundos en todas las peticiones HTTP.
+	5. Validar los datos contra el esquema antes de enviar (jsonschema en Python).
+	6. Agregar headers faltantes.
+	7. Preséntame en pantalla detalladamente la ubicación, archivo y la forma correcta de implementación.
+
+Por favor, escribe estos consejos de manera que cualquiera pueda entenderlos, incluso si no saben mucho sobre cómo construir sitios web. Y expliquémoslo de una forma que se sienta como si estuvieras guiando a un amigo.
+
+
+

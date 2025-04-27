@@ -8,7 +8,7 @@ class Address(models.Model):
     zip_code_and_city = models.CharField(max_length=70)
 
     def __str__(self):
-        return f"{self.street_and_house_number}, {self.zip_code_and_city}, {self.country}"
+        return f"{self.country}, {self.zip_code_and_city}, {self.street_and_house_number}"
 
 
 class Debtor(models.Model):
@@ -26,14 +26,6 @@ class Creditor(models.Model):
 
     def __str__(self):
         return self.creditor_name
-
-
-class Amount(models.Model):
-    amount = models.DecimalField(max_digits=15, decimal_places=2)
-    currency = models.CharField(max_length=3, default='EUR')
-
-    def __str__(self):
-        return f"{self.currency} - {self.amount}"
 
 
 class Account(models.Model):
@@ -60,11 +52,11 @@ class PaymentIdentification(models.Model):
 
 
 class InstructedAmount(models.Model):
-    amount = models.DecimalField(max_digits=12, decimal_places=2)
-    currency = models.CharField(max_length=3)
+    amount = models.DecimalField(max_digits=15, decimal_places=2)
+    currency = models.CharField(max_length=3, default='EUR')
 
     def __str__(self):
-        return f"{self.amount} {self.currency}"
+        return f"{self.currency} - {self.amount}"
 
 
 SERVICE_LEVEL_CHOICES = [
@@ -112,7 +104,7 @@ class PaymentTypeInformation(models.Model):
     
 
 class SepaCreditTransfer(models.Model):
-    payment_id = models.CharField(max_length=35, unique=True)
+    payment_id = models.CharField(max_length=36, unique=True)
     auth_id = models.CharField(max_length=70, blank=True, null=True)
     transaction_status = models.CharField(max_length=10, default='PDNG', choices=[
         ('RJCT', 'Rechazada'),
@@ -138,12 +130,11 @@ class SepaCreditTransfer(models.Model):
     creditor_account = models.ForeignKey(Account, related_name='creditor_account', on_delete=models.CASCADE)
     creditor_agent = models.ForeignKey(FinancialInstitution, on_delete=models.CASCADE)
     payment_identification = models.ForeignKey(PaymentIdentification, on_delete=models.CASCADE)
-    instructed_amount = models.ForeignKey(Amount, on_delete=models.CASCADE)
+    instructed_amount = models.ForeignKey(InstructedAmount, on_delete=models.CASCADE)
 
     payment_type_information = models.OneToOneField(
         PaymentTypeInformation,
         on_delete=models.CASCADE,
-        default=None,
         null=True,
         blank=True
     )
@@ -167,7 +158,7 @@ class SepaCreditTransfer(models.Model):
 
     def get_absolute_url(self):
         from django.urls import reverse
-        return reverse('check_statusGPT3', args=[str(self.payment_id)])
+        return reverse('estado_transferenciaGPT3', args=[str(self.payment_id)])
     
     def __str__(self):
         return f"Transferencia {self.payment_id}"

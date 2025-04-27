@@ -1,6 +1,7 @@
 {% extends 'base.html' %}
 
 {% block content %}
+
 <div class="d-flex justify-content-between mb-4">
     <h2>Transferencias SEPA Instant</h2>
     <a href="{% url 'crear_transferenciaGPT3' %}" class="btn btn-primary">
@@ -18,8 +19,7 @@
                 <th>Monto</th>
                 <th>Estado</th>
                 <th>Fecha Creación</th>
-                <th>Acciones</th>
-                <th></th>
+                <th class="text-end">Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -28,27 +28,53 @@
                 <td class="text-muted">{{ t.payment_id|truncatechars:12 }}</td>
                 <td>{{ t.debtor.debtor_name }}</td>
                 <td>{{ t.creditor.creditor_name }}</td>
-                <td class="fw-bold">
-                    {{ t.instructed_amount.amount }} {{ t.instructed_amount.currency }}
-                </td>
+                <td class="fw-bold">{{ t.instructed_amount.amount }} {{ t.instructed_amount.currency }}</td>
                 <td>
-                    <span class="badge bg-{{ t.get_status_color }}">
+                    <span class="badge {% if t.transaction_status == 'ACSP' %}bg-success
+                                   {% elif t.transaction_status == 'RJCT' %}bg-danger
+                                   {% elif t.transaction_status == 'PDNG' %}bg-warning
+                                   {% else %}bg-secondary{% endif %}">
                         {{ t.get_transaction_status_display }}
                     </span>
                 </td>
                 <td>{{ t.created_at|date:"d/m/Y H:i" }}</td>
 
                 <td class="text-end">
-                  <a href="{{ transfer.get_absolute_url }}" class="btn btn-sm btn-info">Ver</a>
-                  <a href="/{{ t.payment_id }}/enviar/" class="btn btn-sm btn-primary">Enviar</a>
-                  <a href="/{{ t.payment_id }}/estado/" class="btn btn-sm btn-warning">Estado</a>
+                  {% if t.payment_id %}
+                  <a href="{{ t.get_absolute_url }}" class="btn btn-sm btn-info" title="Detalle">
+                      <i class="bi bi-eye"></i> View
+                  </a>
+                  <form method="post" action="{% url 'enviar_transferenciaGPT3' t.payment_id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-success" title="Enviar">
+                        <i class="bi bi-send"></i>Send
+                    </button>
+                  </form>
+                  <form method="post" action="{% url 'cancelar_transferenciaGPT3' t.payment_id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-danger" title="Cancelar">
+                        <i class="bi bi-x-circle"></i>Cancel
+                    </button>
+                  </form>
+                  <form method="post" action="{% url 'retry_second_factorGPT3' t.payment_id %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-sm btn-warning" title="Reintentar 2FA">
+                        <i class="bi bi-arrow-repeat"></i>2FA
+                    </button>
+                  </form>
+                  <a href="{% url 'estado_transferenciaGPT3' t.payment_id %}" class="btn btn-sm btn-secondary" title="Estado">
+                    <i class="bi bi-search"></i>Status
+                  </a>
+                  {% else %}
+                  <span class="text-muted">ID no disponible</span>
+                  {% endif %}
                 </td>
             </tr>
             {% empty %}
             <tr>
                 <td colspan="7" class="text-center py-4">
                     <div class="alert alert-info mb-0">
-                        <i class="bi bi-info-circle"></i> No se encontraron transferencias
+                        <i class="bi bi-info-circle"></i> No se encontraron transferencias registradas.
                     </div>
                 </td>
             </tr>
@@ -57,22 +83,27 @@
     </table>
 </div>
 
+<!-- Paginación -->
 <div class="d-flex justify-content-between align-items-center mt-4">
     <div>
-        Mostrando {{ transferencias.start_index }} - {{ transferencias.end_index }} de {{ transferencias.paginator.count }} transferencias
+        {% if transferencias.paginator.count == 0 %}
+            No hay transferencias.
+        {% else %}
+            Mostrando 
+            {{ transferencias.start_index }}{% if transferencias.start_index != transferencias.end_index %} - {{ transferencias.end_index }}{% endif %}
+            de {{ transferencias.paginator.count }} transferencia{% if transferencias.paginator.count != 1 %}s{% endif %}
+        {% endif %}
     </div>
+
+    {% if transferencias.paginator.count > 0 %}
     <nav>
         <ul class="pagination mb-0">
             {% if transferencias.has_previous %}
             <li class="page-item">
-                <a class="page-link" href="?page=1" aria-label="Primera">
-                    <span aria-hidden="true">&laquo;&laquo;</span>
-                </a>
+                <a class="page-link" href="?page=1" aria-label="Primera">&laquo;&laquo;</a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?page={{ transferencias.previous_page_number }}" aria-label="Anterior">
-                    <span aria-hidden="true">&laquo;</span>
-                </a>
+                <a class="page-link" href="?page={{ transferencias.previous_page_number }}" aria-label="Anterior">&laquo;</a>
             </li>
             {% else %}
             <li class="page-item disabled">
@@ -97,14 +128,10 @@
 
             {% if transferencias.has_next %}
             <li class="page-item">
-                <a class="page-link" href="?page={{ transferencias.next_page_number }}" aria-label="Siguiente">
-                    <span aria-hidden="true">&raquo;</span>
-                </a>
+                <a class="page-link" href="?page={{ transferencias.next_page_number }}" aria-label="Siguiente">&raquo;</a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?page={{ transferencias.paginator.num_pages }}" aria-label="Última">
-                    <span aria-hidden="true">&raquo;&raquo;</span>
-                </a>
+                <a class="page-link" href="?page={{ transferencias.paginator.num_pages }}" aria-label="Última">&raquo;&raquo;</a>
             </li>
             {% else %}
             <li class="page-item disabled">
@@ -116,5 +143,9 @@
             {% endif %}
         </ul>
     </nav>
+    {% endif %}
 </div>
+
+
+
 {% endblock %}

@@ -41,7 +41,11 @@ GRANT CONNECT ON DATABASE ${DB_NAME} TO ${DB_USER};
 GRANT CREATE ON DATABASE ${DB_NAME} TO ${DB_USER};
 EOF
 
-clear
+# clear
+
+echo " ------------------------------------------- " 
 
 
 echo "Operaciones en la base de datos completadas."
+
+echo " ------------------------------------------- " 

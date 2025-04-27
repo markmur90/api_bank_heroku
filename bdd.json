@@ -2559,71 +2559,35 @@
   "model": "auth.permission",
   "pk": 285,
   "fields": {
-    "name": "Can add amount",
+    "name": "Can add payment type information",
     "content_type": 72,
-    "codename": "add_amount"
+    "codename": "add_paymenttypeinformation"
   }
 },
 {
   "model": "auth.permission",
   "pk": 286,
   "fields": {
-    "name": "Can change amount",
+    "name": "Can change payment type information",
     "content_type": 72,
-    "codename": "change_amount"
+    "codename": "change_paymenttypeinformation"
   }
 },
 {
   "model": "auth.permission",
   "pk": 287,
   "fields": {
-    "name": "Can delete amount",
+    "name": "Can delete payment type information",
     "content_type": 72,
-    "codename": "delete_amount"
+    "codename": "delete_paymenttypeinformation"
   }
 },
 {
   "model": "auth.permission",
   "pk": 288,
   "fields": {
-    "name": "Can view amount",
-    "content_type": 72,
-    "codename": "view_amount"
-  }
-},
-{
-  "model": "auth.permission",
-  "pk": 289,
-  "fields": {
-    "name": "Can add payment type information",
-    "content_type": 73,
-    "codename": "add_paymenttypeinformation"
-  }
-},
-{
-  "model": "auth.permission",
-  "pk": 290,
-  "fields": {
-    "name": "Can change payment type information",
-    "content_type": 73,
-    "codename": "change_paymenttypeinformation"
-  }
-},
-{
-  "model": "auth.permission",
-  "pk": 291,
-  "fields": {
-    "name": "Can delete payment type information",
-    "content_type": 73,
-    "codename": "delete_paymenttypeinformation"
-  }
-},
-{
-  "model": "auth.permission",
-  "pk": 292,
-  "fields": {
     "name": "Can view payment type information",
-    "content_type": 73,
+    "content_type": 72,
     "codename": "view_paymenttypeinformation"
   }
 },
@@ -3200,31 +3164,23 @@
   "pk": 72,
   "fields": {
     "app_label": "gpt3",
-    "model": "amount"
-  }
-},
-{
-  "model": "contenttypes.contenttype",
-  "pk": 73,
-  "fields": {
-    "app_label": "gpt3",
     "model": "paymenttypeinformation"
   }
 },
 {
   "model": "sessions.session",
-  "pk": "4uekcpk8hor9eqw4fn82vf8yf24nl773",
+  "pk": "ueilvmihc3qnaj43g7byqyikatex0tp3",
   "fields": {
-    "session_data": ".eJxVjEEOwiAQRe_C2hBgKIhL9z0DGQZGqoYmpV0Z765NutDtf-_9l4i4rTVuvSxxyuIitDj9bgnpUdoO8h3bbZY0t3WZktwVedAuxzmX5_Vw_w4q9vqt0Try6ApYy4iJlPfWWEgILntmIg5-GDibYIhAAybLAeCMWiUFTOL9Af3OOII:1u8F1Z:uH-RG_MBL5UMpLyR8rxtmZ4HIIip87o8BhEyGKImc6s",
-    "expire_date": "2025-04-25T09:37:09.251Z"
+    "session_data": ".eJxVjEEOgjAQRe_StWkYbDtTl-45A5lOp4IaSCisjHdXEha6_e-9_zI9b-vQb1WXfszmYsCcfrfE8tBpB_nO0222Mk_rMia7K_ag1XZz1uf1cP8OBq7Dt_aETXE-ElEICDE2waND4KhUoPUpnwUDtI48k2B0pFAKqiNRAQHz_gCbvTa5:1u8knU:fSNdmJpOXm1-8IdSsKVSsiN234f43yStgStI8G0CO_8",
+    "expire_date": "2025-04-26T19:32:44.595Z"
   }
 },
 {
   "model": "authentication.customuser",
   "pk": 1,
   "fields": {
-    "password": "pbkdf2_sha256$1000000$53OD5evhiw2DqlwHsRm0GL$NNzxZcZ4f5ULFDTmbLVOEr7hZg8tqft9ybr3CwBhAgA=",
-    "last_login": "2025-04-25T09:12:08.649Z",
+    "password": "pbkdf2_sha256$1000000$k13WaUjAf3NEnkGlUcUHcI$uKdgd5Ayx4XXVy4RXZdmaW7WuydmMHqJkAGclQv3mok=",
+    "last_login": "2025-04-26T19:02:44.519Z",
     "is_superuser": true,
     "email": "j.moltke@db.com",
     "username": "493069k1",
@@ -3271,18 +3227,10 @@
   }
 },
 {
-  "model": "gpt3.amount",
-  "pk": 1,
-  "fields": {
-    "amount": "618.25",
-    "currency": "EUR"
-  }
-},
-{
   "model": "gpt3.account",
   "pk": 1,
   "fields": {
-    "iban": "DE41400501500154813455",
+    "iban": "DE86500700100925993805",
     "currency": "EUR"
   }
 },
@@ -3290,7 +3238,7 @@
   "model": "gpt3.account",
   "pk": 2,
   "fields": {
-    "iban": "DE86500700100925993805",
+    "iban": "DE41400501500154813455",
     "currency": "EUR"
   }
 },
@@ -3299,6 +3247,14 @@
   "pk": 1,
   "fields": {
     "financial_institution_id": "WELADED1MST"
+  }
+},
+{
+  "model": "gpt3.instructedamount",
+  "pk": 1,
+  "fields": {
+    "amount": "618.25",
+    "currency": "EUR"
   }
 }
 ]

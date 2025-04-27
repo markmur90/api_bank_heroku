@@ -37,18 +37,26 @@
             {% endif %}
         </div>
         
-        <div class="card-footer text-muted">
-            <a href="{% url 'listar_transferencias' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Volver al Listado
-            </a>
-            <a href="{% url 'descargar_pdf' transferencia.payment_id %}" class="btn btn-outline-primary">
-                <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
-            </a>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
 
-            <form method="POST" action="{% url 'retry_second_factor' transferencia.payment_id %}" class="d-inline ms-2">
+            <form action="{% url 'listar_transferenciasGPT3' %}" class="btn btn-secondary me-2">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-info">
+                    <i class="bi bi-arrow-repeat"></i> Volver al Listado
+                </button>
+            </form>  
+
+            <form action="{% url 'descargar_pdfGPT3' transferencia.payment_id %}" class="btn btn-primary">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-info">
+                    <i class="bi bi-arrow-repeat"></i> Descargar PDF
+                </button>
+            </form>            
+            
+            <form method="POST" action="{% url 'retry_second_factorGPT3' transferencia.payment_id %}" class="btn btn-secondary">
                 {% csrf_token %}
                 <input type="hidden" name="otp" value="SEPA_TRANSFER_GRANT">
-                <button type="submit" class="btn btn-outline-info">
+                <button type="submit" class="btn btn-info">
                     <i class="bi bi-arrow-repeat"></i> Reintentar Autenticación
                 </button>
             </form>

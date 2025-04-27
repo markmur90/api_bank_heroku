@@ -1,4 +1,6 @@
+import uuid
 import os
+import requests
 from datetime import datetime
 from urllib import response
 from django.shortcuts import render, redirect, get_object_or_404
@@ -10,23 +12,24 @@ import xml.etree.ElementTree as ET
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from requests.exceptions import RequestException, HTTPError, Timeout, ConnectionError
+from django.urls import reverse
 
-from api.gpt3.generate_aml import generar_archivo_aml
-from api.gpt3.generate_xml import generar_xml_pain001
-
+from api.gpt3.bank_client import *
+from api.gpt3.generate_aml import *
+from api.gpt3.generate_xml import *
 from api.gpt3.models import *
 from api.gpt3.forms import *
-from api.gpt3.utils import (
-    build_complete_sepa_headers, generar_pdf_transferencia, get_oauth_session, build_headers, attach_common_headers,
-    validate_headers, handle_error_response
-)
-from api.gpt3.helpers import generate_deterministic_id, generate_payment_id, generate_payment_id_uuid, obtener_ruta_log_transferencia, obtener_ruta_schema_transferencia
+from api.gpt3.utils import *
+from api.gpt3.helpers import *
 
+# API_URL = "https://simulator-api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer"
+API_URL = "https://api.db.com:443/gw/dbapi/banking/transactions/v2"
 
 @login_required
 def descargar_pdf(request, payment_id):
     transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
-    generar_pdf_transferencia(transferencia)  # Siempre asegura que se genera el PDF más reciente
+    generar_pdf_transferencia(transferencia)
     carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
 
     pdf_archivo = next(
@@ -42,6 +45,41 @@ def descargar_pdf(request, payment_id):
     return FileResponse(open(pdf_archivo, 'rb'), content_type='application/pdf', as_attachment=True, filename=os.path.basename(pdf_archivo))
 
 
+# Función para registrar logs
+def registrar_log(payment_id, headers, response_text, error=None):
+    carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
+    os.makedirs(carpeta_transferencia, exist_ok=True)
+
+    log_path = os.path.join(carpeta_transferencia, f"transferencia_{payment_id}.log")
+    with open(log_path, 'a', encoding='utf-8') as log_file:
+        # Separador inicial
+        log_file.write("\n" + "=" * 80 + "\n")
+        log_file.write(f"Registro de transferencia - Payment ID: {payment_id}\n")
+        log_file.write(f"Fecha y hora: {datetime.now()}\n")
+        log_file.write("=" * 80 + "\n\n")
+
+        # Headers enviados
+        log_file.write("=== Headers enviados ===\n")
+        for key, value in headers.items():
+            log_file.write(f"{key}: {value}\n")
+        log_file.write("\n")
+
+        # Respuesta o error
+        if error:
+            log_file.write("=== Error ===\n")
+            log_file.write(f"{error}\n")
+        else:
+            log_file.write("=== Respuesta ===\n")
+            log_file.write(f"{response_text}\n")
+
+        # Separador final
+        log_file.write("\n" + "=" * 80 + "\n")
+        log_file.write("Fin del registro\n")
+        log_file.write("=" * 80 + "\n\n")
+
+
+# Crear Transferencia
+
 @login_required
 def crear_transferencia(request):
     if request.method == 'POST':
@@ -49,52 +87,61 @@ def crear_transferencia(request):
         if form.is_valid():
             transferencia = form.save(commit=False)
             transferencia.payment_id = generate_payment_id_uuid()
+            transferencia.auth_id = generate_payment_id_uuid()
+            transferencia.transaction_status = "PDNG"
 
-            # Generar instruction_id determinista sin prefijo
-            transferencia.payment_identification.instruction_id = generate_deterministic_id(
-                transferencia.payment_id,
-                transferencia.creditor_account.iban,
-                transferencia.instructed_amount.amount
+            # Crear y asignar PaymentIdentification
+            payment_identification = PaymentIdentification.objects.create(
+                instruction_id=generate_deterministic_id(
+                    transferencia.payment_id,
+                    transferencia.creditor_account.iban,
+                    transferencia.instructed_amount.amount
+                ),
+                end_to_end_id=generate_deterministic_id(
+                    transferencia.debtor_account.iban,
+                    transferencia.creditor_account.iban,
+                    transferencia.instructed_amount.amount,
+                    transferencia.requested_execution_date,
+                    prefix="E2E"
+                )
             )
-
-            # Generar end_to_end_id con prefijo E2E
-            transferencia.payment_identification.end_to_end_id = generate_deterministic_id(
-                transferencia.debtor_account.iban,
-                transferencia.creditor_account.iban,
-                transferencia.instructed_amount.amount,
-                transferencia.requested_execution_date,
-                prefix="E2E"
-            )
+            transferencia.payment_identification = payment_identification
 
             transferencia.save()
-
             # Guardar archivos directamente al crear (pain.001 + AML)
             generar_xml_pain001(transferencia, transferencia.payment_id)
             generar_archivo_aml(transferencia, transferencia.payment_id)
 
             messages.success(request, "Transferencia creada correctamente.")
-            return redirect('listar_transferenciasGPT3')
+            return redirect('listar_transferenciasGPT3')  # Sin argumentos
     else:
         form = SepaCreditTransferForm()
-    return render(request, 'api/GPT3/crear_transferencia.html', {'form': form})
+    return render(request, 'api/GPT3/crear_transferencia.html', {'form': form, 'transferencia': None})
 
 
 @login_required
 def listar_transferencias(request):
-    transferencias = SepaCreditTransfer.objects.all().order_by('-created_at')
+    transferencias = SepaCreditTransfer.objects.all().order_by('created_at')
     return render(request, 'api/GPT3/listar_transferencias.html', {'transferencias': transferencias})
 
 
 @login_required
 def detalle_transferencia(request, payment_id):
     transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
-    log_path = obtener_ruta_log_transferencia(payment_id)
-    log_content = "Log no disponible"
-    if os.path.exists(log_path):
-        with open(log_path, 'r') as f:
-            log_content = f.read()
 
     carpeta = obtener_ruta_schema_transferencia(payment_id)
+    archivos_logs = {
+        archivo: os.path.join(carpeta, archivo)
+        for archivo in os.listdir(carpeta)
+        if archivo.endswith(".log")
+    }
+
+    log_files_content = {}
+    for nombre, ruta in archivos_logs.items():
+        if os.path.exists(ruta):
+            with open(ruta, 'r', encoding='utf-8') as f:
+                log_files_content[nombre] = f.read()
+
     xml_pain001 = os.path.join(carpeta, f"pain001_{payment_id}.xml")
     xml_pain002 = os.path.join(carpeta, f"pain002_{payment_id}.xml")
     aml_file = os.path.join(carpeta, f"aml_{payment_id}.txt")
@@ -102,25 +149,40 @@ def detalle_transferencia(request, payment_id):
     archivos = {
         'pain001': xml_pain001 if os.path.exists(xml_pain001) else None,
         'pain002': xml_pain002 if os.path.exists(xml_pain002) else None,
-        'aml': aml_file if os.path.exists(aml_file) else None
+        'aml': aml_file if os.path.exists(aml_file) else None,
     }
 
     return render(request, 'api/GPT3/detalle_transferencia.html', {
         'transferencia': transferencia,
-        'log': log_content,
+        'log_files_content': log_files_content,  # Todos los logs con su contenido
         'archivos': archivos
     })
 
 
-@login_required
+# Enviar transferencia
+@csrf_exempt
+@require_http_methods(["POST"])
 def enviar_transferencia(request, payment_id):
     transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+    otp = request.POST.get('otp', '123456')  # Capturar OTP del formulario o usar un valor predeterminado
     session = get_oauth_session(request)
-    headers = build_complete_sepa_headers(request, 'POST')
-    errores = validate_headers(headers)
-    if errores:
-        messages.error(request, "Errores en cabeceras: " + ", ".join(errores))
-        return redirect('detalle_transferencia', payment_id=payment_id)
+    access_token = session.token['access_token']
+
+    # Capturamos los datos adicionales de PaymentTypeInformation
+    service_level_code = request.POST.get('payment_type_information_service_level', 'INST')
+    local_instrument_code = request.POST.get('payment_type_information_local_instrument', 'INST')
+    category_purpose_code = request.POST.get('payment_type_information_category_purpose', 'GDSV')
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "idempotency-id": payment_id,
+        "otp": otp,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "x-request-id": str(uuid.uuid4()),
+        "Origin": "https://api.db.com",
+        "X-Requested-With": "XMLHttpRequest"
+    }
 
     payload = {
         "creditor": {
@@ -134,7 +196,7 @@ def enviar_transferencia(request, payment_id):
             }
         },
         "creditorAccount": {
-            "iban": transferencia.creditor_account.iban, 
+            "iban": transferencia.creditor_account.iban,
             "currency": transferencia.creditor_account.currency
         },
         "creditorAgent": {
@@ -151,7 +213,7 @@ def enviar_transferencia(request, payment_id):
             }
         },
         "debtorAccount": {
-            "iban": transferencia.debtor_account.iban, 
+            "iban": transferencia.debtor_account.iban,
             "currency": transferencia.debtor_account.currency
         },
         "instructedAmount": {
@@ -168,106 +230,550 @@ def enviar_transferencia(request, payment_id):
         "remittanceInformationUnstructured": transferencia.remittance_information_unstructured,
         "paymentTypeInformation": {
             "serviceLevel": {
-                "serviceLevelCode": "INST"
+                "serviceLevelCode": service_level_code
             },
             "localInstrument": {
-                "localInstrumentCode": "INST"
+                "localInstrumentCode": local_instrument_code
             },
             "categoryPurpose": {
-                "categoryPurposeCode": "SALA"
+                "categoryPurposeCode": category_purpose_code
             }
         }
     }
 
     try:
-        # Regenerar archivos XML y AML antes de envío
+        # Generar y validar el archivo XML (pain.001)
         generar_xml_pain001(transferencia, payment_id)
+        carpeta_xml = obtener_ruta_schema_transferencia(payment_id)
+        pain001_path = os.path.join(carpeta_xml, f"pain001_{payment_id}.xml")
+        if os.path.exists(pain001_path):
+            with open(pain001_path, 'r', encoding='utf-8') as f:
+                validate_pain001(f.read())
+
+        # Generar el archivo AML
         generar_archivo_aml(transferencia, payment_id)
 
-        res = session.post(
-            'https://simulator-api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer/',
-            json=payload, headers=headers
-        )
-
-        log_path = obtener_ruta_log_transferencia(payment_id)
-        with open(log_path, 'w') as log_file:
-            log_file.write(f"Headers enviados:\n{headers}\n\n")
-            log_file.write(f"Headers respuesta:\n{dict(res.headers)}\n\n")
-            log_file.write(f"Body:\n{res.text}\n")
-
-        if res.status_code not in [200, 201]:
-            mensaje = handle_error_response(res)
+        # Enviar la solicitud al banco
+        response = requests.post(f"{API_URL}/", json=payload, headers=headers, timeout=(5, 15))
+        
+        # Verificar el código de estado de la respuesta
+        if response.status_code not in [200, 201]:
+            mensaje = handle_error_response(response)
             messages.error(request, f"Error al enviar transferencia: {mensaje}")
             return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
 
+        response.raise_for_status()
+
         # Guardar respuesta XML pain.002 si es proporcionada
-        content_type = res.headers.get("Content-Type", "")
+        content_type = response.headers.get("Content-Type", "")
         if "xml" in content_type:
-            carpeta_xml = obtener_ruta_schema_transferencia(payment_id)
             xml_response_path = os.path.join(carpeta_xml, f"pain002_{payment_id}.xml")
             with open(xml_response_path, "w", encoding="utf-8") as xmlfile:
-                xmlfile.write(res.text)
+                xmlfile.write(response.text)
 
-        transferencia.transaction_status = "PDNG"
+        # Actualizar el estado de la transferencia
+        transferencia.transaction_status = response.json().get("transactionStatus", "PDNG")
         transferencia.save()
-        messages.success(request, "Transferencia enviada, registrada y respuesta XML guardada.")
-        return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
 
+        # Registrar logs
+        registrar_log(payment_id, headers, response.text)
+        messages.success(request, "Transferencia enviada exitosamente.")
+
+    except requests.RequestException as e:
+        # Registrar errores en el log
+        registrar_log(payment_id, headers, "", error=str(e))
+        messages.error(request, f"Error al enviar transferencia: {str(e)}")
+
+    return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
+
+@login_required
+def enviar_transferencia1(request, payment_id):
+    transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+    otp = request.POST.get('otp', '123456')
+    session = get_oauth_session(request)
+    access_token = session.token['access_token']
+
+    # Capturamos los datos adicionales de PaymentTypeInformation
+    service_level_code = request.POST.get('payment_type_information_service_level', 'INST')
+    local_instrument_code = request.POST.get('payment_type_information_local_instrument', 'INST')
+    category_purpose_code = request.POST.get('payment_type_information_category_purpose', 'GDSV')
+
+    payload = {
+        "creditor": {
+            "creditorName": transferencia.creditor.creditor_name,
+            "creditorPostalAddress": {
+                "country": transferencia.creditor.postal_address.country,
+                "addressLine": {
+                    "streetAndHouseNumber": transferencia.creditor.postal_address.street_and_house_number,
+                    "zipCodeAndCity": transferencia.creditor.postal_address.zip_code_and_city
+                }
+            }
+        },
+        "creditorAccount": {
+            "iban": transferencia.creditor_account.iban,
+            "currency": transferencia.creditor_account.currency
+        },
+        "creditorAgent": {
+            "financialInstitutionId": transferencia.creditor_agent.financial_institution_id
+        },
+        "debtor": {
+            "debtorName": transferencia.debtor.debtor_name,
+            "debtorPostalAddress": {
+                "country": transferencia.debtor.postal_address.country,
+                "addressLine": {
+                    "streetAndHouseNumber": transferencia.debtor.postal_address.street_and_house_number,
+                    "zipCodeAndCity": transferencia.debtor.postal_address.zip_code_and_city
+                }
+            }
+        },
+        "debtorAccount": {
+            "iban": transferencia.debtor_account.iban,
+            "currency": transferencia.debtor_account.currency
+        },
+        "instructedAmount": {
+            "amount": float(transferencia.instructed_amount.amount),
+            "currency": transferencia.instructed_amount.currency
+        },
+        "paymentIdentification": {
+            "endToEndIdentification": transferencia.payment_identification.end_to_end_id,
+            "instructionId": transferencia.payment_identification.instruction_id
+        },
+        "purposeCode": transferencia.purpose_code,
+        "requestedExecutionDate": transferencia.requested_execution_date.strftime('%Y-%m-%d'),
+        "remittanceInformationStructured": transferencia.remittance_information_structured,
+        "remittanceInformationUnstructured": transferencia.remittance_information_unstructured,
+        "paymentTypeInformation": {
+            "serviceLevel": {
+                "serviceLevelCode": service_level_code
+            },
+            "localInstrument": {
+                "localInstrumentCode": local_instrument_code
+            },
+            "categoryPurpose": {
+                "categoryPurposeCode": category_purpose_code
+            }
+        }
+    }
+
+    try:
+        # Validar pain.001 antes de enviar
+        generar_xml_pain001(transferencia, payment_id)
+        carpeta_xml = obtener_ruta_schema_transferencia(payment_id)
+        pain001_path = os.path.join(carpeta_xml, f"pain001_{payment_id}.xml")
+        if os.path.exists(pain001_path):
+            with open(pain001_path, 'r', encoding='utf-8') as f:
+                validate_pain001(f.read())
+
+        # Generar AML
+        generar_archivo_aml(transferencia, payment_id)
+
+        # 🚀 Usar bank_client
+        response = send_sepa_transfer(payment_id, payload, otp, access_token)
+
+        transferencia.transaction_status = response.get("transactionStatus", "PDNG")
+        transferencia.save()
+
+        messages.success(request, "Transferencia enviada exitosamente.")
     except Exception as e:
-        messages.error(request, f"Error inesperado: {str(e)}")
-        return redirect('detalle_transferenciaGPT3', payment_id=payment_id)  
+        # Guardar el error en la carpeta correspondiente
+        carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
+        error_log_path = os.path.join(carpeta_transferencia, f"error_{payment_id}.log")
+        with open(error_log_path, 'w', encoding='utf-8') as error_file:
+            error_file.write(f"Error al enviar transferencia: {str(e)}\n")
+        messages.error(request, f"Error al enviar transferencia: {str(e)}")
+
+    return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
 
 
 @login_required
+def enviar_transferencia2(request, payment_id):
+    transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+    otp = request.POST.get('otp', '123456')
+    session = get_oauth_session(request)
+    access_token = session.token['access_token']
+    
+    service_level_code = request.POST.get('payment_type_information_service_level', 'INST')
+    local_instrument_code = request.POST.get('payment_type_information_local_instrument', 'INST')
+    category_purpose_code = request.POST.get('payment_type_information_category_purpose', 'GDSV')
+
+    payload = {
+        "creditor": {
+            "creditorName": transferencia.creditor.creditor_name,
+            "creditorPostalAddress": {
+                "country": transferencia.creditor.postal_address.country,
+                "addressLine": {
+                    "streetAndHouseNumber": transferencia.creditor.postal_address.street_and_house_number,
+                    "zipCodeAndCity": transferencia.creditor.postal_address.zip_code_and_city
+                }
+            }
+        },
+        "creditorAccount": {
+            "iban": transferencia.creditor_account.iban,
+            "currency": transferencia.creditor_account.currency
+        },
+        "creditorAgent": {
+            "financialInstitutionId": transferencia.creditor_agent.financial_institution_id
+        },
+        "debtor": {
+            "debtorName": transferencia.debtor.debtor_name,
+            "debtorPostalAddress": {
+                "country": transferencia.debtor.postal_address.country,
+                "addressLine": {
+                    "streetAndHouseNumber": transferencia.debtor.postal_address.street_and_house_number,
+                    "zipCodeAndCity": transferencia.debtor.postal_address.zip_code_and_city
+                }
+            }
+        },
+        "debtorAccount": {
+            "iban": transferencia.debtor_account.iban,
+            "currency": transferencia.debtor_account.currency
+        },
+        "instructedAmount": {
+            "amount": float(transferencia.instructed_amount.amount),
+            "currency": transferencia.instructed_amount.currency
+        },
+        "paymentIdentification": {
+            "endToEndIdentification": transferencia.payment_identification.end_to_end_id,
+            "instructionId": transferencia.payment_identification.instruction_id
+        },
+        "purposeCode": transferencia.purpose_code,
+        "requestedExecutionDate": transferencia.requested_execution_date.strftime('%Y-%m-%d'),
+        "remittanceInformationStructured": transferencia.remittance_information_structured,
+        "remittanceInformationUnstructured": transferencia.remittance_information_unstructured,
+        "paymentTypeInformation": {
+            "serviceLevel": {
+                "serviceLevelCode": service_level_code
+            },
+            "localInstrument": {
+                "localInstrumentCode": local_instrument_code
+            },
+            "categoryPurpose": {
+                "categoryPurposeCode": category_purpose_code
+            }
+        }
+    }
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "idempotency-id": payment_id,
+        "otp": otp,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "x-request-id": str(uuid.uuid4()),
+        "Origin": "https://api.db.com",
+        "X-Requested-With": "XMLHttpRequest"
+    }
+
+    try:
+        # Validar y generar el XML pain.001
+        generar_xml_pain001(transferencia, payment_id)
+        carpeta_xml = obtener_ruta_schema_transferencia(payment_id)
+        pain001_path = os.path.join(carpeta_xml, f"pain001_{payment_id}.xml")
+
+        if os.path.exists(pain001_path):
+            with open(pain001_path, 'r', encoding='utf-8') as f:
+                validate_pain001(f.read())
+
+        # Generar el archivo AML
+        generar_archivo_aml(transferencia, payment_id)
+
+        # Realizar la solicitud HTTP
+        response = requests.post(
+            f"{API_URL}/",
+            json=payload,
+            headers=headers,
+            timeout=(5, 5)
+        )
+        response.raise_for_status()
+
+        # Actualizar el estado de la transferencia
+        transferencia.transaction_status = response.json().get("transactionStatus", "PDNG")
+        transferencia.save()
+
+        messages.success(request, "Transferencia enviada exitosamente.")
+
+    except requests.RequestException as e:
+        # Guardar errores en un archivo específico por transferencia
+        carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
+        os.makedirs(carpeta_transferencia, exist_ok=True)
+        error_log_path = os.path.join(carpeta_transferencia, f"error_{payment_id}.log")
+        with open(error_log_path, 'w', encoding='utf-8') as error_file:
+            error_file.write(f"Error al enviar transferencia: {str(e)}\n")
+
+        messages.error(request, f"Error al enviar transferencia: {str(e)}")
+
+    return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
+
+
+
+# Estado de transferencia
+@csrf_exempt
+@require_http_methods(["GET"])
 def estado_transferencia(request, payment_id):
     transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
     session = get_oauth_session(request)
-    headers = build_complete_sepa_headers(request, 'GET')
+    access_token = session.token['access_token']
 
-    url = f"https://simulator-api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer/{payment_id}/status"
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/json",
+        "x-request-id": str(uuid.uuid4()),
+        "Origin": "https://api.db.com",
+        "X-Requested-With": "XMLHttpRequest"
+    }
 
     try:
-        res = session.get(url, headers=headers)
-
-        # Registrar en log
-        log_path = obtener_ruta_log_transferencia(payment_id)
-        with open(log_path, 'a') as log_file:
-            log_file.write(f"\nConsulta de estado - {datetime.now()}\nHeaders enviados:\n{headers}\n\n")
-            log_file.write(f"Headers respuesta:\n{dict(res.headers)}\n\n")
-            log_file.write(f"Respuesta:\n{res.text}\n")
-
-        if res.status_code == 200:
-            # Guardar XML de respuesta si aplica
-            content_type = res.headers.get("Content-Type", "")
-            if "xml" in content_type:
-                carpeta_xml = obtener_ruta_schema_transferencia(payment_id)
-                xml_response_path = os.path.join(carpeta_xml, f"pain002_{payment_id}_estado.xml")
-                with open(xml_response_path, "w", encoding="utf-8") as xmlfile:
-                    xmlfile.write(res.text)
-
-            transferencia.transaction_status = res.json().get("transactionStatus", transferencia.transaction_status)
+        response = requests.get(f"{API_URL}/{payment_id}/status", headers=headers, timeout=(5, 15))
+        
+        # Verificar el código de estado de la respuesta
+        if response.status_code not in [200, 201]:
+            mensaje = handle_error_response(response)
+            messages.error(request, f"Error al enviar transferencia: {mensaje}")
+            return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
+        
+        response.raise_for_status()
+        
+        # Guardar respuesta XML pain.002 si es proporcionada
+        carpeta_xml = obtener_ruta_schema_transferencia(payment_id)
+        content_type = response.headers.get("Content-Type", "")
+        if "xml" in content_type:
+            xml_response_path = os.path.join(carpeta_xml, f"pain002_{payment_id}.xml")
+            with open(xml_response_path, "w", encoding="utf-8") as xmlfile:
+                xmlfile.write(response.text)
+                
+        nueva_estado = response.json().get("transactionStatus")
+        
+        if nueva_estado:
+            transferencia.transaction_status = nueva_estado
             transferencia.save()
-            messages.success(request, "Estado actualizado desde el banco.")
-        else:
-            mensaje = handle_error_response(res)
-            messages.error(request, f"Error al consultar estado: {mensaje}")
-        return render(request, 'api/GPT3/detalle_transferencia.html', {
-            'transferencia': transferencia,
-            'log': "Log no disponible",
-            'archivos': {
-                'pain001': os.path.join(obtener_ruta_schema_transferencia(payment_id), f"pain001_{payment_id}.xml"),
-                'pain002': os.path.join(obtener_ruta_schema_transferencia(payment_id), f"pain002_{payment_id}.xml"),
-                'aml': os.path.join(obtener_ruta_schema_transferencia(payment_id), f"aml_{payment_id}.txt"),
-            'bank_response': res.json() if res.ok else None
-            }
-        })
+        registrar_log(payment_id, headers, response.text)
+        messages.success(request, "Estado actualizado correctamente.")
+    except requests.RequestException as e:
+        registrar_log(payment_id, headers, "", error=str(e))
+        messages.error(request, f"Error al consultar estado: {str(e)}")
+    return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
 
-    except Exception as e:
+
+@login_required
+def estado_transferencia1(request, payment_id):
+    transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+    session = get_oauth_session(request)
+    access_token = session.token['access_token']
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Accept": "application/json",
+        "x-request-id": str(uuid.uuid4()),
+        "Origin": "https://api.db.com",
+        "X-Requested-With": "XMLHttpRequest"
+    }
+
+    try:
+        # Realizar la solicitud HTTP
+        response = requests.get(
+            f"{API_URL}/{payment_id}/status",
+            headers=headers,
+            timeout=(5, 15)
+        )
+        response.raise_for_status()
+
+        # Actualizar el estado de la transferencia
+        nueva_estado = response.json().get("transactionStatus")
+        if nueva_estado:
+            transferencia.transaction_status = nueva_estado
+            transferencia.save()
+
+        messages.success(request, "Estado actualizado correctamente.")
+    except requests.RequestException as e:
+        # Guardar errores en un archivo específico por transferencia
+        carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
+        os.makedirs(carpeta_transferencia, exist_ok=True)
+        error_log_path = os.path.join(carpeta_transferencia, f"error_estado_{payment_id}.log")
+        with open(error_log_path, 'w', encoding='utf-8') as error_file:
+            error_file.write(f"Error al consultar estado: {str(e)}\n")
+
         messages.error(request, f"Error al consultar estado: {str(e)}")
 
-    return redirect('detalle_transferencia', payment_id=payment_id)
+    return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
 
 
+
+# Cancelar transferencia
+@csrf_exempt
+@require_http_methods(["DELETE"])
+def cancelar_transferencia(request, payment_id):
+    transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+    session = get_oauth_session(request)
+    access_token = session.token['access_token']
+    otp = request.POST.get('otp', '123456')
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "idempotency-id": payment_id,
+        "otp": otp,
+        "Accept": "application/json",
+        "x-request-id": str(uuid.uuid4()),
+        "Origin": "https://api.db.com",
+        "X-Requested-With": "XMLHttpRequest"
+    }
+
+    try:
+        response = requests.delete(f"{API_URL}/{payment_id}", headers=headers, timeout=(5, 15))
+        response.raise_for_status()
+        transferencia.transaction_status = "CANC"
+        transferencia.save()
+        registrar_log(payment_id, headers, response.text)
+        messages.success(request, "Transferencia cancelada exitosamente.")
+    except requests.RequestException as e:
+        registrar_log(payment_id, headers, "", error=str(e))
+        messages.error(request, f"Error al cancelar transferencia: {str(e)}")
+    return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
+
+
+
+@login_required
+def cancelar_transferencia1(request, payment_id):
+    transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+    session = get_oauth_session(request)
+    access_token = session.token['access_token']
+    otp = request.POST.get('otp', '123456')  # Capturar OTP real
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "idempotency-id": payment_id,
+        "otp": otp,
+        "Accept": "application/json",
+        "x-request-id": str(uuid.uuid4()),
+        "Origin": "https://api.db.com",
+        "X-Requested-With": "XMLHttpRequest"
+    }
+
+    try:
+        # Realizar la solicitud HTTP
+        response = requests.delete(
+            f"{API_URL}/{payment_id}",
+            headers=headers,
+            timeout=(5, 15)
+        )
+        response.raise_for_status()
+
+        # Actualizar el estado de la transferencia
+        transferencia.transaction_status = "CANC"
+        transferencia.save()
+
+        messages.success(request, "Transferencia cancelada exitosamente.")
+    except requests.RequestException as e:
+        # Guardar errores en un archivo específico por transferencia
+        carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
+        os.makedirs(carpeta_transferencia, exist_ok=True)
+        error_log_path = os.path.join(carpeta_transferencia, f"error_cancelar_{payment_id}.log")
+        with open(error_log_path, 'w', encoding='utf-8') as error_file:
+            error_file.write(f"Error al cancelar transferencia: {str(e)}\n")
+
+        messages.error(request, f"Error al cancelar transferencia: {str(e)}")
+
+    return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
+
+
+# Reintentar segundo factor
+@csrf_exempt
+@require_http_methods(["PATCH"])
+def retry_second_factor_view(request, payment_id):
+    transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+    session = get_oauth_session(request)
+    access_token = session.token['access_token']
+    otp = request.POST.get('otp', '123456')
+
+    payload = {
+        "action": request.POST.get("action", "CREATE"),
+        "authId": transferencia.auth_id
+    }
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "idempotency-id": payment_id,
+        "otp": otp,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "x-request-id": str(uuid.uuid4()),
+        "Origin": "https://api.db.com",
+        "X-Requested-With": "XMLHttpRequest"
+    }
+
+    try:
+        response = requests.patch(f"{API_URL}/{payment_id}", json=payload, headers=headers, timeout=(5, 15))
+        response.raise_for_status()
+        
+        # Guardar respuesta XML pain.002 si es proporcionada
+        carpeta_xml = obtener_ruta_schema_transferencia(payment_id)        
+        content_type = response.headers.get("Content-Type", "")
+        if "xml" in content_type:
+            xml_response_path = os.path.join(carpeta_xml, f"pain002_{payment_id}.xml")
+            with open(xml_response_path, "w", encoding="utf-8") as xmlfile:
+                xmlfile.write(response.text)
+        
+        registrar_log(payment_id, headers, response.text)
+        messages.success(request, "Reintento de segundo factor realizado correctamente.")
+    except requests.RequestException as e:
+        registrar_log(payment_id, headers, "", error=str(e))
+        messages.error(request, f"Error al reintentar autenticación: {str(e)}")
+    return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+@login_required
+def retry_second_factor_view1(request, payment_id):
+    if not payment_id:
+        messages.error(request, "El ID de pago no es válido.")
+        return redirect('listar_transferenciasGPT3')
+
+    session = get_oauth_session(request)
+    access_token = session.token['access_token']
+    otp = request.POST.get('otp', '123456')  # Capturar OTP del formulario o dummy
+
+    payload = {
+        "action": request.POST.get("action", "CREATE"),
+        "authId": request.POST.get("authId")
+    }
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "idempotency-id": payment_id,
+        "otp": otp,
+        "Content-Type": "application/json",
+        "Accept": "application/json",
+        "x-request-id": str(uuid.uuid4()),
+        "Origin": "https://api.db.com",
+        "X-Requested-With": "XMLHttpRequest"
+    }
+
+    try:
+        # Realizar la solicitud HTTP
+        response = requests.patch(
+            f"{API_URL}/{payment_id}",
+            json=payload,
+            headers=headers,
+            timeout=(5, 15)
+        )
+        response.raise_for_status()
+
+        messages.success(request, "Reintento de segundo factor realizado correctamente.")
+    except requests.RequestException as e:
+        # Guardar el error en un log específico de retry
+        carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
+        os.makedirs(carpeta_transferencia, exist_ok=True)
+        error_log_path = os.path.join(carpeta_transferencia, f"error_retry_{payment_id}.log")
+        with open(error_log_path, 'w', encoding='utf-8') as error_file:
+            error_file.write(f"Error al reintentar autenticación: {str(e)}\n")
+
+        messages.error(request, f"Error al reintentar autenticación: {str(e)}")
+
+    return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
+
+
+
+# Crear Transferencia Masiva
 @login_required
 class CrearBulkTransferView(View):
     def get(self, request):
@@ -404,46 +910,49 @@ class DetalleBulkTransferView(View):
         })
 
 
-@csrf_exempt
-@require_http_methods(["POST"])
+
+
+
+
+
+
 @login_required
-def retry_second_factor(request, payment_id):
-    session = get_oauth_session(request)
-    headers = build_headers(request, 'PATCH')
-    attach_common_headers(headers, 'PATCH')
+def ver_log_transferencia(request, payment_id):
+    # Ruta del log principal de la transferencia
+    log_path = get_log_path(payment_id)
 
-    data = {
-        "action": request.POST.get("action", "CREATE"),
-        "authId": request.POST.get("authId")
-    }
+    # En caso que el log de la transferencia no exista, buscamos errores
+    posibles_logs = [
+        log_path,  # transferencia_<payment_id>.log
+        os.path.join(os.path.dirname(log_path), f"error_cancelar_{payment_id}.log"),
+        os.path.join(os.path.dirname(log_path), f"error_estado_{payment_id}.log"),
+        os.path.join(os.path.dirname(log_path), f"error_{payment_id}.log"),
+    ]
 
-    url = f"https://simulator-api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer/{payment_id}"
+    log_encontrado = None
+    for path in posibles_logs:
+        if os.path.exists(path):
+            log_encontrado = path
+            break
+
+    if not log_encontrado:
+        messages.error(request, "Log no disponible para esta transferencia.")
+        return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
+
     try:
-        res = session.patch(url, json=data, headers=headers)
+        with open(log_encontrado, 'r', encoding='utf-8') as log_file:
+            contenido = log_file.read()
 
-        log_path = obtener_ruta_log_transferencia(payment_id)
-        with open(log_path, 'a') as log:
-            log.write(f"\nPATCH OTP Retry - {datetime.now()}\nHeaders: {headers}\n\nBody: {data}\n\nResponse: {res.text}\n")
-
-        if res.status_code == 200:
-            # Guardar XML de respuesta OTP si viene en formato XML
-            content_type = res.headers.get("Content-Type", "")
-            if "xml" in content_type:
-                carpeta = obtener_ruta_schema_transferencia(payment_id)
-                otp_xml_path = os.path.join(carpeta, f"otp_patch_{payment_id}.xml")
-                with open(otp_xml_path, 'w', encoding='utf-8') as xmlfile:
-                    xmlfile.write(res.text)
-
-            messages.success(request, "OTP actualizado correctamente.")
-        else:
-            mensaje = handle_error_response(res)
-            messages.error(request, f"Error al reintentar OTP: {mensaje}")
+        response = HttpResponse(f"<pre>{contenido}</pre>", content_type="text/html")
+        response['Content-Disposition'] = f'inline; filename=\"{os.path.basename(log_encontrado)}\"'
+        return response
 
     except Exception as e:
-        messages.error(request, f"Error inesperado al aplicar segundo factor: {str(e)}")
+        messages.error(request, f"Error al visualizar el log: {str(e)}")
+        return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
 
-    return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
 
+# Listar vistas
 
 def postal_address_list_view(request):
     addresses = Address.objects.all().order_by('-id')
@@ -510,6 +1019,11 @@ def amount_list_view(request):
         amounts_paginated = paginator.page(1)
     return render(request, 'api/GPT3/amount_list.html', {'amounts': amounts_paginated})
 
+
+
+
+# Crear
+
 def create_account(request):
     if request.method == 'POST':
         form = AccountForm(request.POST)
@@ -523,12 +1037,12 @@ def create_account(request):
 
 def create_amount(request):
     if request.method == 'POST':
-        form = AmountForm(request.POST)
+        form = InstructedAmountForm(request.POST)
         if form.is_valid():
             form.save()
             return redirect('amount_listGPT3')
     else:
-        form = AmountForm()
+        form = InstructedAmountForm()
     return render(request, 'api/GPT3/create_amount.html', {'form': form})
 
 
@@ -585,5 +1099,3 @@ def create_creditor(request):
     else:
         form = CreditorForm()
     return render(request, 'api/GPT3/create_creditor.html', {'form': form})
-
-

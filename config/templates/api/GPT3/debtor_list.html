@@ -14,6 +14,7 @@
             <tr>
                 <th>ID</th>
                 <th>Nombre</th>
+                <th>Customer ID</th>
                 <th>Dirección Postal</th>
             </tr>
         </thead>
@@ -22,6 +23,7 @@
             <tr>
                 <td>{{ debtor.id }}</td>
                 <td>{{ debtor.debtor_name }}</td>
+                <td>{{ debtor.customer_id }}</td>
                 <td>{{ debtor.postal_address }}</td>
             </tr>
             {% empty %}

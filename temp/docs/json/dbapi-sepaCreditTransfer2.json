@@ -3017,12 +3017,12 @@
       },
       "PaymentId": {
         "type": "string",
-        "description": "Resource identification of the generated paymentinitiation resource ('Transaction-ID' from the header which is populated with the Intra Bank ID); should be available at least when status is PDNG or ACCP.",
+        "description": "Identificación de recursos del recurso de entrada de pago generado ('ID de transacción' del encabezado que está poblado con la ID intra banco);Debe estar disponible al menos cuando el estado es PDNG o ACCP.",
         "example": "232ed5b7-fc70-4c67-98bb-bf95b3300001"
       },
       "AuthId": {
         "type": "string",
-        "description": "Authentication Id used for update SCA status Sepa payment; it will be valid for 5 minutes.",
+        "description": "ID de autenticación utilizado para actualizar el estado SCA SEPA Pago;Será válido por 5 minutos.",
         "example": "232ed5b7-fc70-4c67-98bb-bf95b3300001"
       },
       "SepaBulkCreditTransfersDetails": {

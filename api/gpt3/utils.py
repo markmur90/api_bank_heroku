@@ -1,9 +1,11 @@
+import json
 import os
 import re
 import logging
 import uuid
-from django.conf import settings
+import qrcode
 
+from django.conf import settings
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from requests_oauthlib import OAuth2Session
@@ -13,9 +15,11 @@ from reportlab.platypus import Table, TableStyle
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 from datetime import datetime
+from reportlab.lib.utils import ImageReader
+from jsonschema import validate, ValidationError
+from requests.structures import CaseInsensitiveDict
 
 from api.gpt3.helpers import obtener_ruta_schema_transferencia
-
 from api.gpt3.models import SepaCreditTransfer
 
 logger = logging.getLogger(__name__)
@@ -27,6 +31,7 @@ ORIGIN = "https://api.db.com"
 
 API_CLIENT_ID = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
 API_CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzsniABTiDYl7QCh6XXEXzgDrjBD4zSvtHbP0Qa707g3eYbmKxO'
+
 DEUTSCHE_BANK_CLIENT_ID='SE0IWHFHJFHB848R9E0R9FRUFBCJHW0W9FHF008E88W0457338ASKH64880'
 DEUTSCHE_BANK_CLIENT_SECRET='H858hfhg0ht40588hhfjpfhhd9944940jf'
 
@@ -35,34 +40,69 @@ CLIENT_SECRET = API_CLIENT_SECRET
 
 DEFAULT_APIKEY = getattr(settings, "APIKEY", "MI_API_KEY")
 
+LOGS_DIR = os.path.join("schemas", "transferencias")
+os.makedirs(LOGS_DIR, exist_ok=True)
+
 
 
 def build_complete_sepa_headers(request, method: str):
+    """
+    Construye las cabeceras completas para una solicitud SEPA.
+
+    Args:
+        request: Objeto de solicitud HTTP.
+        method (str): Método HTTP (e.g., 'POST', 'GET', 'PATCH', 'DELETE').
+
+    Returns:
+        CaseInsensitiveDict: Objeto con las cabeceras completas.
+    """
     method = method.upper()
-    headers = {}
-    
+    headers = CaseInsensitiveDict()
+
+    # Cabecera idempotency-id (obligatoria para POST y GET)
     headers['idempotency-id'] = request.headers.get('idempotency-id', str(uuid.uuid4()))
-    headers['otp'] = (
-        request.POST.get('otp') if method == 'POST'
-        else request.headers.get('otp', 'SEPA_TRANSFER_GRANT') if method in ['PATCH', 'DELETE']
-        else None
-    )
+
+    # Cabecera OTP (obligatoria para POST, PATCH, DELETE)
+    if method in ['POST', 'PATCH', 'DELETE']:
+        headers['otp'] = request.POST.get('otp') if method == 'POST' else request.headers.get('otp', 'SEPA_TRANSFER_GRANT')
+
+    # Cabecera Correlation-Id (opcional, pero se genera un valor predeterminado si no está presente)
     headers['Correlation-Id'] = request.headers.get('Correlation-Id', str(uuid.uuid4()))
-    headers['apikey'] = request.headers.get('apikey', DEFAULT_APIKEY)
+
+    # Cabecera x-request-id (obligatoria, se genera un UUID si no está presente)
     headers['x-request-id'] = request.headers.get('x-request-id', str(uuid.uuid4()))
+
+    # Cabecera Origin (obligatoria)
     headers['Origin'] = request.headers.get('Origin', ORIGIN)
+
+    # Cabecera X-Requested-With (obligatoria)
     headers['X-Requested-With'] = "XMLHttpRequest"
+
+    # Cabecera Authorization (obligatoria)
     headers['Authorization'] = f"Bearer {ACCESS_TOKEN}"
+
+    # Cabecera Accept (obligatoria)
     headers['Accept'] = "application/json"
+
+    # Cabecera Content-Type (obligatoria para POST y PATCH)
     if method in ['POST', 'PATCH']:
         headers['Content-Type'] = "application/json"
+
+    # Cabeceras opcionales
     process_id = request.headers.get('process-id')
     if process_id:
         headers['process-id'] = process_id
+
     preview_sig = request.headers.get('previewsignature')
     if preview_sig:
         headers['previewsignature'] = preview_sig
-    return {k: v for k, v in headers.items() if v is not None}
+
+    # Validar cabeceras antes de devolverlas
+    errors = validate_headers(headers)
+    if errors:
+        raise ValueError(f"Errores en las cabeceras: {', '.join(errors)}")
+
+    return headers
 
 
 def handle_error_response(response):
@@ -136,88 +176,123 @@ def generar_pdf_transferencia(transferencia):
     pdf_filename = f"{creditor_name}_{timestamp}_{payment_reference}.pdf"
     pdf_path = os.path.join(carpeta_transferencia, pdf_filename)
 
+    # Crear canvas PDF
     c = canvas.Canvas(pdf_path, pagesize=letter)
-    c.setFont("Helvetica-Bold", 14)
-    c.drawString(150, 750, "SEPA Transfer Receipt")
-    c.setFont("Helvetica", 10)
+    width, height = letter
+    current_y = height - 50
+
+    # Título
+    c.setFont("Helvetica-Bold", 16)
+    c.drawCentredString(width / 2.0, current_y, "SEPA Transfer Receipt")
     current_y = 650
 
-    header_data = [["Creation Date", datetime.now().strftime('%d/%m/%Y %H:%M:%S')],
-                   ["Payment Reference", transferencia.payment_id]]
-    header_table = Table(header_data, colWidths=[150, 300])
-    header_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey)
-    ]))
-    header_table.wrapOn(c, 50, current_y)
-    header_table.drawOn(c, 50, current_y)
+    # Tabla Cabecera
+    header_data = [
+        ["Creation Date", datetime.now().strftime('%d/%m/%Y %H:%M:%S')],
+        ["Payment Reference", transferencia.payment_id]
+    ]
+    crear_tabla_pdf(c, header_data, current_y)
     current_y -= 120
 
-    debtor_data = [["Debtor Information", ""],
-                   ["Name", transferencia.debtor.debtor_name],
-                   ["IBAN", transferencia.debtor_account.iban],
-                   ["CUSROMER ID", transferencia.debtor_account.customer_id],
-                   ["Address", f"{transferencia.debtor.postal_address.street_and_house_number}, {transferencia.debtor.postal_address.zip_code_and_city}, {transferencia.debtor.postal_address.country}"]]
-    debtor_table = Table(debtor_data, colWidths=[150, 300])
-    debtor_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey)
-    ]))
-    debtor_table.wrapOn(c, 50, current_y)
-    debtor_table.drawOn(c, 50, current_y)
+    # Tabla Deudor
+    debtor_data = [
+        ["Debtor Information", ""],
+        ["Name", transferencia.debtor.debtor_name],
+        ["IBAN", transferencia.debtor_account.iban],
+        ["Customer ID", transferencia.debtor.customer_id],
+        ["Address", f"{transferencia.debtor.postal_address.street_and_house_number}, {transferencia.debtor.postal_address.zip_code_and_city}, {transferencia.debtor.postal_address.country}"]
+    ]
+    crear_tabla_pdf(c, debtor_data, current_y)
     current_y -= 120
 
-    creditor_data = [["Creditor Information", ""],
-                     ["Name", transferencia.creditor.creditor_name],
-                     ["IBAN", transferencia.creditor_account.iban],
-                     ["BIC", transferencia.creditor_agent.financial_institution_id],
-                     ["Address", f"{transferencia.creditor.postal_address.street_and_house_number}, {transferencia.creditor.postal_address.zip_code_and_city}, {transferencia.creditor.postal_address.country}"]]
-    creditor_table = Table(creditor_data, colWidths=[150, 300])
-    creditor_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey)
-    ]))
-    creditor_table.wrapOn(c, 50, current_y)
-    creditor_table.drawOn(c, 50, current_y)
+    # Tabla Acreedor
+    creditor_data = [
+        ["Creditor Information", ""],
+        ["Name", transferencia.creditor.creditor_name],
+        ["IBAN", transferencia.creditor_account.iban],
+        ["BIC", transferencia.creditor_agent.financial_institution_id],
+        ["Address", f"{transferencia.creditor.postal_address.street_and_house_number}, {transferencia.creditor.postal_address.zip_code_and_city}, {transferencia.creditor.postal_address.country}"]
+    ]
+    crear_tabla_pdf(c, creditor_data, current_y)
     current_y -= 200
 
-    transfer_data = [["Transfer Details", ""],
-                     ["Amount", f"{transferencia.instructed_amount.amount} {transferencia.instructed_amount.currency}"],
-                     ["Requested Execution Date", transferencia.requested_execution_date.strftime('%d/%m/%Y')],
-                     ["Purpose Code", transferencia.purpose_code],
-                     ["Remittance Info (Structured)", transferencia.remittance_information_structured or 'N/A'],
-                     ["Remittance Info (Unstructured)", transferencia.remittance_information_unstructured or 'N/A'],
-                     ["Auth ID", transferencia.auth_id],
-                     ["Transaction Status", transferencia.transaction_status],
-                     ["Priority", "High (Instant SEPA Credit Transfer)"]]
-    transfer_table = Table(transfer_data, colWidths=[200, 250])
-    transfer_table.setStyle(TableStyle([
-        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
-        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey)
-    ]))
-    transfer_table.wrapOn(c, 50, current_y)
-    transfer_table.drawOn(c, 50, current_y)
+    # Tabla Transferencia
+    transfer_data = [
+        ["Transfer Details", ""],
+        ["Amount", f"{transferencia.instructed_amount.amount} {transferencia.instructed_amount.currency}"],
+        ["Requested Execution Date", transferencia.requested_execution_date.strftime('%d/%m/%Y')],
+        ["Purpose Code", transferencia.purpose_code],
+        ["Remittance Info (Structured)", transferencia.remittance_information_structured or 'N/A'],
+        ["Remittance Info (Unstructured)", transferencia.remittance_information_unstructured or 'N/A'],
+        ["Auth ID", transferencia.auth_id or 'N/A'],
+        ["Transaction Status", transferencia.transaction_status],
+        ["Priority", "High (Instant SEPA Credit Transfer)"]
+    ]
+    crear_tabla_pdf(c, transfer_data, current_y)
     current_y -= 200
 
-    xml_path = os.path.join(carpeta_transferencia, f"pain002_{payment_reference}.xml")
-    if os.path.exists(xml_path):
-        with open(xml_path, "r", encoding="utf-8") as xml_file:
-            xml_lines = xml_file.readlines()
-        c.setFont("Helvetica", 8)
-        c.drawString(50, current_y, "Respuesta pain.002:")
-        current_y -= 12
-        for line in xml_lines:
-            if current_y < 60:
-                c.showPage()
-                c.setFont("Helvetica", 8)
-                current_y = 750
-            c.drawString(50, current_y, line.strip())
-            current_y -= 10
+    # Generar QR Code con Payment ID
+    qr = qrcode.make(transferencia.payment_id)
+    qr_path = os.path.join(carpeta_transferencia, f"qr_{payment_reference}.png")
+    qr.save(qr_path)
 
+    # Insertar QR en una página separada
+    c.showPage()
+    c.setFont("Helvetica-Bold", 14)
+    c.drawCentredString(width / 2.0, height - 80, "Scan to verify Payment ID")
+    qr_image = ImageReader(qr_path)
+    c.drawImage(qr_image, width / 2.0 - 75, height / 2.0 - 75, width=150, height=150, preserveAspectRatio=True)
     c.setFont("Helvetica-Oblique", 8)
-    c.drawString(50, 50, "This document is automatically generated.")
+    c.drawCentredString(width / 2.0, 50, "Generated automatically by SEPA Transfer System.")
+
+    # # Incluir contenido del pain.001 en una página separada
+    # xml_path = os.path.join(carpeta_transferencia, f"pain001_{payment_reference}.xml")
+    # if os.path.exists(xml_path):
+    #     c.showPage()
+    #     c.setFont("Helvetica-Bold", 14)
+    #     c.drawCentredString(width / 2.0, height - 50, "Pain.001 Response Details")
+    #     current_y = height - 80
+    #     c.setFont("Helvetica", 10)
+
+    #     with open(xml_path, "r", encoding="utf-8") as xml_file:
+    #         xml_lines = xml_file.readlines()
+
+    #     for line in xml_lines:
+    #         if current_y < 80:
+    #             c.showPage()
+    #             c.setFont("Helvetica", 10)
+    #             current_y = height - 80
+    #         # Formatear el contenido del XML para hacerlo más legible y justificarlo
+    #         formatted_line = line.strip().replace("<", "&lt;").replace(">", "&gt;")
+    #         wrapped_lines = c.beginText(50, current_y)
+    #         wrapped_lines.setFont("Helvetica", 10)
+    #         wrapped_lines.setTextOrigin(50, current_y)
+    #         wrapped_lines.setWordSpace(0.5)
+    #         wrapped_lines.textLines(formatted_line)
+    #         c.drawText(wrapped_lines)
+    #         current_y -= 12 * len(formatted_line.splitlines())
+
+    # Guardar PDF
     c.save()
+
+    # Limpiar QR temporal
+    if os.path.exists(qr_path):
+        os.remove(qr_path)
+
     return pdf_path
+
+
+def crear_tabla_pdf(c, data, y_position):
+    table = Table(data, colWidths=[180, 350])
+    table.setStyle(TableStyle([
+        ('BACKGROUND', (0, 0), (-1, 0), colors.lightgrey),
+        ('GRID', (0, 0), (-1, -1), 0.5, colors.grey),
+        ('FONTNAME', (0, 0), (-1, 0), 'Helvetica-Bold'),
+        ('FONTNAME', (0, 1), (-1, -1), 'Helvetica'),
+        ('FONTSIZE', (0, 0), (-1, -1), 9),
+    ]))
+    table.wrapOn(c, 50, y_position)
+    table.drawOn(c, 50, y_position)
 
 
 def validate_headers(headers):
@@ -254,7 +329,7 @@ def validate_headers(headers):
     return errors
 
 
-def build_headers(request, external_method):
+def build_headers1(request, external_method):
 
     method = external_method.upper()
     headers = {}
@@ -286,6 +361,7 @@ def build_headers(request, external_method):
     process_id = request.headers.get('process-id')
     if process_id:
         headers['process-id'] = process_id
+        
     preview_sig = request.headers.get('previewsignature')
     if preview_sig:
         headers['previewsignature'] = preview_sig
@@ -343,6 +419,124 @@ def validate_parameters(data):
         errors.append("El valor de 'chargeBearer' no debe exceder los 35 caracteres.")
         
     return errors
+
+
+
+def construir_payload(transferencia: SepaCreditTransfer) -> dict:
+    payload = {
+        "debtor": {
+            "debtorName": transferencia.debtor.debtor_name,
+            "debtorPostalAddress": {
+                "country": transferencia.debtor.postal_address.country,
+                "addressLine": {
+                    "streetAndHouseNumber": transferencia.debtor.postal_address.street_and_house_number,
+                    "zipCodeAndCity": transferencia.debtor.postal_address.zip_code_and_city
+                }
+            }
+        },
+        "debtorAccount": {
+            "iban": transferencia.debtor_account.iban,
+            "currency": transferencia.debtor_account.currency
+        },
+        "creditor": {
+            "creditorName": transferencia.creditor.creditor_name,
+            "creditorPostalAddress": {
+                "country": transferencia.creditor.postal_address.country,
+                "addressLine": {
+                    "streetAndHouseNumber": transferencia.creditor.postal_address.street_and_house_number,
+                    "zipCodeAndCity": transferencia.creditor.postal_address.zip_code_and_city
+                }
+            }
+        },
+        "creditorAccount": {
+            "iban": transferencia.creditor_account.iban,
+            "currency": transferencia.creditor_account.currency
+        },
+        "creditorAgent": {
+            "financialInstitutionId": transferencia.creditor_agent.financial_institution_id
+        },
+        "instructedAmount": {
+            "amount": float(transferencia.instructed_amount.amount),
+            "currency": transferencia.instructed_amount.currency
+        },
+        "paymentIdentification": {
+            "endToEndIdentification": transferencia.payment_identification.end_to_end_id,
+            "instructionId": transferencia.payment_identification.instruction_id
+        },
+        "purposeCode": transferencia.purpose_code,
+        "requestedExecutionDate": transferencia.requested_execution_date.strftime("%Y-%m-%d"),
+        "remittanceInformationStructured": transferencia.remittance_information_structured,
+        "remittanceInformationUnstructured": transferencia.remittance_information_unstructured,
+    }
+
+    # ⚡ Opcionales: Si tienes configurado payment_type_information
+    if transferencia.payment_type_information:
+        payload["paymentTypeInformation"] = {
+            "serviceLevel": {
+                "serviceLevelCode": transferencia.payment_type_information.service_level_code
+            },
+            "localInstrument": {
+                "localInstrumentCode": transferencia.payment_type_information.local_instrument_code
+            } if transferencia.payment_type_information.local_instrument_code else None,
+            "categoryPurpose": {
+                "categoryPurposeCode": transferencia.payment_type_information.category_purpose_code
+            } if transferencia.payment_type_information.category_purpose_code else None
+        }
+
+        # Limpieza por si opcionales vienen en None
+        payload["paymentTypeInformation"] = {k: v for k, v in payload["paymentTypeInformation"].items() if v}
+
+    return payload
+
+
+
+def build_headers(idempotency_id=None, otp=None, correlation_id=None):
+    headers = {
+        "Accept": "text/html, application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Encoding": "gzip, deflate, br, zstd",
+        "Accept-Language": "es-CO",
+        "Connection": "keep-alive",
+        "Host": "api.db.com",
+        "Priority": "u=0, i",
+        "Sec-Fetch-Dest": "document",
+        "Sec-Fetch-Mode": "navigate",
+        "Sec-Fetch-Site": "none",
+        "Sec-Fetch-User": "?1",
+        "Upgrade-Insecure-Requests": "1",
+        "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+    }
+    if idempotency_id:
+        headers["idempotency-id"] = idempotency_id
+    if otp:
+        headers["otp"] = otp
+    if correlation_id:
+        headers["Correlation-Id"] = correlation_id
+    return headers
+
+
+def validate_schema(data, schema):
+    try:
+        validate(instance=data, schema=schema)
+        return True
+    except ValidationError as e:
+        return False, str(e)
+
+
+def save_log(payment_id, request_headers, response_headers, response_text):
+    """Guarda un log completo por transferencia"""
+    log_path = os.path.join(LOGS_DIR, f"transferencia_{payment_id}.log")
+    with open(log_path, "w", encoding="utf-8") as f:
+        f.write(f"--- Request Headers ---\n{json.dumps(request_headers, indent=2)}\n")
+        f.write(f"\n--- Response Headers ---\n{json.dumps(dict(response_headers), indent=2)}\n")
+        f.write(f"\n--- Response Text ---\n{response_text}\n")
+
+def get_log_path(payment_id):
+    return os.path.join(LOGS_DIR, f"transferencia_{payment_id}.log")
+
+def log_exists(payment_id):
+    """Verifica si existe el archivo de log para el payment_id dado"""
+    log_path = get_log_path(payment_id)
+    return os.path.isfile(log_path)
 
 
 

@@ -3,7 +3,7 @@ from datetime import datetime
 import os
 import uuid
 
-LOG_DIR = os.path.join("logs", "transferencias")
+LOG_DIR = os.path.join("schemas", "transferencias")
 SCHEMA_DIR = os.path.join("schemas", "transferencias")
 
 
@@ -22,13 +22,15 @@ def generate_deterministic_id(*args, prefix=""):
 
 
 def obtener_ruta_schema_transferencia(payment_id):
-    carpeta = os.path.join(SCHEMA_DIR, payment_id)
+    # Convertir payment_id a cadena para evitar errores con UUID
+    carpeta = os.path.join(SCHEMA_DIR, str(payment_id))
     os.makedirs(carpeta, exist_ok=True)
     return carpeta
 
 
 def obtener_ruta_log_transferencia(payment_id):
-    carpeta = os.path.join(LOG_DIR, payment_id)
+    # Convertir payment_id a cadena para evitar errores con UUID
+    carpeta = os.path.join(LOG_DIR, str(payment_id))
     os.makedirs(carpeta, exist_ok=True)
     return os.path.join(carpeta, f"transferencia_{payment_id}.log")
 

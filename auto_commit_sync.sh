@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Ruta del repositorio que deseas monitorizar
-REPO_PATH=$(eval echo ~/Documentos/GitHub/api_bank_heroku)
+REPO_PATH=$(eval echo ~/Documentos/GitHub/api_bank_h)
 LOGS_PATH=$(eval echo ~/Documentos/GitHub/logs)
 cd "$REPO_PATH" || exit 1
 

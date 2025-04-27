@@ -26,7 +26,7 @@
       "name": "Apply migrations"
     },
     {
-      "command": "python manage.py collectstatic",
+      "command": "python manage.py collectstatic --noinput",
       "name": "Collect static files"
     }
     // {
