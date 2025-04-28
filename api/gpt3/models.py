@@ -84,19 +84,16 @@ class PaymentTypeInformation(models.Model):
     service_level_code = models.CharField(
         max_length=10,
         choices=SERVICE_LEVEL_CHOICES,
-        default='INST'
     )
     local_instrument_code = models.CharField(
         max_length=35,
         choices=LOCAL_INSTRUMENT_CHOICES,
-        default='INST',
         blank=True,
         null=True
     )
     category_purpose_code = models.CharField(
         max_length=35,
         choices=CATEGORY_PURPOSE_CHOICES,
-        default='GDSV',
         blank=True,
         null=True
     )
@@ -121,8 +118,8 @@ class SepaCreditTransfer(models.Model):
     ])
     purpose_code = models.CharField(max_length=4, default='GDSV')
     requested_execution_date = models.DateField()
-    remittance_information_structured = models.CharField(max_length=140, blank=True, null=True)
-    remittance_information_unstructured = models.CharField(max_length=140, blank=True, null=True)
+    remittance_information_structured = models.CharField(max_length=10, blank=True, null=True)
+    remittance_information_unstructured = models.CharField(max_length=60, blank=True, null=True)
 
     debtor = models.ForeignKey(Debtor, on_delete=models.CASCADE)
     debtor_account = models.ForeignKey(Account, related_name='debtor_account', on_delete=models.CASCADE)

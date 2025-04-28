@@ -1,0 +1,63 @@
+Informe de escaneo - Fecha y hora: 2025-04-27 20:14:43
+
+
+### REPORTE DE: 127.0.0.1
+  Puerto 2222:
+    status: abierto
+    ssh: 
+    hydra: Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2025-04-27 20:14:43
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 91 login tries (l:7/p:13), ~6 tries per task
+[DATA] attacking ssh://127.0.0.1:2222/
+    medusa: Medusa v2.3_rc1 [http://www.foofus.net] (C) JoMo-Kun / Foofus Networks <jmk@foofus.net>
+    ping: PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.042 ms
+64 bytes from 127.0.0.1: icmp_seq=2 ttl=64 time=0.110 ms
+64 bytes from 127.0.0.1: icmp_seq=3 ttl=64 time=0.105 ms
+64 bytes from 127.0.0.1: icmp_seq=4 ttl=64 time=0.101 ms
+
+--- 127.0.0.1 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3058ms
+rtt min/avg/max/mdev = 0.042/0.089/0.110/0.027 ms
+    nmap: Starting Nmap 7.95 ( https://nmap.org ) at 2025-04-27 20:14 -05
+Nmap scan report for localhost (127.0.0.1)
+Host is up (0.00011s latency).
+
+PORT     STATE SERVICE
+2222/tcp open  EtherNetIP-1
+
+Nmap done: 1 IP address (1 host up) scanned in 0.09 seconds
+
+--------------------------------------------------
+
+
+Resumen del escaneo:
+
+IP: 127.0.0.1
+  Puerto 2222:
+    status: abierto
+    ssh: 
+    hydra: Hydra v9.5 (c) 2023 by van Hauser/THC & David Maciejak - Please do not use in military or secret service organizations, or for illegal purposes (this is non-binding, these *** ignore laws and ethics anyway).
+
+Hydra (https://github.com/vanhauser-thc/thc-hydra) starting at 2025-04-27 20:14:43
+[DATA] max 16 tasks per 1 server, overall 16 tasks, 91 login tries (l:7/p:13), ~6 tries per task
+[DATA] attacking ssh://127.0.0.1:2222/
+    medusa: Medusa v2.3_rc1 [http://www.foofus.net] (C) JoMo-Kun / Foofus Networks <jmk@foofus.net>
+    ping: PING 127.0.0.1 (127.0.0.1) 56(84) bytes of data.
+64 bytes from 127.0.0.1: icmp_seq=1 ttl=64 time=0.042 ms
+64 bytes from 127.0.0.1: icmp_seq=2 ttl=64 time=0.110 ms
+64 bytes from 127.0.0.1: icmp_seq=3 ttl=64 time=0.105 ms
+64 bytes from 127.0.0.1: icmp_seq=4 ttl=64 time=0.101 ms
+
+--- 127.0.0.1 ping statistics ---
+4 packets transmitted, 4 received, 0% packet loss, time 3058ms
+rtt min/avg/max/mdev = 0.042/0.089/0.110/0.027 ms
+    nmap: Starting Nmap 7.95 ( https://nmap.org ) at 2025-04-27 20:14 -05
+Nmap scan report for localhost (127.0.0.1)
+Host is up (0.00011s latency).
+
+PORT     STATE SERVICE
+2222/tcp open  EtherNetIP-1
+
+Nmap done: 1 IP address (1 host up) scanned in 0.09 seconds

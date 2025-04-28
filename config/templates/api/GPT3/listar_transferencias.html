@@ -85,15 +85,7 @@
 
 <!-- Paginación -->
 <div class="d-flex justify-content-between align-items-center mt-4">
-    <div>
-        {% if transferencias.paginator.count == 0 %}
-            No hay transferencias.
-        {% else %}
-            Mostrando 
-            {{ transferencias.start_index }}{% if transferencias.start_index != transferencias.end_index %} - {{ transferencias.end_index }}{% endif %}
-            de {{ transferencias.paginator.count }} transferencia{% if transferencias.paginator.count != 1 %}s{% endif %}
-        {% endif %}
-    </div>
+
 
     {% if transferencias.paginator.count > 0 %}
     <nav>
