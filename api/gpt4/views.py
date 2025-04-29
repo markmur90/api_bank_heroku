@@ -110,12 +110,6 @@ def create_transfer(request):
             )
             transfer.payment_identification = payment_identification
             transfer.save()
-            
-        try:
-            generar_xml_pain001(transfer, transfer.payment_id)
-            generar_archivo_aml(transfer, transfer.payment_id)
-        except Exception as e:
-            registrar_log(transfer.payment_id, {}, error=f"Error generación inicial: {str(e)}")
 
         messages.success(request, "Transferencia creada correctamente.")            
         return redirect('list_transfersGPT4')
@@ -179,6 +173,9 @@ def send_transfer_view(request, transfer_id):
     if request.method == 'POST':
         form = SendTransferForm(request.POST)
         if form.is_valid():
+            instant_flag = form.cleaned_data.get('instant_transfer', False)
+            transfer.set_instant_transfer(instant_flag)
+            
             obtain_token = form.cleaned_data.get('obtain_token')
             manual_token = form.cleaned_data.get('manual_token')
             obtain_otp = form.cleaned_data.get('obtain_otp')
@@ -200,7 +197,6 @@ def send_transfer_view(request, transfer_id):
             transfer.status = 'PDNG'
             transfer.save()
 
-            transfer.to_schema_data = lambda instant_transfer=form.cleaned_data.get('instant_transfer', False): transfer.to_schema_data(instant_transfer)
 
             response = send_transfer(
                 transfer,

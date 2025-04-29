@@ -8,7 +8,8 @@ from api.gpt4.utils import obtener_ruta_schema_transferencia
 logger = logging.getLogger("bank_services")
 
 
-def generar_archivo_aml(transferencia, payment_id):
+def generar_archivo_aml(transferencia, payment_id, instant_transfer=False):
+
     carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
     aml_filename = f"aml_{payment_id}.xml"
     aml_path = os.path.join(carpeta_transferencia, aml_filename)
@@ -17,7 +18,8 @@ def generar_archivo_aml(transferencia, payment_id):
     transaction = ET.SubElement(root, "Transaction")
 
     ET.SubElement(transaction, "TransactionID").text = str(transferencia.payment_id)  # Convertir UUID a cadena
-    ET.SubElement(transaction, "TransactionType").text = "INST"
+    ET.SubElement(transaction, "TransactionType").text = "INST" if instant_transfer else "SEPA" # type: ignore
+
     ET.SubElement(transaction, "ExecutionDate").text = transferencia.requested_execution_date.strftime("%Y-%m-%dT%H:%M:%S")
 
     amount = ET.SubElement(transaction, "Amount")
@@ -51,5 +53,23 @@ def generar_archivo_aml(transferencia, payment_id):
 
     ET.ElementTree(root).write(aml_path, encoding="utf-8", xml_declaration=True)
     return aml_path
+
+
+from lxml import etree
+
+def validar_aml_con_xsd(aml_path, xsd_path="schemas/xsd/aml_transaction_report.xsd"):
+    """
+    Valida el archivo AML generado contra su esquema XSD.
+    """
+    with open(xsd_path, 'rb') as f:
+        schema_root = etree.XML(f.read())
+        schema = etree.XMLSchema(schema_root)
+
+    with open(aml_path, 'rb') as f:
+        xml_doc = etree.parse(f)
+
+    if not schema.validate(xml_doc):
+        errors = schema.error_log
+        raise ValueError(f"El archivo AML no es válido según el XSD: {errors}")
 
 

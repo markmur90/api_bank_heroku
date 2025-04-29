@@ -127,7 +127,12 @@ class Transfer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    _instant_transfer_flag = False  # Propiedad temporal, no se guarda en la DB
+    def set_instant_transfer(self, value: bool):
+        self._instant_transfer_flag = bool(value)
+        
     def to_schema_data(self, instant_transfer=False):
+        instant_transfer = self._instant_transfer_flag
         return {
             "purposeCode": self.purpose_code or "GDSV",
             "requestedExecutionDate": self.requested_execution_date.strftime('%Y-%m-%d'),
@@ -167,7 +172,6 @@ class Transfer(models.Model):
                 "currency": self.creditor_account.currency,
             },
             "remittanceInformationUnstructured": self.remittance_information_unstructured or "Pago de servicios",
-            "instantTransfer": instant_transfer
         }
 
     def save(self, *args, **kwargs):

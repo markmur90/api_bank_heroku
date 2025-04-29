@@ -2,6 +2,7 @@ import logging
 import os
 import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
+from lxml import etree
 
 from api.gpt4.utils import obtener_ruta_schema_transferencia
 
@@ -62,7 +63,8 @@ def generar_xml_pain001(transferencia, payment_id):
     cdt_trf_tx_inf = ET.SubElement(pmt_inf, "CdtTrfTxInf")
     pmt_id = ET.SubElement(cdt_trf_tx_inf, "PmtId")
     ET.SubElement(pmt_id, "EndToEndId").text = str(transferencia.payment_identification.end_to_end_id)  # Convertir UUID a cadena
-
+    ET.SubElement(pmt_id, "InstrId").text = str(transferencia.payment_identification.instruction_id)
+    
     amt = ET.SubElement(cdt_trf_tx_inf, "Amt")
     ET.SubElement(amt, "InstdAmt", Ccy=transferencia.currency).text = str(transferencia.instructed_amount)
 
@@ -97,3 +99,36 @@ def generar_xml_pain001(transferencia, payment_id):
 
     logger.info(f"XML pain.001 generado en {xml_path}")
     return xml_path
+
+
+def validar_xml_pain001(xml_path):
+    """
+    Verifica que el XML generado contenga EndToEndId e InstrId.
+    """
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+
+    ns = {'ns': "urn:iso:std:iso:20022:tech:xsd:pain.001.001.03"}
+    e2e = root.find('.//ns:EndToEndId', ns)
+    instr = root.find('.//ns:InstrId', ns)
+
+    if e2e is None or not e2e.text.strip():
+        raise ValueError("El XML no contiene un EndToEndId válido.")
+    if instr is None or not instr.text.strip():
+        raise ValueError("El XML no contiene un InstructionId válido.")
+
+
+def validar_xml_con_xsd(xml_path, xsd_path="schemas/xsd/pain.001.001.03.xsd"):
+    """
+    Valida el archivo XML `pain.001` contra el esquema XSD.
+    """
+    with open(xsd_path, 'rb') as f:
+        schema_root = etree.XML(f.read())
+        schema = etree.XMLSchema(schema_root)
+
+    with open(xml_path, 'rb') as f:
+        xml_doc = etree.parse(f)
+
+    if not schema.validate(xml_doc):
+        errors = schema.error_log
+        raise ValueError(f"El XML no es válido según el XSD: {errors}")

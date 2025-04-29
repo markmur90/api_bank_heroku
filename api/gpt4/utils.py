@@ -26,9 +26,11 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from jsonschema import validate, ValidationError
 
+from api.gpt4.generate_aml import generar_archivo_aml, validar_aml_con_xsd
+from api.gpt4.generate_xml import generar_xml_pain001, validar_xml_con_xsd, validar_xml_pain001
 from api.gpt4.validator import preparar_request_type_y_datos
 from api.gpt4.schemas import sepa_credit_transfer_schema
-
+from api.gpt4.models import PaymentIdentification
 
 logger = logging.getLogger(__name__)
 
@@ -427,10 +429,22 @@ def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False
     })
 
     body = schema_data
+    
+    e2e_id = generate_end_to_end_id()
+    instr_id = generate_instruction_id()
+
     body['paymentIdentification'] = {
-        "endToEndIdentification": generate_end_to_end_id(),
-        "instructionId": generate_instruction_id(),
+        "endToEndIdentification": e2e_id,
+        "instructionId": instr_id,
     }
+
+    # Actualiza el modelo también
+    payment_identification = PaymentIdentification.objects.create(
+        end_to_end_id=e2e_id,
+        instruction_id=instr_id
+    )
+    transfer.payment_identification = payment_identification
+    transfer.save()
 
     try:
         validate(instance=body, schema=sepa_credit_transfer_schema)
@@ -452,6 +466,25 @@ def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False
     else:
         transfer.status = 'ERROR'
     transfer.save()
+    
+    # 💡 Aquí generamos XML reales después del envío
+    try:
+        generar_xml_pain001(transfer, payment_id)
+        generar_archivo_aml(transfer, payment_id, instant_transfer=transfer._instant_transfer_flag)
+        aml_path = generar_archivo_aml(transfer, payment_id, instant_transfer=transfer._instant_transfer_flag)
+        xml_path = generar_xml_pain001(transfer, payment_id)
+        
+        validar_xml_pain001(xml_path)
+        validar_xml_con_xsd(xml_path)
+        
+        validar_aml_con_xsd(aml_path)
+        
+        logger = setup_logger(payment_id)
+        logger.info("Validación de XML pain.001 superada correctamente.")
+        
+
+    except Exception as e:
+        save_log(payment_id, response_body=f"Error generando XML posterior: {str(e)}")
 
     return response
 
