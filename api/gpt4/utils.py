@@ -28,6 +28,7 @@ from jsonschema import validate, ValidationError
 
 from api.gpt4.generate_aml import generar_archivo_aml, validar_aml_con_xsd
 from api.gpt4.generate_xml import generar_xml_pain001, validar_xml_con_xsd, validar_xml_pain001
+from api.gpt4.paths import obtener_ruta_schema_transferencia
 from api.gpt4.validator import preparar_request_type_y_datos
 from api.gpt4.schemas import sepa_credit_transfer_schema
 from api.gpt4.models import PaymentIdentification
@@ -71,11 +72,7 @@ CLIENT_ID = DEUTSCHE_BANK_CLIENT_ID
 CLIENT_SECRET = DEUTSCHE_BANK_CLIENT_SECRET
 TOKEN_URL = DEUTSCHE_BANK_TOKEN_URL
 
-def obtener_ruta_schema_transferencia(payment_id):
-    # Convertir payment_id a cadena para evitar errores con UUID
-    carpeta = os.path.join(SCHEMA_DIR, str(payment_id))
-    os.makedirs(carpeta, exist_ok=True)
-    return carpeta
+
 
 # ===========================
 # LOGS Y HEADERS

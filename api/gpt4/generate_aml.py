@@ -3,7 +3,7 @@ import os
 import xml.etree.ElementTree as ET
 from datetime import datetime
 
-from api.gpt4.utils import obtener_ruta_schema_transferencia
+from api.gpt4.paths import obtener_ruta_schema_transferencia
 
 logger = logging.getLogger("bank_services")
 
