@@ -144,3 +144,103 @@ ACCESS CODE:                BAR1588623
 
 
 
+Aquí tienes una lista de los códigos encontrados en el archivo, clasificados por longitud (mínimo 6, 8 y 10 dígitos) y con referencia a lo que pertenecen:
+
+---
+
+### **Códigos de 6 dígitos**
+1. **02569S** - PIN de autorización.
+2. **021167** - SSN (Número de Seguro Social).
+3. **54082** - PIN del oficial autorizado (James Von Moltke).
+4. **03275** - Código postal.
+5. **9231** - SIC Code (Standard Industrial Classification).
+
+---
+
+### **Códigos de 8 dígitos**
+1. **090512DE** - Parte del ID de transacción.
+2. **19311295** - Dirección IP del servidor (ns1.db.com.de).
+3. **20413250** - Dirección IP del servidor (ns21.db.net).
+4. **20878714** - Dirección IP del servidor (ns20.db.net).
+5. **20878713** - Dirección IP del servidor (ns20.db.uk).
+6. **19311280** - Dirección IP del servidor (varios).
+7. **84578900** - Código de sesión SSL.
+8. **493069K1** - Nombre de usuario.
+
+---
+
+### **Códigos de 10 dígitos**
+1. **090s125007** - Parte del ID de transacción.
+2. **000000000S** - Número de cliente.
+3. **38837862BE** - Parte del número de cliente.
+4. **0141936500** - Número de cuenta del remitente.
+5. **8452937652** - Código CHIPS.
+6. **8457890034** - Código de sesión SSL.
+
+---
+
+Aquí tienes una lista de los códigos encontrados con un mínimo de 6, 8 y 10 dígitos, excluyendo aquellos que forman parte del código fuente, junto con su referencia:
+
+---
+
+### **Códigos de 6 dígitos**
+1. **02569S** - PIN de autorización.
+2. **021167** - SSN (Número de Seguro Social).
+3. **54082** - PIN del oficial autorizado (James Von Moltke).
+4. **03275** - Código postal.
+5. **9231** - SIC Code (Standard Industrial Classification).
+
+---
+
+### **Códigos de 8 dígitos**
+1. **19311295** - Dirección IP del servidor (ns1.db.com.de).
+2. **20413250** - Dirección IP del servidor (ns21.db.net).
+3. **20878714** - Dirección IP del servidor (ns20.db.net).
+4. **20878713** - Dirección IP del servidor (ns20.db.uk).
+5. **84578900** - Código de sesión SSL.
+6. **493069K1** - Nombre de usuario.
+
+---
+
+### **Códigos de 10 dígitos**
+1. **090s125007** - Parte del ID de transacción.
+2. **0141936500** - Número de cuenta del remitente.
+3. **8452937652** - Código CHIPS.
+4. **4874236859** - Referencia de mensaje.
+5. **916696857** - ID del director.
+
+---
+Aquí tienes una lista de los códigos encontrados con un mínimo de 6, 8 y 10 dígitos, excluyendo aquellos que forman parte del código fuente, junto con su referencia:
+
+---
+
+### **Códigos de 6 dígitos**
+1. **02569S** - PIN de autorización.
+2. **021167** - SSN (Número de Seguro Social).
+3. **60325** - Código postal de Frankfurt.
+4. **388378** - Parte del número de cliente.
+5. **957302** - Código de acceso de descarga SWIFT.
+
+---
+
+### **Códigos de 8 dígitos**
+1. **19311295** - Dirección IP del servidor (ns1.db.com.de).
+2. **20413250** - Dirección IP del servidor (ns21.db.net).
+3. **20878714** - Dirección IP del servidor (ns20.db.net).
+4. **84578900** - Código de sesión SSL.
+5. **493069K1** - Nombre de usuario.
+6. **79056588** - Código internacional de depósito.
+
+---
+
+### **Códigos de 10 dígitos**
+1. **090s125007** - Parte del ID de transacción.
+2. **0141936500** - Número de cuenta del remitente.
+3. **8452937652** - Código CHIPS.
+4. **4874236859** - Referencia de mensaje.
+5. **9573020414** - Código de acceso de descarga SWIFT.
+
+---
+
+access_token = w0qXWSEW4YVFgeInQqBEg8sXnjFJsl
+- OAuth Token: 2YotnFZFEjr1zCsicMWpAA

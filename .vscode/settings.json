@@ -1,5 +1,6 @@
 {
     "workbench.colorCustomizations": {
+        "tab.activeBackground": "#823d3d",
         "activityBar.activeBackground": "#93e6fc",
         "activityBar.background": "#93e6fc",
         "activityBar.foreground": "#15202b",
@@ -19,7 +20,5 @@
         "titleBar.inactiveForeground": "#15202b99"
     },
     "peacock.color": "#61dafb",
-    "python.analysis.extraPaths": [
-        "./docs/act/sys/dbapi_OTP"
-    ]
+
 }

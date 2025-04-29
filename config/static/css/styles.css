@@ -1,7 +1,15 @@
 body {
-    background-color: #f8f9fa;
+    background-image: url('/static/images/background.jpg');
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    background-position: center;
+    color: #333; /* Asegúrate de que el texto sea legible */
     font-family: Arial, sans-serif;
     padding-top: 156px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;    
 }
 .card {
     margin-top: 20px;
@@ -21,4 +29,13 @@ button {
 }
 button:hover {
     background-color: #0056b3;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+main {
+    flex: 1;
 }

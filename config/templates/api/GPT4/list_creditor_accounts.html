@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Cuentas de Acreedores Registradas</h2>
+    <a href="{% url 'create_creditor_accountGPT4' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nueva Cuenta
+    </a>
+    <a href="{% url 'create_creditor_agentGPT4' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nuevo Agente
+    </a>    
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>Acreedor</th>
+                <th>IBAN</th>
+                <th>Moneda</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for account in accounts %}
+            <tr>
+                <td>{{ account.creditor.name }}</td>
+                <td>{{ account.iban }}</td>
+                <td>{{ account.currency }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center">No hay cuentas de acreedores registradas.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

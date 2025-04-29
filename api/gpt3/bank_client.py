@@ -5,7 +5,9 @@ import os
 import xml.etree.ElementTree as ET
 from cryptography.fernet import Fernet
 from lxml import etree
-from api.gpt3.utils import build_complete_sepa_headers, save_log  # Importar la función
+
+from api.gpt3.utils import build_complete_sepa_headers, save_log
+
 
 # Configuraciones
 TIMEOUT = (5, 5)  # (connect_timeout, read_timeout)

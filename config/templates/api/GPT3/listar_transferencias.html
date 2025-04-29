@@ -40,28 +40,17 @@
                 <td>{{ t.created_at|date:"d/m/Y H:i" }}</td>
 
                 <td class="text-end">
-                  {% if t.payment_id %}
-                  <a href="{{ t.get_absolute_url }}" class="btn btn-sm btn-info" title="Detalle">
-                      <i class="bi bi-eye"></i> View
-                  </a>
+
+
+                  {% if t.transaction_status == 'PDNG' %}
                   <form method="post" action="{% url 'enviar_transferenciaGPT3' t.payment_id %}" class="d-inline">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-sm btn-success" title="Enviar">
                         <i class="bi bi-send"></i>Send
                     </button>
                   </form>
-                  <form method="post" action="{% url 'cancelar_transferenciaGPT3' t.payment_id %}" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-danger" title="Cancelar">
-                        <i class="bi bi-x-circle"></i>Cancel
-                    </button>
-                  </form>
-                  <form method="post" action="{% url 'retry_second_factorGPT3' t.payment_id %}" class="d-inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-sm btn-warning" title="Reintentar 2FA">
-                        <i class="bi bi-arrow-repeat"></i>2FA
-                    </button>
-                  </form>
+
+
                   <a href="{% url 'estado_transferenciaGPT3' t.payment_id %}" class="btn btn-sm btn-secondary" title="Estado">
                     <i class="bi bi-search"></i>Status
                   </a>

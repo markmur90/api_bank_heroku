@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h3>Enviar Transferencia: {{ transfer.payment_id }}</h3>
+    </div>
+    <div class="card-body">
+
+        <form method="post" class="needs-validation" novalidate>
+            {% csrf_token %}
+
+            <div class="mb-4">
+                <h5>Configuración del TOKEN</h5>
+                <div class="form-check mb-2">
+                    {{ form.obtain_token }}
+                    <label class="form-check-label" for="id_obtain_token">Generar automáticamente nuevo TOKEN</label>
+                </div>
+                <div class="mb-3">
+                    {{ form.manual_token.label_tag }}
+                    {{ form.manual_token }}
+                    <div class="form-text">Si ya tienes un TOKEN, ingrésalo aquí manualmente. De lo contrario, selecciona la opción anterior.</div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <h5>Configuración del OTP</h5>
+                <div class="form-check mb-2">
+                    {{ form.obtain_otp }}
+                    <label class="form-check-label" for="id_obtain_otp">Solicitar automáticamente nuevo OTP</label>
+                </div>
+                <div class="mb-3">
+                    {{ form.manual_otp.label_tag }}
+                    {{ form.manual_otp }}
+                    <div class="form-text">
+                        Puedes ingresar el OTP manualmente si ya lo tienes (mínimo 6 caracteres, máximo 8).
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card desplegable para mostrar el contenido de zCod.md -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <button class="btn btn-link" type="button" data-bs-toggle="collapse" data-bs-target="#zCodContent" aria-expanded="false" aria-controls="zCodContent">
+                        Mostrar Información Adicional
+                    </button>
+                </div>
+                <div id="zCodContent" class="collapse">
+                    <div class="card-body overflow-auto" style="max-height: 200px;">
+                        <pre>
+                            {{ zcod_content|safe }}
+                        </pre>
+                    </div>
+                </div>
+            </div>         
+
+            <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                <a href="{% url 'transfer_detailGPT4' transfer.id %}" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Cancelar
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-send-check"></i> Enviar Transferencia
+                </button>
+            </div>
+        </form>
+
+    </div>
+</div>
+{% endblock %}

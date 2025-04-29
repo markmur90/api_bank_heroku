@@ -4,58 +4,72 @@
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
+
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
+
                 <!-- Administración -->
                 <li class="nav-item">
-                    <a class="btn btn-outline-light me-2" href="/admin/">Administración</a>
-                </li>
-
-                <!-- SEPA Transfers -->
-                <li class="nav-item">
-                    <a class="btn btn-outline-light me-2" href="{% url 'transfer_list22' %}">SEPA XML</a>
-                </li>
-
-
-                <!-- SEPA Transfers Dropdown -->
-                <li class="nav-item dropdown">
-                    <a class="btn btn-outline-light dropdown-toggle me-2" href="#" id="sepaDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        SEPA JSON
+                    <a class="nav-link" href="/admin/">
+                        <i class="bi bi-tools"></i> Administración
                     </a>
-                    <ul class="dropdown-menu" aria-labelledby="sepaDropdown">
-                        <li><a class="dropdown-item" href="{% url 'transfer_listGPT' %}">Transferencias</a></li>
-                        <li><a class="dropdown-item" href="{% url 'initiate_transferGPT' %}">Nueva Transferencia</a></li>
-                        <li><a class="dropdown-item" href="{% url 'postal_address_listGPT' %}">Direcciones Postales</a></li>
-                        <li><a class="dropdown-item" href="{% url 'account_listGPT' %}">Cuentas</a></li>
-                        <li><a class="dropdown-item" href="{% url 'financial_institution_listGPT' %}">Instituciones Financieras</a></li>
-                        <li><a class="dropdown-item" href="{% url 'debtor_listGPT' %}">Deudores</a></li>
-                        <li><a class="dropdown-item" href="{% url 'creditor_listGPT' %}">Acreedores</a></li>
-                        <li><a class="dropdown-item" href="{% url 'amount_listGPT' %}">Montos</a></li>
+                </li>
 
+                <!-- Clientes -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="clientesDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-people"></i> Clientes
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="clientesDropdown">
+                        <li><h6 class="dropdown-header text-primary fw-bold" style="font-size: 1.2rem; background-color: #e3f2fd;">Gestión de Clientes</h6></li>
+                        <li><a class="dropdown-item" href="{% url 'list_debtorsGPT4' %}">Cliente</a></li>
+                        <li><a class="dropdown-item" href="{% url 'create_debtorGPT4' %}">Crear Cliente</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header text-success fw-bold" style="font-size: 1.2rem; background-color: #e8f5e9;">Cuentas</h6></li>
+                        <li><a class="dropdown-item" href="{% url 'list_debtor_accountsGPT4' %}">Cuentas Clientes</a></li>
+                        <li><a class="dropdown-item" href="{% url 'create_debtor_accountGPT4' %}">Crear Cuenta</a></li>
                     </ul>
                 </li>
 
-                <!-- SEPA Transfers Dropdown -->
+                <!-- Beneficiarios -->
                 <li class="nav-item dropdown">
-                    <a class="btn btn-outline-light dropdown-toggle me-2" href="#" id="sepa3Dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        SEPA Instant
+                    <a class="nav-link dropdown-toggle" href="#" id="beneficiariosDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-person-check"></i> Beneficiarios
                     </a>
-                    <ul class="dropdown-menu" aria-labelledby="sepa3Dropdown">
-                        <li><a class="dropdown-item" href="{% url 'listar_transferenciasGPT3' %}">Transferencias</a></li>
-                        <li><a class="dropdown-item" href="{% url 'crear_transferenciaGPT3' %}">Nueva Transferencia</a></li>
-                        <li><a class="dropdown-item" href="{% url 'postal_address_listGPT3' %}">Direcciones Postales</a></li>
-                        <li><a class="dropdown-item" href="{% url 'account_listGPT3' %}">Cuentas</a></li>
-                        <li><a class="dropdown-item" href="{% url 'financial_institution_listGPT3' %}">Instituciones Financieras</a></li>
-                        <li><a class="dropdown-item" href="{% url 'debtor_listGPT3' %}">Deudores</a></li>
-                        <li><a class="dropdown-item" href="{% url 'creditor_listGPT3' %}">Acreedores</a></li>
-                        <li><a class="dropdown-item" href="{% url 'amount_listGPT3' %}">Montos</a></li>
+                    <ul class="dropdown-menu" aria-labelledby="beneficiariosDropdown">
+                        <li><h6 class="dropdown-header text-primary fw-bold" style="font-size: 1.2rem; background-color: #e3f2fd;">Gestión de Beneficiarios</h6></li>
+                        <li><a class="dropdown-item" href="{% url 'list_creditorsGPT4' %}">Beneficiarios</a></li>
+                        <li><a class="dropdown-item" href="{% url 'create_creditorGPT4' %}">Crear Beneficiario</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header text-success fw-bold" style="font-size: 1.2rem; background-color: #e8f5e9;">Cuentas</h6></li>
+                        <li><a class="dropdown-item" href="{% url 'list_creditor_accountsGPT4' %}">Cuentas Beneficiarios</a></li>
+                        <li><a class="dropdown-item" href="{% url 'create_creditor_accountGPT4' %}">Crear Cuenta</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><h6 class="dropdown-header text-danger fw-bold" style="font-size: 1.2rem; background-color: #fff8e1;">Agentes</h6></li>
+                        <li><a class="dropdown-item" href="{% url 'list_creditor_agentsGPT4' %}">Agentes Beneficiarios</a></li>
+                        <li><a class="dropdown-item" href="{% url 'create_creditor_agentGPT4' %}">Crear Agente</a></li>
+                    </ul>
+                </li>
 
+                <!-- Transferencias -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="transferenciasDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-arrow-left-right"></i> Transferencias
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="transferenciasDropdown">
+                        <li><h6 class="dropdown-header text-danger fw-bold" style="font-size: 1.2rem; background-color: #ffebee;">Gestión de Transferencias</h6></li>
+                        <li><a class="dropdown-item" href="{% url 'list_transfersGPT4' %}">Transferencias</a></li>
+                        <li><a class="dropdown-item" href="{% url 'create_transferGPT4' %}">Nueva Transferencia</a></li>
                     </ul>
                 </li>
 
             </ul>
+
+            <!-- Botón de Logout a la derecha -->
             <div class="d-flex ms-auto">
-                <a class="btn btn-danger" href="{% url 'logout' %}">Cerrar Sesión</a>
+                <a class="btn btn-danger" href="{% url 'logout' %}">
+                    <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                </a>
             </div>
         </div>
     </div>

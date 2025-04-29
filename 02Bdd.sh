@@ -17,13 +17,12 @@ python3 manage.py migrate
 
 echo " ------------------------------------------- " 
 
-# clear
-
+clear
+# python3 manage.py createsuperuser
 python3 manage.py loaddata bdd.json
 
 echo " ------------------------------------------- " 
 
 
-echo "Base de datos inicializada"
+echo -e "\033[1mBase de datos inicializada\033[0m"
 
-echo " ------------------------------------------- " 

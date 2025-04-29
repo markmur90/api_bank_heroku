@@ -24,8 +24,7 @@ echo " ------------------------------------------- "
 
 # sudo systemctl status postgresql
 
-# clear
+clear
 
-echo "✅ ✅ ✅ Environment setup complete. You can now run your Django application.✅ ✅ ✅ "
+echo -e "\033[1m✅ ✅ ✅ Environment setup complete. You can now run your Django application.✅ ✅ ✅\033[0m"
 
-echo " ------------------------------------------- " 

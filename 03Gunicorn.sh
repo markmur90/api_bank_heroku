@@ -21,6 +21,7 @@ python3 manage.py collectstatic --noinput
 
 echo " ------------------------------------------- " 
 
-# clear
+clear
+echo -e "\033[1mServidor en ejecución\033[0m"
 
 gunicorn config.wsgi:application --bind 0.0.0.0:8000

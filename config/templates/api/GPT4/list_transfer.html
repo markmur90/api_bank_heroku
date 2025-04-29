@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Transferencias Registradas</h2>
+    <a href="{% url 'create_transferGPT4' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nueva Transferencia
+    </a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-striped table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Deudor</th>
+                <th>Acreedor</th>
+                <th>Monto</th>
+                <th>Estado</th>
+                <th>Fecha de Creación</th>
+                <th class="text-end">Acciones</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for transfer in transfers %}
+            <tr>
+                <td class="text-muted">{{ transfer.payment_id|truncatechars:12 }}</td>
+                <td>{{ transfer.debtor.name }}</td>
+                <td>{{ transfer.creditor.name }}</td>
+                <td class="fw-bold">{{ transfer.instructed_amount }} {{ transfer.currency }}</td>
+                <td>
+                    <span class="badge 
+                        {% if transfer.status == 'ENVIADO' %}bg-success
+                        {% elif transfer.status == 'PENDING' %}bg-warning
+                        {% elif transfer.status == 'ERROR' %}bg-danger
+                        {% else %}bg-secondary{% endif %}">
+                        {{ transfer.status }}
+                    </span>
+                </td>
+                <td>{{ transfer.created_at|date:"d/m/Y H:i" }}</td>
+                <td class="text-end">
+                    <a href="{% url 'transfer_detailGPT4' transfer.id %}" class="btn btn-sm btn-outline-primary">
+                        <i class="bi bi-eye"></i> Ver Detalle
+                    </a>
+                    <a href="{% url 'send_transfer_viewGPT4' transfer.id %}" class="btn btn-sm btn-outline-success">
+                        <i class="bi bi-send"></i> Enviar
+                    </a>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="7" class="text-center">No hay transferencias registradas.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

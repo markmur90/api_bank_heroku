@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'corsheaders',
     'debug_toolbar',
     'rest_framework.authtoken',
+    'markdownify',
     'api.accounts',
     'api.collection',
     'api.transactions',
@@ -52,6 +53,7 @@ INSTALLED_APPS = [
     'api.sepa_payment',
     'api.gpt',
     'api.gpt3',
+    'api.gpt4',
 ]
 
 # Middleware
@@ -162,6 +164,7 @@ CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOWED_ORIGINS = [
     "https://api.db.com",
+    "https://api-bank-heroku-72c443ab11d3.herokuapp.com",
 ]
 
 # REST Framework

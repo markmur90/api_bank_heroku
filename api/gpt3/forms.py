@@ -201,3 +201,42 @@ class CreditTransfersDetailsForm(forms.ModelForm):
             'remittance_information_unstructured': forms.TextInput(attrs={'class': 'form-control'})
         }
 
+
+class SendTransferForm(forms.Form):
+    obtain_token = forms.BooleanField(
+        required=False,
+        label='Obtener nuevo TOKEN',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    manual_token = forms.CharField(
+        required=False,
+        label='TOKEN manual',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Introduce TOKEN manual si aplica'})
+    )
+    obtain_otp = forms.BooleanField(
+        required=False,
+        label='Obtener nuevo OTP',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
+    )
+    manual_otp = forms.CharField(
+        required=False,
+        label='OTP manual',
+        min_length=6,
+        max_length=8,
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Introduce OTP manual de 6 a 8 caracteres'})
+    )
+
+    def clean(self):
+        cleaned_data = super().clean()
+        obtain_token = cleaned_data.get('obtain_token')
+        manual_token = cleaned_data.get('manual_token')
+        obtain_otp = cleaned_data.get('obtain_otp')
+        manual_otp = cleaned_data.get('manual_otp')
+
+        if not obtain_token and not manual_token:
+            raise forms.ValidationError('Debes seleccionar obtener TOKEN o proporcionar uno manualmente.')
+
+        if not obtain_otp and not manual_otp:
+            raise forms.ValidationError('Debes seleccionar obtener OTP o proporcionar uno manualmente.')
+
+        return cleaned_data

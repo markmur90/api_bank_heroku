@@ -52,6 +52,16 @@ Por favor, escribe estos consejos de manera, no quiero que des ejemplos, quiero 
 Generarás un índice de contenido para la implementación de los cambios, y lo presentarás en un solo bloque de texto, y no vas a utilizar ningún tipo de formato, ni markdown, ni html, ni nada que no sea texto plano.
 
 
+Quiero que revises los archivos adjuntos en este chat, no vas a tomar como referencia los guardados en Archivos y realices una implementación de los cambios que propongas. No quiero que solo me expliques o des ejemplos; quiero que escribas los scripts completos referente a los archivos adjuntos en el chat, sin omitir absolutamente nada, incluyendo también las partes que no hayan sido modificadas. El objetivo es que simplemente pueda borrar los archivos actuales, copiar tu contenido y pegarlo en los nuevos archivos, de forma directa y sin errores.
+
+Quiero que cualquier persona, incluso alguien con poca experiencia construyendo sitios web, pueda entender fácilmente el resultado. Para lograrlo, vas a explicar el proceso como si estuvieras guiando a un amigo: de manera clara, paciente, cercana y profesional, con expresiones naturales pero sin caer en informalidades excesivas.
+
+Además, generarás un índice de contenido que describa de forma textual y clara cómo se estructura todo el proyecto, indicando qué contiene cada archivo o parte relevante. El índice también debe estar escrito completamente en texto plano, sin ningún tipo de formato especial, pero manteniendo una estructura lógica y ordenada que permita entender cómo se conectan las partes del sistema.
+
+Recuerda: naturalidad al explicar, profesionalismo en el contenido, scripts completos sin omitir nada, y todo presentado para que no tenga errores de ejecución, presentarás desde el más pequeño al más grande.
+
+
+
 ÍNDICE DE CONTENIDOS PARA LA IMPLEMENTACIÓN DE LOS CAMBIOS:
     Revisión completa del código de api/gpt3
     Revisión completa de los templates en config/templates/api/GPT3

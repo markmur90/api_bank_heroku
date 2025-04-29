@@ -2343,252 +2343,576 @@
   "model": "auth.permission",
   "pk": 261,
   "fields": {
-    "name": "Can add creditor",
+    "name": "Can add payment type information",
     "content_type": 66,
-    "codename": "add_creditor"
+    "codename": "add_paymenttypeinformation"
   }
 },
 {
   "model": "auth.permission",
   "pk": 262,
   "fields": {
-    "name": "Can change creditor",
+    "name": "Can change payment type information",
     "content_type": 66,
-    "codename": "change_creditor"
+    "codename": "change_paymenttypeinformation"
   }
 },
 {
   "model": "auth.permission",
   "pk": 263,
   "fields": {
-    "name": "Can delete creditor",
+    "name": "Can delete payment type information",
     "content_type": 66,
-    "codename": "delete_creditor"
+    "codename": "delete_paymenttypeinformation"
   }
 },
 {
   "model": "auth.permission",
   "pk": 264,
   "fields": {
-    "name": "Can view creditor",
+    "name": "Can view payment type information",
     "content_type": 66,
-    "codename": "view_creditor"
+    "codename": "view_paymenttypeinformation"
   }
 },
 {
   "model": "auth.permission",
   "pk": 265,
   "fields": {
-    "name": "Can add debtor",
+    "name": "Can add creditor",
     "content_type": 67,
-    "codename": "add_debtor"
+    "codename": "add_creditor"
   }
 },
 {
   "model": "auth.permission",
   "pk": 266,
   "fields": {
-    "name": "Can change debtor",
+    "name": "Can change creditor",
     "content_type": 67,
-    "codename": "change_debtor"
+    "codename": "change_creditor"
   }
 },
 {
   "model": "auth.permission",
   "pk": 267,
   "fields": {
-    "name": "Can delete debtor",
+    "name": "Can delete creditor",
     "content_type": 67,
-    "codename": "delete_debtor"
+    "codename": "delete_creditor"
   }
 },
 {
   "model": "auth.permission",
   "pk": 268,
   "fields": {
-    "name": "Can view debtor",
+    "name": "Can view creditor",
     "content_type": 67,
-    "codename": "view_debtor"
+    "codename": "view_creditor"
   }
 },
 {
   "model": "auth.permission",
   "pk": 269,
   "fields": {
-    "name": "Can add bulk transfer",
+    "name": "Can add debtor",
     "content_type": 68,
-    "codename": "add_bulktransfer"
+    "codename": "add_debtor"
   }
 },
 {
   "model": "auth.permission",
   "pk": 270,
   "fields": {
-    "name": "Can change bulk transfer",
+    "name": "Can change debtor",
     "content_type": 68,
-    "codename": "change_bulktransfer"
+    "codename": "change_debtor"
   }
 },
 {
   "model": "auth.permission",
   "pk": 271,
   "fields": {
-    "name": "Can delete bulk transfer",
+    "name": "Can delete debtor",
     "content_type": 68,
-    "codename": "delete_bulktransfer"
+    "codename": "delete_debtor"
   }
 },
 {
   "model": "auth.permission",
   "pk": 272,
   "fields": {
-    "name": "Can view bulk transfer",
+    "name": "Can view debtor",
     "content_type": 68,
-    "codename": "view_bulktransfer"
+    "codename": "view_debtor"
   }
 },
 {
   "model": "auth.permission",
   "pk": 273,
   "fields": {
-    "name": "Can add payment information",
+    "name": "Can add bulk transfer",
     "content_type": 69,
-    "codename": "add_paymentinformation"
+    "codename": "add_bulktransfer"
   }
 },
 {
   "model": "auth.permission",
   "pk": 274,
   "fields": {
-    "name": "Can change payment information",
+    "name": "Can change bulk transfer",
     "content_type": 69,
-    "codename": "change_paymentinformation"
+    "codename": "change_bulktransfer"
   }
 },
 {
   "model": "auth.permission",
   "pk": 275,
   "fields": {
-    "name": "Can delete payment information",
+    "name": "Can delete bulk transfer",
     "content_type": 69,
-    "codename": "delete_paymentinformation"
+    "codename": "delete_bulktransfer"
   }
 },
 {
   "model": "auth.permission",
   "pk": 276,
   "fields": {
-    "name": "Can view payment information",
+    "name": "Can view bulk transfer",
     "content_type": 69,
-    "codename": "view_paymentinformation"
+    "codename": "view_bulktransfer"
   }
 },
 {
   "model": "auth.permission",
   "pk": 277,
   "fields": {
-    "name": "Can add credit transfers details",
+    "name": "Can add payment information",
     "content_type": 70,
-    "codename": "add_credittransfersdetails"
+    "codename": "add_paymentinformation"
   }
 },
 {
   "model": "auth.permission",
   "pk": 278,
   "fields": {
-    "name": "Can change credit transfers details",
+    "name": "Can change payment information",
     "content_type": 70,
-    "codename": "change_credittransfersdetails"
+    "codename": "change_paymentinformation"
   }
 },
 {
   "model": "auth.permission",
   "pk": 279,
   "fields": {
-    "name": "Can delete credit transfers details",
+    "name": "Can delete payment information",
     "content_type": 70,
-    "codename": "delete_credittransfersdetails"
+    "codename": "delete_paymentinformation"
   }
 },
 {
   "model": "auth.permission",
   "pk": 280,
   "fields": {
-    "name": "Can view credit transfers details",
+    "name": "Can view payment information",
     "content_type": 70,
-    "codename": "view_credittransfersdetails"
+    "codename": "view_paymentinformation"
   }
 },
 {
   "model": "auth.permission",
   "pk": 281,
   "fields": {
-    "name": "Can add sepa credit transfer",
+    "name": "Can add credit transfers details",
     "content_type": 71,
-    "codename": "add_sepacredittransfer"
+    "codename": "add_credittransfersdetails"
   }
 },
 {
   "model": "auth.permission",
   "pk": 282,
   "fields": {
-    "name": "Can change sepa credit transfer",
+    "name": "Can change credit transfers details",
     "content_type": 71,
-    "codename": "change_sepacredittransfer"
+    "codename": "change_credittransfersdetails"
   }
 },
 {
   "model": "auth.permission",
   "pk": 283,
   "fields": {
-    "name": "Can delete sepa credit transfer",
+    "name": "Can delete credit transfers details",
     "content_type": 71,
-    "codename": "delete_sepacredittransfer"
+    "codename": "delete_credittransfersdetails"
   }
 },
 {
   "model": "auth.permission",
   "pk": 284,
   "fields": {
-    "name": "Can view sepa credit transfer",
+    "name": "Can view credit transfers details",
     "content_type": 71,
-    "codename": "view_sepacredittransfer"
+    "codename": "view_credittransfersdetails"
   }
 },
 {
   "model": "auth.permission",
   "pk": 285,
   "fields": {
-    "name": "Can add payment type information",
+    "name": "Can add sepa credit transfer",
     "content_type": 72,
-    "codename": "add_paymenttypeinformation"
+    "codename": "add_sepacredittransfer"
   }
 },
 {
   "model": "auth.permission",
   "pk": 286,
   "fields": {
-    "name": "Can change payment type information",
+    "name": "Can change sepa credit transfer",
     "content_type": 72,
-    "codename": "change_paymenttypeinformation"
+    "codename": "change_sepacredittransfer"
   }
 },
 {
   "model": "auth.permission",
   "pk": 287,
   "fields": {
-    "name": "Can delete payment type information",
+    "name": "Can delete sepa credit transfer",
     "content_type": 72,
-    "codename": "delete_paymenttypeinformation"
+    "codename": "delete_sepacredittransfer"
   }
 },
 {
   "model": "auth.permission",
   "pk": 288,
   "fields": {
-    "name": "Can view payment type information",
+    "name": "Can view sepa credit transfer",
     "content_type": 72,
+    "codename": "view_sepacredittransfer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 289,
+  "fields": {
+    "name": "Can add creditor",
+    "content_type": 73,
+    "codename": "add_creditor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 290,
+  "fields": {
+    "name": "Can change creditor",
+    "content_type": 73,
+    "codename": "change_creditor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 291,
+  "fields": {
+    "name": "Can delete creditor",
+    "content_type": 73,
+    "codename": "delete_creditor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 292,
+  "fields": {
+    "name": "Can view creditor",
+    "content_type": 73,
+    "codename": "view_creditor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 293,
+  "fields": {
+    "name": "Can add creditor agent",
+    "content_type": 74,
+    "codename": "add_creditoragent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 294,
+  "fields": {
+    "name": "Can change creditor agent",
+    "content_type": 74,
+    "codename": "change_creditoragent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 295,
+  "fields": {
+    "name": "Can delete creditor agent",
+    "content_type": 74,
+    "codename": "delete_creditoragent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 296,
+  "fields": {
+    "name": "Can view creditor agent",
+    "content_type": 74,
+    "codename": "view_creditoragent"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 297,
+  "fields": {
+    "name": "Can add debtor",
+    "content_type": 75,
+    "codename": "add_debtor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 298,
+  "fields": {
+    "name": "Can change debtor",
+    "content_type": 75,
+    "codename": "change_debtor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 299,
+  "fields": {
+    "name": "Can delete debtor",
+    "content_type": 75,
+    "codename": "delete_debtor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 300,
+  "fields": {
+    "name": "Can view debtor",
+    "content_type": 75,
+    "codename": "view_debtor"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 301,
+  "fields": {
+    "name": "Can add payment identification",
+    "content_type": 76,
+    "codename": "add_paymentidentification"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 302,
+  "fields": {
+    "name": "Can change payment identification",
+    "content_type": 76,
+    "codename": "change_paymentidentification"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 303,
+  "fields": {
+    "name": "Can delete payment identification",
+    "content_type": 76,
+    "codename": "delete_paymentidentification"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 304,
+  "fields": {
+    "name": "Can view payment identification",
+    "content_type": 76,
+    "codename": "view_paymentidentification"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 305,
+  "fields": {
+    "name": "Can add payment type information",
+    "content_type": 77,
+    "codename": "add_paymenttypeinformation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 306,
+  "fields": {
+    "name": "Can change payment type information",
+    "content_type": 77,
+    "codename": "change_paymenttypeinformation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 307,
+  "fields": {
+    "name": "Can delete payment type information",
+    "content_type": 77,
+    "codename": "delete_paymenttypeinformation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 308,
+  "fields": {
+    "name": "Can view payment type information",
+    "content_type": 77,
     "codename": "view_paymenttypeinformation"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 309,
+  "fields": {
+    "name": "Can add creditor account",
+    "content_type": 78,
+    "codename": "add_creditoraccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 310,
+  "fields": {
+    "name": "Can change creditor account",
+    "content_type": 78,
+    "codename": "change_creditoraccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 311,
+  "fields": {
+    "name": "Can delete creditor account",
+    "content_type": 78,
+    "codename": "delete_creditoraccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 312,
+  "fields": {
+    "name": "Can view creditor account",
+    "content_type": 78,
+    "codename": "view_creditoraccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 313,
+  "fields": {
+    "name": "Can add debtor account",
+    "content_type": 79,
+    "codename": "add_debtoraccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 314,
+  "fields": {
+    "name": "Can change debtor account",
+    "content_type": 79,
+    "codename": "change_debtoraccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 315,
+  "fields": {
+    "name": "Can delete debtor account",
+    "content_type": 79,
+    "codename": "delete_debtoraccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 316,
+  "fields": {
+    "name": "Can view debtor account",
+    "content_type": 79,
+    "codename": "view_debtoraccount"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 317,
+  "fields": {
+    "name": "Can add transfer",
+    "content_type": 80,
+    "codename": "add_transfer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 318,
+  "fields": {
+    "name": "Can change transfer",
+    "content_type": 80,
+    "codename": "change_transfer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 319,
+  "fields": {
+    "name": "Can delete transfer",
+    "content_type": 80,
+    "codename": "delete_transfer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 320,
+  "fields": {
+    "name": "Can view transfer",
+    "content_type": 80,
+    "codename": "view_transfer"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 321,
+  "fields": {
+    "name": "Can add log transferencia",
+    "content_type": 81,
+    "codename": "add_logtransferencia"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 322,
+  "fields": {
+    "name": "Can change log transferencia",
+    "content_type": 81,
+    "codename": "change_logtransferencia"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 323,
+  "fields": {
+    "name": "Can delete log transferencia",
+    "content_type": 81,
+    "codename": "delete_logtransferencia"
+  }
+},
+{
+  "model": "auth.permission",
+  "pk": 324,
+  "fields": {
+    "name": "Can view log transferencia",
+    "content_type": 81,
+    "codename": "view_logtransferencia"
   }
 },
 {
@@ -3116,7 +3440,7 @@
   "pk": 66,
   "fields": {
     "app_label": "gpt3",
-    "model": "creditor"
+    "model": "paymenttypeinformation"
   }
 },
 {
@@ -3124,7 +3448,7 @@
   "pk": 67,
   "fields": {
     "app_label": "gpt3",
-    "model": "debtor"
+    "model": "creditor"
   }
 },
 {
@@ -3132,7 +3456,7 @@
   "pk": 68,
   "fields": {
     "app_label": "gpt3",
-    "model": "bulktransfer"
+    "model": "debtor"
   }
 },
 {
@@ -3140,7 +3464,7 @@
   "pk": 69,
   "fields": {
     "app_label": "gpt3",
-    "model": "paymentinformation"
+    "model": "bulktransfer"
   }
 },
 {
@@ -3148,7 +3472,7 @@
   "pk": 70,
   "fields": {
     "app_label": "gpt3",
-    "model": "credittransfersdetails"
+    "model": "paymentinformation"
   }
 },
 {
@@ -3156,7 +3480,7 @@
   "pk": 71,
   "fields": {
     "app_label": "gpt3",
-    "model": "sepacredittransfer"
+    "model": "credittransfersdetails"
   }
 },
 {
@@ -3164,23 +3488,95 @@
   "pk": 72,
   "fields": {
     "app_label": "gpt3",
+    "model": "sepacredittransfer"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 73,
+  "fields": {
+    "app_label": "gpt4",
+    "model": "creditor"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 74,
+  "fields": {
+    "app_label": "gpt4",
+    "model": "creditoragent"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 75,
+  "fields": {
+    "app_label": "gpt4",
+    "model": "debtor"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 76,
+  "fields": {
+    "app_label": "gpt4",
+    "model": "paymentidentification"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 77,
+  "fields": {
+    "app_label": "gpt4",
     "model": "paymenttypeinformation"
   }
 },
 {
-  "model": "sessions.session",
-  "pk": "ueilvmihc3qnaj43g7byqyikatex0tp3",
+  "model": "contenttypes.contenttype",
+  "pk": 78,
   "fields": {
-    "session_data": ".eJxVjEEOgjAQRe_StWkYbDtTl-45A5lOp4IaSCisjHdXEha6_e-9_zI9b-vQb1WXfszmYsCcfrfE8tBpB_nO0222Mk_rMia7K_ag1XZz1uf1cP8OBq7Dt_aETXE-ElEICDE2waND4KhUoPUpnwUDtI48k2B0pFAKqiNRAQHz_gCbvTa5:1u8knU:fSNdmJpOXm1-8IdSsKVSsiN234f43yStgStI8G0CO_8",
-    "expire_date": "2025-04-26T19:32:44.595Z"
+    "app_label": "gpt4",
+    "model": "creditoraccount"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 79,
+  "fields": {
+    "app_label": "gpt4",
+    "model": "debtoraccount"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 80,
+  "fields": {
+    "app_label": "gpt4",
+    "model": "transfer"
+  }
+},
+{
+  "model": "contenttypes.contenttype",
+  "pk": 81,
+  "fields": {
+    "app_label": "gpt4",
+    "model": "logtransferencia"
+  }
+},
+{
+  "model": "sessions.session",
+  "pk": "h2zk7gy2znkjez4f49odhfoypyp0wu3u",
+  "fields": {
+    "session_data": ".eJxVjDkOwjAQAP_iGlm78U1JnzdYPtY4gBwpTirE35GlFNDOjObNfDj26o9Om18yuzJkl18WQ3pSGyI_QruvPK1t35bIR8JP2_m8ZnrdzvZvUEOvYwuTwuCUESlaB9mqCMWYySqRschQCKQmBIyONIJFIXQRGaRwCRUS-3wBtmk2og:1u9hXi:VYIQBftW65uRlfpCpYnjyqDEVhix8YMg-6gT71SY3sM",
+    "expire_date": "2025-04-29T10:16:22.900Z"
   }
 },
 {
   "model": "authentication.customuser",
   "pk": 1,
   "fields": {
-    "password": "pbkdf2_sha256$1000000$k13WaUjAf3NEnkGlUcUHcI$uKdgd5Ayx4XXVy4RXZdmaW7WuydmMHqJkAGclQv3mok=",
-    "last_login": "2025-04-26T19:02:44.519Z",
+    "password": "pbkdf2_sha256$1000000$ZfWcexELqmfPWBfXysqzBN$xo+7HEslcB7Z3qK0Ee7PBXWq880UlWHWM393hq8uGgo=",
+    "last_login": "2025-04-29T10:05:15.319Z",
     "is_superuser": true,
     "email": "j.moltke@db.com",
     "username": "493069k1",
@@ -3192,69 +3588,91 @@
   }
 },
 {
-  "model": "gpt3.address",
+  "model": "gpt4.debtor",
   "pk": 1,
   "fields": {
-    "country": "DE",
-    "street_and_house_number": "TAUNUSANLAGE 12",
-    "zip_code_and_city": "60325 FRANKFURT"
+    "name": "MIRYA TRADING CO LTD",
+    "customer_id": "090512DEUTDEFFXXX886479",
+    "postal_address_country": "DE",
+    "postal_address_street": "TAUNUSANLAGE 12",
+    "postal_address_city": "60325 FRANKFURT"
   }
 },
 {
-  "model": "gpt3.address",
-  "pk": 2,
-  "fields": {
-    "country": "DE",
-    "street_and_house_number": "WESELER STRABE 230",
-    "zip_code_and_city": "48151 MÜNSTER"
-  }
-},
-{
-  "model": "gpt3.debtor",
+  "model": "gpt4.debtoraccount",
   "pk": 1,
   "fields": {
-    "debtor_name": "MIRYA TRADING CO LTD",
-    "postal_address": 1,
-    "customer_id": "09512DEUTDEFFXXX886479"
-  }
-},
-{
-  "model": "gpt3.creditor",
-  "pk": 1,
-  "fields": {
-    "creditor_name": "MOHAMMAD REZA NAJAFI KALASHI",
-    "postal_address": 2
-  }
-},
-{
-  "model": "gpt3.account",
-  "pk": 1,
-  "fields": {
+    "debtor": 1,
     "iban": "DE86500700100925993805",
     "currency": "EUR"
   }
 },
 {
-  "model": "gpt3.account",
-  "pk": 2,
+  "model": "gpt4.creditor",
+  "pk": 1,
   "fields": {
+    "name": "MOHAMMAD REZA NAJAFI KALASHI",
+    "postal_address_country": "DE",
+    "postal_address_street": "WESELER STRABE 230",
+    "postal_address_city": "48151 MÜNSTER"
+  }
+},
+{
+  "model": "gpt4.creditoraccount",
+  "pk": 1,
+  "fields": {
+    "creditor": 1,
     "iban": "DE41400501500154813455",
     "currency": "EUR"
   }
 },
 {
-  "model": "gpt3.financialinstitution",
+  "model": "gpt4.creditoragent",
   "pk": 1,
   "fields": {
-    "financial_institution_id": "WELADED1MST"
+    "bic": "WELADED1MST",
+    "financial_institution_id": "WELADED1XXX",
+    "other_information": "SPARKASSE MÜNSTERLAND OST"
   }
 },
 {
-  "model": "gpt3.instructedamount",
+  "model": "gpt4.paymentidentification",
   "pk": 1,
   "fields": {
-    "amount": "618.25",
-    "currency": "EUR"
+    "end_to_end_id": "E2E35132009902ff0c36d3437de0ddf92a0",
+    "instruction_id": "7cd140e96da30b9d051b74bca61e616c811"
+  }
+},
+{
+  "model": "gpt4.paymenttypeinformation",
+  "pk": 1,
+  "fields": {
+    "service_level_code": "",
+    "local_instrument_code": "",
+    "category_purpose_code": ""
+  }
+},
+{
+  "model": "gpt4.transfer",
+  "pk": 1,
+  "fields": {
+    "payment_id": "eVRNohmrxwuCDALKHi42S6jXSbQhc6hAOpZ",
+    "debtor": 1,
+    "debtor_account": 1,
+    "creditor": 1,
+    "creditor_account": 1,
+    "creditor_agent": 1,
+    "instructed_amount": "618.25",
+    "currency": "EUR",
+    "purpose_code": "GDSV",
+    "requested_execution_date": "2025-04-29",
+    "remittance_information_structured": null,
+    "remittance_information_unstructured": "JDKJSV",
+    "status": "CREA",
+    "payment_identification": 1,
+    "payment_type_information": 1,
+    "created_at": "2025-04-29T09:46:57.712Z",
+    "updated_at": "2025-04-29T09:46:57.712Z"
   }
 }
 ]

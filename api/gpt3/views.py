@@ -24,8 +24,8 @@ from api.gpt3.utils import *
 from api.gpt3.helpers import *
 
 # API_URL = "https://simulator-api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer"
-# API_URL = "https://api.db.com:443/gw/dbapi/banking/transactions/v2"
-API_URL = "https://127.0.0.1:2222"
+API_URL = "https://api.db.com:443/gw/dbapi/banking/transactions/v2"
+# API_URL = "https://127.0.0.1:2222"
 
 
 HEADERS = {
