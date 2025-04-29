@@ -27,7 +27,7 @@ from reportlab.lib.utils import ImageReader
 from jsonschema import validate, ValidationError
 
 from api.gpt4.validator import preparar_request_type_y_datos
-from schemas import sepa_credit_transfer_schema
+from api.gpt4.schemas import sepa_credit_transfer_schema
 
 
 logger = logging.getLogger(__name__)

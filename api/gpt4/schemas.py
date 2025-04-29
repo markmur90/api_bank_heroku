@@ -153,7 +153,7 @@ sepa_credit_transfer_schema = {
         "instantTransfer": {
             "type": "boolean",
             "description": "Indica si la transferencia debe ser procesada como Instant.",
-            "default": false # type: ignore
+            "default": False,
         }
     },
     "required": [
