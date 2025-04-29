@@ -127,6 +127,49 @@ class Transfer(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    def to_schema_data(self, instant_transfer=False):
+        return {
+            "purposeCode": self.purpose_code or "GDSV",
+            "requestedExecutionDate": self.requested_execution_date.strftime('%Y-%m-%d'),
+            "debtor": {
+                "debtorName": self.debtor.name,
+                "debtorPostalAddress": {
+                    "country": self.debtor.postal_address_country,
+                    "addressLine": {
+                        "streetAndHouseNumber": self.debtor.postal_address_street,
+                        "zipCodeAndCity": self.debtor.postal_address_city,
+                    }
+                }
+            },
+            "debtorAccount": {
+                "iban": self.debtor_account.iban,
+                "currency": self.debtor_account.currency,
+            },
+            "instructedAmount": {
+                "amount": float(self.instructed_amount),
+                "currency": self.currency,
+            },
+            "creditorAgent": {
+                "financialInstitutionId": self.creditor_agent.financial_institution_id or "",
+            },
+            "creditor": {
+                "creditorName": self.creditor.name,
+                "creditorPostalAddress": {
+                    "country": self.creditor.postal_address_country,
+                    "addressLine": {
+                        "streetAndHouseNumber": self.creditor.postal_address_street,
+                        "zipCodeAndCity": self.creditor.postal_address_city,
+                    }
+                }
+            },
+            "creditorAccount": {
+                "iban": self.creditor_account.iban,
+                "currency": self.creditor_account.currency,
+            },
+            "remittanceInformationUnstructured": self.remittance_information_unstructured or "Pago de servicios",
+            "instantTransfer": instant_transfer
+        }
+
     def save(self, *args, **kwargs):
         # Asignar automáticamente servicio INST si no se especifica
         if not self.payment_type_information:

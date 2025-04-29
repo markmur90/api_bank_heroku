@@ -111,14 +111,14 @@ def create_transfer(request):
             transfer.payment_identification = payment_identification
             transfer.save()
             
-            try:
-                generar_xml_pain001(transfer, transfer.payment_id)
-                generar_archivo_aml(transfer, transfer.payment_id)
-            except Exception as e:
-                registrar_log(transfer.payment_id, {}, error=f"Error generación inicial: {str(e)}")
+        try:
+            generar_xml_pain001(transfer, transfer.payment_id)
+            generar_archivo_aml(transfer, transfer.payment_id)
+        except Exception as e:
+            registrar_log(transfer.payment_id, {}, error=f"Error generación inicial: {str(e)}")
 
-            messages.success(request, "Transferencia creada correctamente.")            
-            return redirect('list_transfersGPT4')
+        messages.success(request, "Transferencia creada correctamente.")            
+        return redirect('list_transfersGPT4')
     else:
         form = TransferForm()
     return render(request, 'api/GPT4/create_transfer.html', {'form': form, 'transfer': None})
@@ -195,22 +195,24 @@ def send_transfer_view(request, transfer_id):
             if manual_otp:
                 otp_to_use = manual_otp
 
-            try:
-                # Envio transferencia con señal de PDNG
-                transfer.status = 'PDNG'
-                transfer.save()
+        try:
+            # Envio transferencia con señal de PDNG
+            transfer.status = 'PDNG'
+            transfer.save()
 
-                response = send_transfer(
-                    transfer,
-                    use_token=token_to_use,
-                    use_otp=otp_to_use,
-                    regenerate_token=regenerate_token,
-                    regenerate_otp=regenerate_otp
-                )
-                # Aquí podrías actualizar estado de la transferencia basado en response si quieres
-                return redirect('transfer_detailGPT4', transfer_id=transfer.id)
-            except Exception as e:
-                form.add_error(None, f'Error enviando transferencia: {str(e)}')
+            transfer.to_schema_data = lambda instant_transfer=form.cleaned_data.get('instant_transfer', False): transfer.to_schema_data(instant_transfer)
+
+            response = send_transfer(
+                transfer,
+                use_token=token_to_use,
+                use_otp=otp_to_use,
+                regenerate_token=regenerate_token,
+                regenerate_otp=regenerate_otp
+            )
+            # Aquí podrías actualizar estado de la transferencia basado en response si quieres
+            return redirect('transfer_detailGPT4', transfer_id=transfer.id)
+        except Exception as e:
+            form.add_error(None, f'Error enviando transferencia: {str(e)}')
 
     else:
         form = SendTransferForm()
