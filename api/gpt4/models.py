@@ -1,5 +1,7 @@
 from django.db import models
-from api.gpt4.utils import generate_unique_code
+
+from api.gpt4.helpers import generate_unique_code
+
 
 class Debtor(models.Model):
     name = models.CharField(max_length=70, unique=True, blank=False)
