@@ -5,19 +5,19 @@ export DATABASE_URL="postgres://markmur88:Ptf8454Jd55@localhost:5432/mydatabase"
 
 source $HOME/Documentos/Entorno/venvAPI/bin/activate
 
-echo " ------------------------------------------- " 
+echo "  "
 
 python3 manage.py makemigrations
 
-echo " ------------------------------------------- " 
+echo "  "
 
 python3 manage.py migrate
 
-echo " ------------------------------------------- " 
+echo "  "
 
 python3 manage.py collectstatic --noinput
 
-echo " ------------------------------------------- " 
+echo "  "
 
 clear
 echo -e "\033[1mServidor en ejecución\033[0m"

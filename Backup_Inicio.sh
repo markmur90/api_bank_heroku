@@ -13,5 +13,8 @@ echo " "
 echo "Inicializando Respaldos..."
 bash ./copy_and_backup.sh
 echo " "
+echo "Espaldo WEB..."
+bash ./sync_to_remote.sh
+echo " "
 echo "Iniciando servidor con Gunicorn..."
 bash ./03Gunicorn.sh

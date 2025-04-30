@@ -29,8 +29,6 @@ fi
 # Pausa antes de proceder con la copia de seguridad
 sleep 1
 echo " "
-echo " "
-echo " "
 
 # Confirmar antes de proceder con la copia de seguridad
 echo -e "\033[1m¿Desea proceder con la copia de seguridad? (s/n):\033[0m"
@@ -50,9 +48,7 @@ if [[ "$CONFIRM" == "s" ]]; then
     BACKUP_CREATED=true
 fi
 
-clear
 # Mensaje final
-echo " "
 echo " "
 if $PROJECT_COPIED && $BACKUP_CREATED; then
     echo -e "\033[1mAmbos procesos se realizaron exitosamente:\033[0m"
@@ -69,5 +65,6 @@ elif $BACKUP_CREATED; then
 else
     echo -e "\033[1mNinguno de los procesos se realizó.\033[0m"
 fi
+echo " "
 
 
