@@ -6,8 +6,6 @@ from lxml import etree
 
 from api.gpt4.paths import obtener_ruta_schema_transferencia
 
-
-
 logger = logging.getLogger("bank_services")
 
 

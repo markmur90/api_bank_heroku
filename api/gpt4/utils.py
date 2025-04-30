@@ -15,7 +15,6 @@ import re
 
 from django.contrib import messages
 from requests.structures import CaseInsensitiveDict
-from requests_oauthlib import OAuth2Session
 from django.conf import settings
 from django.shortcuts import get_object_or_404, redirect
 from django.http import FileResponse
@@ -123,9 +122,6 @@ def default_request_headers():
         "Sec-Fetch-User": "?1",
         "Upgrade-Insecure-Requests": "1",
         "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
-        "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
-        "X-Frame-Options": "DENY",
-        "X-Content-Type-Options": "nosniff",
         "Origin": ORIGIN
 
     }
