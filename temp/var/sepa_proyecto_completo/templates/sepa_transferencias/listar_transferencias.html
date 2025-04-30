@@ -1,0 +1,24 @@
+{% extends 'base.html' %}
+{% block title %}Lista de Transferencias{% endblock %}
+{% block content %}
+<h1>Transferencias Realizadas</h1>
+<table class="table table-striped">
+  <thead>
+    <tr><th>ID</th><th>Estado</th><th>Fecha</th><th>Acciones</th></tr>
+  </thead>
+  <tbody>
+    {% for t in transferencias %}
+    <tr>
+      <td>{{ t.payment_id }}</td>
+      <td>{{ t.get_transaction_status_display }}</td>
+      <td>{{ t.created_at }}</td>
+      <td>
+        <a href="/{{ t.payment_id }}/" class="btn btn-sm btn-info">Ver</a>
+        <a href="/{{ t.payment_id }}/enviar/" class="btn btn-sm btn-primary">Enviar</a>
+        <a href="/{{ t.payment_id }}/estado/" class="btn btn-sm btn-warning">Estado</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

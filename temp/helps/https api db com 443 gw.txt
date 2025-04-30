@@ -1,0 +1,1 @@
+https://api.db.com:443/gw/dbapi/banking/transactions/v2

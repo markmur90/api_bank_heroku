@@ -1,0 +1,222 @@
+La estructura de carpetas y módulos es fundamental para mantener un proyecto organizado, escalable y fácil de mantener. A continuación, se define una estructura de carpetas y módulos optimizada para el desarrollo de la API en Django, teniendo en cuenta las funcionalidades descritas en el archivo proporcionado.
+Estructura de Carpetas y Módulos
+Copy
+
+/memo_bank_api
+    ├── /api
+    │   ├── /authentication
+    │   │   ├── __init__.py
+    │   │   ├── models.py
+    │   │   ├── serializers.py
+    │   │   ├── views.py
+    │   │   └── urls.py
+    │   ├── /accounts
+    │   │   ├── __init__.py
+    │   │   ├── models.py
+    │   │   ├── serializers.py
+    │   │   ├── views.py
+    │   │   └── urls.py
+    │   ├── /transactions
+    │   │   ├── __init__.py
+    │   │   ├── models.py
+    │   │   ├── serializers.py
+    │   │   ├── views.py
+    │   │   └── urls.py
+    │   ├── /transfers
+    │   │   ├── __init__.py
+    │   │   ├── models.py
+    │   │   ├── serializers.py
+    │   │   ├── views.py
+    │   │   └── urls.py
+    │   ├── /collections
+    │   │   ├── __init__.py
+    │   │   ├── models.py
+    │   │   ├── serializers.py
+    │   │   ├── views.py
+    │   │   └── urls.py
+    │   ├── /sandbox
+    │   │   ├── __init__.py
+    │   │   ├── models.py
+    │   │   ├── serializers.py
+    │   │   ├── views.py
+    │   │   └── urls.py
+    │   └── /core
+    │       ├── __init__.py
+    │       ├── models.py (modelos comunes)
+    │       ├── utils.py (funciones útiles)
+    │       └── permissions.py (permisos personalizados)
+    ├── /frontend
+    │   ├── /templates
+    │   │   ├── base.html
+    │   │   ├── dashboard.html
+    │   │   ├── login.html
+    │   │   ├── transfers.html
+    │   │   └── collections.html
+    │   └── /static
+    │       ├── /css
+    │       │   └── styles.css
+    │       ├── /js
+    │       │   └── main.js
+    │       └── /images
+    ├── /config
+    │   ├── __init__.py
+    │   ├── settings.py
+    │   ├── urls.py
+    │   ├── asgi.py
+    │   └── wsgi.py
+    ├── /tests
+    │   ├── __init__.py
+    │   ├── test_authentication.py
+    │   ├── test_accounts.py
+    │   ├── test_transactions.py
+    │   ├── test_transfers.py
+    │   ├── test_collections.py
+    │   └── test_sandbox.py
+    ├── manage.py
+    ├── requirements.txt
+    └── README.md
+
+Descripción de Carpetas y Módulos
+1. /api
+
+Contiene todos los módulos relacionados con la lógica de la API, divididos por funcionalidad.
+
+    /authentication:
+
+        models.py: Modelos relacionados con la autenticación (por ejemplo, tokens personalizados).
+
+        serializers.py: Serializadores para la autenticación (login, refresh token).
+
+        views.py: Vistas para manejar la autenticación.
+
+        urls.py: Rutas para los endpoints de autenticación.
+
+    /accounts:
+
+        models.py: Modelos para las cuentas bancarias (IBAN, saldo, tipo de cuenta, etc.).
+
+        serializers.py: Serializadores para las cuentas.
+
+        views.py: Vistas para listar y obtener detalles de cuentas.
+
+        urls.py: Rutas para los endpoints de cuentas.
+
+    /transactions:
+
+        models.py: Modelos para las transacciones (monto, fecha, dirección, estado, etc.).
+
+        serializers.py: Serializadores para las transacciones.
+
+        views.py: Vistas para listar y obtener detalles de transacciones.
+
+        urls.py: Rutas para los endpoints de transacciones.
+
+    /transfers:
+
+        models.py: Modelos para las transferencias SEPA (beneficiario, tipo de transferencia, estado, etc.).
+
+        serializers.py: Serializadores para las transferencias.
+
+        views.py: Vistas para iniciar y obtener detalles de transferencias.
+
+        urls.py: Rutas para los endpoints de transferencias.
+
+    /collections:
+
+        models.py: Modelos para las colecciones SEPA Direct Debit (mandato, fecha programada, estado, etc.).
+
+        serializers.py: Serializadores para las colecciones.
+
+        views.py: Vistas para programar y obtener detalles de colecciones.
+
+        urls.py: Rutas para los endpoints de colecciones.
+
+    /sandbox:
+
+        models.py: Modelos para simular transacciones y colecciones en el entorno de pruebas.
+
+        serializers.py: Serializadores para las simulaciones.
+
+        views.py: Vistas para simular transacciones y colecciones.
+
+        urls.py: Rutas para los endpoints de sandbox.
+
+    /core:
+
+        models.py: Modelos comunes utilizados en varios módulos.
+
+        utils.py: Funciones útiles reutilizables (por ejemplo, validaciones, formateo de datos).
+
+        permissions.py: Permisos personalizados para controlar el acceso a los endpoints.
+
+2. /frontend
+
+Contiene la interfaz de usuario en HTML, CSS y JavaScript.
+
+    /templates:
+
+        base.html: Plantilla base para todas las páginas.
+
+        dashboard.html: Panel de control con resumen de cuentas y transacciones.
+
+        login.html: Página de inicio de sesión.
+
+        transfers.html: Formulario para realizar transferencias.
+
+        collections.html: Formulario para programar colecciones.
+
+    /static:
+
+        /css: Archivos CSS para estilos.
+
+        /js: Archivos JavaScript para interactividad.
+
+        /images: Imágenes utilizadas en el frontend.
+
+3. /config
+
+Contiene la configuración del proyecto Django.
+
+    settings.py: Configuración del proyecto (base de datos, autenticación, middleware, etc.).
+
+    urls.py: Rutas principales del proyecto (incluye las rutas de los módulos de la API).
+
+    asgi.py y wsgi.py: Configuración para el despliegue en servidores ASGI/WSGI.
+
+4. /tests
+
+Contiene las pruebas automatizadas del proyecto.
+
+    test_authentication.py: Pruebas para la autenticación.
+
+    test_accounts.py: Pruebas para los endpoints de cuentas.
+
+    test_transactions.py: Pruebas para los endpoints de transacciones.
+
+    test_transfers.py: Pruebas para los endpoints de transferencias.
+
+    test_collections.py: Pruebas para los endpoints de colecciones.
+
+    test_sandbox.py: Pruebas para el entorno de sandbox.
+
+5. Archivos Raíz
+
+    manage.py: Script para gestionar el proyecto Django.
+
+    requirements.txt: Dependencias del proyecto.
+
+    README.md: Documentación del proyecto.
+
+Ventajas de esta Estructura
+
+    Modularidad: Cada funcionalidad está encapsulada en su propio módulo, lo que facilita el mantenimiento y la escalabilidad.
+
+    Reutilización: Los módulos comunes (como core) permiten reutilizar código en diferentes partes del proyecto.
+
+    Claridad: La estructura es clara y fácil de entender, lo que facilita la incorporación de nuevos desarrolladores.
+
+    Pruebas: Las pruebas están organizadas por módulo, lo que facilita la ejecución y el mantenimiento de las mismas.
+
+Conclusión
+
+Esta estructura de carpetas y módulos está diseñada para optimizar el desarrollo del proyecto, garantizando que sea escalable, mantenible y fácil de entender. Además, se integra perfectamente con herramientas de IA como GitHub Copilot y ChatGPT para acelerar el proceso de desarrollo.

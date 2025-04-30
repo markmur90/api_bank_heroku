@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="mb-4">Crear Nuevo Acreedor</h2>
+
+<form method="post" class="needs-validation" novalidate>
+    {% csrf_token %}
+
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="id_name" class="form-label">Nombre</label>
+                    {{ form.name }}
+                </div>
+
+            </div>
+
+            <div class="row g-3 mt-3">
+                <div class="col-md-2">
+                    <label for="id_postal_address_country" class="form-label">País</label>
+                    {{ form.postal_address_country }}
+                </div>                
+                <div class="col-md-6">
+                    <label for="id_postal_address_street" class="form-label">Calle</label>
+                    {{ form.postal_address_street }}
+                </div>
+                <div class="col-md-4">
+                    <label for="id_postal_address_city" class="form-label">Ciudad</label>
+                    {{ form.postal_address_city }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+        <a href="{% url 'list_creditorsGPT4' %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Listado
+        </a>
+        <button type="submit" class="btn btn-primary">
+            <i class="bi bi-save"></i> Guardar Acreedor
+        </button>
+    </div>
+</form>
+
+{% endblock %}

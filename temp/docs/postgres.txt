@@ -1,0 +1,125 @@
+
+sudo systemctl enable postgresql
+sudo systemctl start postgresql
+
+sudo systemctl status postgresql
+
+sudo journalctl -u postgresql
+
+sudo nano /etc/postgresql/12/main/postgresql.conf
+
+sudo nano /usr/lib/systemd/system/postgresql.service
+
+ExecStart=/usr/lib/postgresql/12/bin/postgres -D /var/lib/postgresql/12/main -c config_file=/etc/postgresql/12/main/postgresql.conf
+
+sudo systemctl daemon-reload
+sudo systemctl restart postgresql
+sudo systemctl status postgresql
+
+
+
+
+Para crear una base de datos en PostgreSQL y otorgar permisos a un usuario, puedes seguir estos pasos:
+
+sudo -u postgres psql
+CREATE DATABASE IF NOT EXISTS api_db;
+CREATE USER "493069k1" WITH PASSWORD '02569S';
+GRANT ALL PRIVILEGES ON SCHEMA public TO "493069k1";
+GRANT CONNECT ON DATABASE api_db TO "493069k1";
+GRANT CREATE ON DATABASE api_db TO "493069k1";
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "493069k1";
+\q
+
+-- Asegúrate de que el usuario tiene permisos en la base de datos
+GRANT CONNECT ON DATABASE api_db TO "493069k1";
+GRANT CREATE ON DATABASE api_db TO "493069k1";
+
+-- Cambia a la base de datos
+\c api_db
+
+-- Otorga permisos en el esquema public
+GRANT USAGE ON SCHEMA public TO "493069k1";
+GRANT CREATE ON SCHEMA public TO "493069k1";
+GRANT ALL PRIVILEGES ON SCHEMA public TO "493069k1";
+
+-- Configura privilegios predeterminados para tablas futuras
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO "493069k1";
+
+-- Asegúrate de que la base de datos no existe antes de crearla
+CREATE DATABASE IF NOT EXISTS nombre_base_datos;
+CREATE USER IF NOT EXISTS nombre_usuario WITH PASSWORD 'contraseña_segura';
+GRANT ALL PRIVILEGES ON DATABASE nombre_base_datos TO nombre_usuario;
+
+-- Verifica que el usuario y la base de datos se hayan creado correctamente
+\c nombre_base_datos
+\du
+\q
+
+
+############################################################################################################
+
+sudo apt install postgresql postgresql-contrib -y
+sudo systemctl status postgresql
+sudo systemctl enable postgresql
+sudo systemctl start postgresql
+sudo -u postgres psql
+sudo nano /etc/postgresql/12/main/postgresql.conf
+sudo systemctl restart postgresql
+
+
+Aquí tienes los pasos para crear una base de datos en PostgreSQL y otorgar todos los permisos a un usuario:
+1. Acceder a PostgreSQL
+
+Abre la terminal y conéctate a PostgreSQL como superusuario:
+
+sudo -u postgres psql
+
+2. Crear la base de datos
+
+Ejecuta el siguiente comando para crear la base de datos:
+
+CREATE DATABASE mi_base_de_datos;
+
+3. Crear el usuario
+
+Si el usuario no existe, créalo con una contraseña segura:
+
+CREATE USER mi_usuario WITH PASSWORD 'mi_contraseña';
+
+4. Otorgar todos los permisos sobre la base de datos
+
+GRANT ALL PRIVILEGES ON DATABASE mi_base_de_datos TO mi_usuario;
+
+5. Dar permisos sobre esquemas y tablas
+
+Para permitirle administrar todas las tablas dentro del esquema public (por defecto en PostgreSQL):
+
+GRANT ALL PRIVILEGES ON SCHEMA public TO markmur88;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO markmur88;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO markmur88;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO markmur88;
+
+6. Verificar los permisos
+
+Ejecuta el siguiente comando para comprobar los privilegios asignados:
+
+\l  -- Lista todas las bases de datos y sus dueños
+\du -- Muestra los usuarios y sus roles
+\dn+ -- Muestra los esquemas y permisos
+
+7. Salir de PostgreSQL
+
+Escribe \q y presiona Enter.
+
+Ahora, el usuario mi_usuario tiene todos los permisos en mi_base_de_datos. ¿Necesitas algo más? 🚀
+
+
+-- Reemplaza "nombre_usuario" con el nombre de tu usuario de base de datos
+GRANT USAGE ON SCHEMA public TO markmur88;
+GRANT CREATE ON SCHEMA public TO markmur88;
+GRANT ALL PRIVILEGES ON SCHEMA public TO markmur88;
+
+-- Configura privilegios predeterminados para tablas futuras
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO markmur88;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO markmur88;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO markmur88;

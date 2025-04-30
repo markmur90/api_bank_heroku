@@ -1,0 +1,46 @@
+testssl
+ChatGPT dijo:
+
+Parece que te refieres a testssl.sh, una herramienta de línea de comandos para probar la configuración SSL/TLS de un servidor. ¿Quieres ayuda con su instalación, uso, o estás buscando algo en particular?
+Dijiste:
+si
+ChatGPT dijo:
+
+Perfecto. ¿Qué necesitas hacer con testssl.sh? ¿Quieres instalarlo, ejecutar un escaneo en un servidor específico o interpretar los resultados?
+Dijiste:
+descarga 
+ChatGPT dijo:
+
+Para descargar testssl.sh, sigue estos pasos:
+1. Clonar el repositorio desde GitHub
+
+Abre una terminal y ejecuta:
+
+git clone --depth 1 https://github.com/drwetter/testssl.sh.git
+
+2. Entrar en la carpeta descargada
+
+cd testssl.sh
+
+3. Dar permisos de ejecución
+
+chmod +x testssl.sh
+
+4. (Opcional) Instalar dependencias
+
+Si quieres asegurarte de que tienes las herramientas necesarias:
+
+sudo apt update && sudo apt install -y openssl curl nmap
+
+(Para Debian/Ubuntu. En CentOS/Fedora usa dnf o yum y en macOS usa brew.)
+5. Verificar que funciona
+
+./testssl.sh --version
+
+6. Hacer un escaneo básico
+
+Ejemplo para analizar google.com:
+
+./testssl.sh google.com
+
+Si necesitas ayuda con alguna parte, dime en qué entorno lo estás ejecutando (Linux, macOS, Windows con WSL, etc.). 🚀
