@@ -1,8 +1,10 @@
 # api/gpt3/urls.py
 
 from django.urls import path
-from api.gpt3.views import descargar_pdf
-from api.gpt3.views2 import *
+
+from api.gpt3.views import DetalleBulkTransferView
+from api.gpt3.views2 import CrearBulkTransferView, EnviarBulkTransferView, EstadoBulkTransferView, account_list_view, amount_list_view, cancelar_transferencia, crear_transferencia, create_account, create_amount, create_creditor, create_debtor, create_financial_institution, create_payment_identification, create_postal_address, creditor_list_view, debtor_list_view, descargar_pdf, detalle_transferencia, enviar_transferencia, estado_transferencia, financial_institution_list_view, listar_bulk_transferencias, listar_transferencias, postal_address_list_view, retry_second_factor_view
+
 
 urlpatterns = [
     # Transferencias individuales

@@ -24,8 +24,7 @@ from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from jsonschema import validate, ValidationError
-
-from api.gpt4.generate_xml import generar_xml_pain001, validar_xml_con_xsd, validar_xml_pain001
+from lxml import etree
 
 logger = logging.getLogger(__name__)
 
@@ -101,15 +100,7 @@ def generar_xml_pain001(transferencia, payment_id):
     # Información del tipo de pago
     pmt_tp_inf = ET.SubElement(pmt_inf, "PmtTpInf")
     svc_lvl = ET.SubElement(pmt_tp_inf, "SvcLvl")
-    ET.SubElement(svc_lvl, "Cd").text = (
-        transferencia.payment_type_information.service_level_code if transferencia.payment_type_information else "INST"
-    )
-    if transferencia.payment_type_information and transferencia.payment_type_information.local_instrument_code:
-        lcl_instrm = ET.SubElement(pmt_tp_inf, "LclInstrm")
-        ET.SubElement(lcl_instrm, "Cd").text = transferencia.payment_type_information.local_instrument_code
-    if transferencia.payment_type_information and transferencia.payment_type_information.category_purpose_code:
-        ctgy_purp = ET.SubElement(pmt_tp_inf, "CtgyPurp")
-        ET.SubElement(ctgy_purp, "Cd").text = transferencia.payment_type_information.category_purpose_code
+    ET.SubElement(svc_lvl, "Cd").text = "SEPA"
 
     # Datos del deudor
     dbtr = ET.SubElement(pmt_inf, "Dbtr")
@@ -166,16 +157,11 @@ def generar_xml_pain001(transferencia, payment_id):
 
 
 def validar_xml_pain001(xml_path):
-    """
-    Verifica que el XML generado contenga EndToEndId e InstrId.
-    """
     tree = ET.parse(xml_path)
     root = tree.getroot()
-
     ns = {'ns': "urn:iso:std:iso:20022:tech:xsd:pain.001.001.03"}
     e2e = root.find('.//ns:EndToEndId', ns)
     instr = root.find('.//ns:InstrId', ns)
-
     if e2e is None or not e2e.text.strip():
         raise ValueError("El XML no contiene un EndToEndId válido.")
     if instr is None or not instr.text.strip():
@@ -183,16 +169,11 @@ def validar_xml_pain001(xml_path):
 
 
 def validar_xml_con_xsd(xml_path, xsd_path="schemas/xsd/pain.001.001.03.xsd"):
-    """
-    Valida el archivo XML `pain.001` contra el esquema XSD.
-    """
     with open(xsd_path, 'rb') as f:
         schema_root = etree.XML(f.read())
         schema = etree.XMLSchema(schema_root)
-
     with open(xml_path, 'rb') as f:
         xml_doc = etree.parse(f)
-
     if not schema.validate(xml_doc):
         errors = schema.error_log
         raise ValueError(f"El XML no es válido según el XSD: {errors}")
@@ -200,7 +181,6 @@ def validar_xml_con_xsd(xml_path, xsd_path="schemas/xsd/pain.001.001.03.xsd"):
 
 
 def generar_archivo_aml(transferencia, payment_id, instant_transfer=False):
-
     carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
     aml_filename = f"aml_{payment_id}.xml"
     aml_path = os.path.join(carpeta_transferencia, aml_filename)
@@ -246,7 +226,7 @@ def generar_archivo_aml(transferencia, payment_id, instant_transfer=False):
     return aml_path
 
 
-from lxml import etree
+
 
 def validar_aml_con_xsd(aml_path, xsd_path="schemas/xsd/aml_transaction_report.xsd"):
     """
@@ -326,9 +306,6 @@ def default_request_headers():
 # ========================
 
 def registrar_log(payment_id, headers_enviados, response_text="", error=None, extra_info=None):
-    """
-    Guarda un log detallado por transferencia, incluyendo headers, respuesta y errores si aplica.
-    """
     carpeta = obtener_ruta_schema_transferencia(payment_id)
     if not os.path.exists(carpeta):
         os.makedirs(carpeta)
@@ -389,7 +366,7 @@ def get_access_token():
 # GENERADORES DE ID
 # ===========================
 
-def generate_unique_code(length=35):
+def generate_unique_code(length=36):
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
 
@@ -408,7 +385,7 @@ def generate_correlation_id():
 def generate_deterministic_id(*args, prefix=""):
     raw = ''.join(str(a) for a in args)
     hash_val = hashlib.sha256(raw.encode()).hexdigest()
-    return (prefix + hash_val)[:35]
+    return (prefix + hash_val)[:36]
 
 def generate_payment_id_uuid() -> str:
     return uuid.uuid4()
@@ -417,21 +394,10 @@ def generate_payment_id_uuid() -> str:
 # OTP
 # ===========================
 def preparar_request_type_y_datos(schema_data):
-    """
-    Determina el tipo de request para la generación del OTP o autorización de transacción
-    en función del campo `instantTransfer` y prepara los datos básicos requeridos por la API.
-    """
-    instant_transfer_value = schema_data.get("instantTransfer", False)
 
-    # Validar que instantTransfer sea booleano
-    if not isinstance(instant_transfer_value, bool):
-        raise ValueError("El campo 'instantTransfer' debe ser un valor booleano.")
-
-    is_instant = instant_transfer_value
-    request_type = "INSTANT_SEPA_CREDIT_TRANSFERS" if is_instant else "SEPA_TRANSFER_GRANT"
-
+    request_type = "SEPA_TRANSFER_GRANT"
     datos = {
-        "type": "challengeRequestDataInstantSepaCreditTransfers" if is_instant else "challengeRequestDataSepaPaymentTransfer",
+        "type": "challengeRequestDataSepaPaymentTransfer",
         "targetIban": schema_data["creditorAccount"]["iban"],
         "amountCurrency": schema_data["instructedAmount"]["currency"],
         "amountValue": schema_data["instructedAmount"]["amount"]
@@ -689,3 +655,69 @@ def handle_error_response(response):
     }
     error_code = response.status_code
     return error_messages.get(error_code, f"Error desconocido: {response.text}")
+
+
+def crear_challenge_autorizacion(transfer, token):
+    schema_data = transfer.to_schema_data()
+    request_type, request_data = preparar_request_type_y_datos(schema_data)
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json',
+        'Correlation-Id': generate_correlation_id(),
+    }
+    payload = {
+        "method": "PHOTOTAN",
+        "requestType": request_type,
+        "requestData": request_data,
+        "language": "es"
+    }
+    try:
+        response = requests.post(
+            "https://api.db.com:443/gw/dbapi/others/transactionAuthorization/v1/challenges",
+            headers=headers,
+            json=payload,
+            timeout=10
+        )
+        if response.status_code != 201:
+            error_msg = handle_error_response(response)
+            registrar_log(transfer.payment_id, headers, response.text, error=error_msg)
+            raise Exception(error_msg)
+        return response.json()["id"]
+    except requests.RequestException as e:
+        registrar_log(transfer.payment_id, headers, error=str(e))
+        raise Exception(f"Error de conexión al crear challenge: {e}")
+
+
+
+def resolver_challenge(challenge_id, token, payment_id):
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json',
+        'Correlation-Id': generate_correlation_id(),
+    }
+    payload = {
+        "challengeResponse": "123456"
+    }
+    try:
+        response = requests.patch(
+            f"https://api.db.com:443/gw/dbapi/others/transactionAuthorization/v1/challenges/{challenge_id}",
+            headers=headers,
+            json=payload,
+            timeout=10
+        )
+        if response.status_code != 200:
+            error_msg = handle_error_response(response)
+            registrar_log(payment_id, headers, response.text, error=error_msg)
+            raise Exception(error_msg)
+        return response.json()["challengeProofToken"]
+    except requests.RequestException as e:
+        registrar_log(payment_id, headers, error=str(e))
+        raise Exception(f"Error de conexión al resolver challenge: {e}")
+
+
+
+def obtener_otp_automatico_con_challenge(transfer):
+    token = get_access_token()
+    challenge_id = crear_challenge_autorizacion(transfer, token)
+    otp_token = resolver_challenge(challenge_id, token, transfer.payment_id)
+    return otp_token, token

@@ -9,7 +9,10 @@ REMOTE_DB_URL="postgres://ue2erdhkle4v0h:pa1773a2b68d739e66a794acd529d1b60c01673
 
 # Marca de tiempo para el backup
 DATE=$(date +"%Y%m%d_%H%M%S")
-BACKUP_FILE="backup_$DATE.sql"
+BACKUP_DIR="/home/markmur88/Documentos/GitHub/backup/"
+# Crear el directorio de backup si no existe
+BACKUP_FILE="${BACKUP_DIR}backup_$DATE.sql"
+
 
 # 1) Reseteamos la BDD remota para que no queden tablas o datos colgados
 echo "🧹 Reseteando base de datos remota..."

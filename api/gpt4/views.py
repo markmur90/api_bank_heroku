@@ -1,14 +1,15 @@
+import logging
 import os
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, HttpResponse
 from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
-from api.gpt4.generate_aml import generar_archivo_aml
-from api.gpt4.generate_xml import generar_xml_pain001
 from api.gpt4.models import Debtor, DebtorAccount, Creditor, CreditorAccount, CreditorAgent, PaymentIdentification, Transfer
 from api.gpt4.forms import DebtorForm, DebtorAccountForm, CreditorForm, CreditorAccountForm, CreditorAgentForm, SendTransferForm, TransferForm
-from api.gpt4.utils import generar_pdf_transferencia, generate_deterministic_id, generate_payment_id_uuid, generate_unique_code, obtener_ruta_schema_transferencia, read_log_file, registrar_log, save_log, send_transfer, ZCOD_DIR
+from api.gpt4.utils import generar_pdf_transferencia, generate_deterministic_id, generate_unique_code, obtener_otp_automatico_con_challenge, obtener_ruta_schema_transferencia, read_log_file, send_transfer, ZCOD_DIR
+
+logger = logging.getLogger(__name__)
 
 
 # ==== DEBTOR ====
@@ -92,7 +93,7 @@ def create_transfer(request):
         form = TransferForm(request.POST)
         if form.is_valid():
             transfer = form.save(commit=False)
-            transfer.payment_id = generate_unique_code()            
+            transfer.payment_id = generate_unique_code()
             payment_identification = PaymentIdentification.objects.create(
                 instruction_id=generate_deterministic_id(
                     transfer.payment_id,
@@ -109,24 +110,33 @@ def create_transfer(request):
             )
             transfer.payment_identification = payment_identification
             transfer.save()
-
-        messages.success(request, "Transferencia creada correctamente.")            
-        return redirect('list_transfersGPT4')
+            messages.success(request, "Transferencia creada correctamente.")
+            return redirect('dashboard')
+        else:
+            messages.error(request, "Por favor corrige los errores en el formulario.")
     else:
         form = TransferForm()
     return render(request, 'api/GPT4/create_transfer.html', {'form': form, 'transfer': None})
 
 
+
 def list_transfers(request):
+    estado = request.GET.get("estado")
     transfers = Transfer.objects.all().order_by('-created_at')
-    paginator = Paginator(transfers, 10)  # Show 10 transfers per page
-    page_number = request.GET.get('page',1)
+
+    if estado in ["PNDG", "RJCT", "ACSP"]:
+        transfers = transfers.filter(status=estado)
+
+    paginator = Paginator(transfers, 10)
+    page_number = request.GET.get('page', 1)
     try:
         transfers_paginated = paginator.page(page_number)
     except (EmptyPage, PageNotAnInteger):
         transfers_paginated = paginator.page(1)
-    
-    return render(request, 'api/GPT4/list_transfer.html', {'transfers': transfers_paginated})
+
+    return render(request, 'api/GPT4/list_transfer.html', {
+        'transfers': transfers_paginated
+    })
 
 
 def transfer_detail(request, transfer_id):
@@ -142,11 +152,14 @@ def transfer_detail(request, transfer_id):
     }
 
     log_files_content = {}
+    mensaje_error = None
     for nombre, ruta in archivos_logs.items():
         if os.path.exists(ruta):
             with open(ruta, 'r', encoding='utf-8') as f:
-                log_files_content[nombre] = f.read()
-
+                contenido = f.read()
+                log_files_content[nombre] = contenido
+                if "=== Error ===" in contenido:
+                    mensaje_error = contenido.split("=== Error ===")[-1].strip().split("===")[0].strip()
     # Carga de archivos XML
     archivos = {
         'pain001': os.path.join(carpeta, f"pain001_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"pain001_{transfer.payment_id}.xml")) else None,
@@ -165,14 +178,13 @@ def transfer_detail(request, transfer_id):
         'log_files_content': log_files_content,
         'archivos': archivos,
         'errores_detectados': errores_detectados,
+        'mensaje_error': mensaje_error
     })
 
 
 
 def send_transfer_view(request, transfer_id):
     transfer = get_object_or_404(Transfer, id=transfer_id)
-
-    # Leer el contenido de zCod.md
     zcod_path = os.path.join(ZCOD_DIR, 'zCod.md')
     zcod_content = ""
     if os.path.exists(zcod_path):
@@ -182,9 +194,7 @@ def send_transfer_view(request, transfer_id):
     if request.method == 'POST':
         form = SendTransferForm(request.POST)
         if form.is_valid():
-            instant_flag = form.cleaned_data.get('instant_transfer', False)
-            transfer.set_instant_transfer(instant_flag)
-            
+
             obtain_token = form.cleaned_data.get('obtain_token')
             manual_token = form.cleaned_data.get('manual_token')
             obtain_otp = form.cleaned_data.get('obtain_otp')
@@ -195,36 +205,43 @@ def send_transfer_view(request, transfer_id):
 
             token_to_use = None
             otp_to_use = None
-
+            
             if manual_token:
                 token_to_use = manual_token
             if manual_otp:
                 otp_to_use = manual_otp
 
-        try:
-            # Envio transferencia con señal de PDNG
-            transfer.status = 'PDNG'
-            transfer.save()
+            if obtain_otp:
+                try:
+                    otp_to_use, token_to_use = obtener_otp_automatico_con_challenge(transfer)
+                    regenerate_token = False
+                    regenerate_otp = False
+                
+                except Exception as e:
+                    form.add_error(None, f'Error generando OTP automático: {str(e)}')
 
-            response = send_transfer(
-                transfer,
-                use_token=token_to_use,
-                use_otp=otp_to_use,
-                regenerate_token=regenerate_token,
-                regenerate_otp=regenerate_otp
-            )
-            # Aquí podrías actualizar estado de la transferencia basado en response si quieres
-            return redirect('transfer_detailGPT4', transfer_id=transfer.id)
-        except Exception as e:
-            form.add_error(None, f'Error enviando transferencia: {str(e)}')
-
+                try:
+                    transfer.status = 'PDNG'
+                    transfer.save()
+                    send_transfer(
+                        transfer,
+                        use_token=token_to_use,
+                        use_otp=otp_to_use,
+                        regenerate_token=regenerate_token,
+                        regenerate_otp=regenerate_otp
+                    )
+                    return redirect('transfer_detailGPT4', transfer_id=transfer.id)
+                except Exception as e:
+                    form.add_error(None, f'Error enviando transferencia: {str(e)}')
+        else:
+            messages.error(request, "Por favor corrige los errores en el formulario.")
     else:
         form = SendTransferForm()
 
     return render(request, 'api/GPT4/send_transfer.html', {
         'transfer': transfer,
         'form': form,
-        'zcod_content': zcod_content  # Asegúrate de pasar esta variable al contexto
+        'zcod_content': zcod_content
     })
 
 

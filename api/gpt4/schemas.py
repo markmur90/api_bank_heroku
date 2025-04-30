@@ -150,11 +150,6 @@ sepa_credit_transfer_schema = {
             "type": "string",
             "maxLength": 140
         },
-        "instantTransfer": {
-            "type": "boolean",
-            "description": "Indica si la transferencia debe ser procesada como Instant.",
-            "default": False,
-        }
     },
     "required": [
         "creditor",

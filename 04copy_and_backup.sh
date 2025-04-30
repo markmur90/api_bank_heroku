@@ -38,6 +38,15 @@ if [[ "$CONFIRM" == "s" ]]; then
     # Crear el directorio de copia de seguridad si no existe
     mkdir -p "$BACKUP_DIR"
 
+    # Solicitar si se desea agregar un campo adicional al nombre del archivo ZIP
+    echo -e "\033[1m¿Desea agregar un campo adicional al nombre del archivo ZIP? (s/n):\033[0m"
+    read -r ADD_FIELD
+    if [[ "$ADD_FIELD" == "s" ]]; then
+        echo -e "\033[1mIngrese el campo adicional:\033[0m"
+        read -r EXTRA_FIELD
+        BACKUP_ZIP="${BACKUP_DIR}$(date +%Y%m%d__%H-%M-%S)_backup_api_bank_h2_${EXTRA_FIELD}.zip"
+    fi
+
     # Realizar la copia de seguridad en formato ZIP excluyendo archivos y carpetas específicos
     echo -e "\033[1mCreando archivo ZIP de respaldo...\033[0m"
     cd "$SOURCE" || exit

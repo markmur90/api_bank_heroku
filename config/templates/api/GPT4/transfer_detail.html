@@ -1,111 +1,44 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<style>
-    /* Scroll bonito para los logs */
-    .log-content::-webkit-scrollbar {
-        width: 6px;
-    }
-    .log-content::-webkit-scrollbar-thumb {
-        background-color: rgba(0,0,0,0.3);
-        border-radius: 3px;
-    }
-    .log-content {
-        scrollbar-width: thin;
-        scrollbar-color: rgba(0,0,0,0.3) transparent;
-    }
-</style>
+<div class="container mt-4">
+  <h2>GPT4 Detalle de la Transferencia</h2>
 
-<div class="card mb-4">
+  {% if mensaje_error %}
+  <div class="alert alert-danger mt-3">
+    <strong>Error:</strong> {{ mensaje_error }}
+  </div>
+  {% endif %}
 
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h3>Detalle Transferencia</h3>
-        <span class="text-muted">ID: {{ transfer.payment_id }}</span>
-    </div>
-    
-    {% if errores_detectados %}
-        <div class="alert alert-danger" role="alert">
-            <h5 class="alert-heading">⚠️ Se detectaron errores en el proceso de la transferencia</h5>
-            <hr>
-            {% for error in errores_detectados %}
-                <pre style="white-space: pre-wrap;">{{ error }}</pre>
-            <hr>
-            {% endfor %}
-        </div>
-    {% endif %}
-
+  <div class="card my-4">
+    <div class="card-header">Datos generales</div>
     <div class="card-body">
-        <dl class="row">
-            <dt class="col-sm-3">Deudor</dt>
-            <dd class="col-sm-9">{{ transfer.debtor.name }}</dd>
-
-            <dt class="col-sm-3">Acreedor</dt>
-            <dd class="col-sm-9">{{ transfer.creditor.name }}</dd>
-
-            <dt class="col-sm-3">Monto</dt>
-            <dd class="col-sm-9">{{ transfer.instructed_amount }} {{ transfer.currency }}</dd>
-
-            <dt class="col-sm-3">Estado</dt>
-            <dd class="col-sm-9">
-                <span class="badge 
-                    {% if transfer.status == 'PDNG' %}bg-warning
-                    {% elif transfer.status == 'ACSC' %}bg-success
-                    {% elif transfer.status == 'RJCT' %}bg-danger
-                    {% elif transfer.status == 'CANC' %}bg-secondary
-                    {% else %}bg-dark{% endif %}">
-                    {{ transfer.get_status_display }}
-                </span>
-            </dd>
-
-            <dt class="col-sm-3">Fecha de creación</dt>
-            <dd class="col-sm-9">{{ transfer.created_at|date:"d/m/Y H:i" }}</dd>
-        </dl>
-
-        <!-- Bloque de Logs -->
-        <div class="mt-4 p-3 bg-light border rounded">
-            <h5>Logs de Transacción</h5>
-            {% if log_files_content %}
-                {% for nombre, contenido in log_files_content.items %}
-                    <div class="mb-3">
-                        <h6 class="text-primary">{{ nombre }}</h6>
-                        <div class="border rounded p-2 bg-white log-content" style="max-height: 300px; overflow-y: auto;">
-                            <pre class="mb-0">{{ contenido }}</pre>
-                        </div>
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p class="text-muted">No hay logs disponibles para esta transferencia.</p>
-            {% endif %}
-        </div>
-
-        <!-- Bloque de Archivos Relacionados -->
-        <div class="mt-4 p-3 bg-light border rounded">
-            <h5>Archivos Relacionados</h5>
-            {% for archivo, contenido in archivos.items %}
-                <div class="mb-3">
-                    <h6 class="text-primary">{{ archivo|capfirst }}</h6>
-                    {% if contenido %}
-                        <div class="border rounded p-2 bg-white log-content" style="max-height: 300px; overflow-y: auto;">
-                            <pre class="mb-0">{{ contenido }}</pre>
-                        </div>
-                    {% else %}
-                        <p class="text-muted">El archivo {{ archivo }} no contiene información.</p>
-                    {% endif %}
-                </div>
-            {% endfor %}
-        </div>        
-
-        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
-            <a href="{% url 'list_transfersGPT4' %}" class="btn btn-secondary">
-                <i class="bi bi-arrow-left"></i> Volver al Listado
-            </a>
-            <a href="{% url 'send_transfer_viewGPT4' transfer.id %}" class="btn btn-success">
-                <i class="bi bi-send"></i> Enviar con OTP
-            </a>
-            <a href="{% url 'descargar_pdfGPT4' transfer.payment_id %}" class="btn btn-outline-secondary">
-                <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
-            </a>
-        </div>
+      <p><strong>Payment ID:</strong> {{ transfer.payment_id }}</p>
+      <p><strong>Estado:</strong> {{ transfer.status }}</p>
     </div>
+  </div>
+
+  {% if archivos.pain001 %}
+  <a href="{{ archivos.pain001 }}" class="btn btn-outline-primary">Ver pain.001</a>
+  {% endif %}
+  {% if archivos.aml %}
+  <a href="{{ archivos.aml }}" class="btn btn-outline-primary">Ver AML</a>
+  {% endif %}
+  {% if archivos.pain002 %}
+  <a href="{{ archivos.pain002 }}" class="btn btn-outline-primary">Ver pain.002</a>
+  {% endif %}
+
+  <h4 class="mt-4">Log de Transferencia</h4>
+  {% for nombre, contenido in log_files_content.items %}
+  <div class="card mt-3">
+    <div class="card-header">{{ nombre }}</div>
+    <div class="card-body">
+      <pre class="text-small">{{ contenido }}</pre>
+    </div>
+  </div>
+  {% endfor %}
 </div>
+<a href="{% url 'dashboard' %}" class="btn btn-secondary me-2">
+  <i class="bi bi-house-door"></i> Dashboard
+</a>
 {% endblock %}

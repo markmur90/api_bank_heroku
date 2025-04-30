@@ -11,7 +11,7 @@ echo "Inicializando base de datos..."
 bash ./02Bdd.sh
 echo " "
 echo "Inicializando Respaldos..."
-bash ./copy_and_backup.sh
+bash ./04copy_and_backup.sh
 echo " "
 echo "Iniciando servidor con Gunicorn..."
 bash ./03Gunicorn.sh

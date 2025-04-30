@@ -49,52 +49,9 @@ class PaymentIdentification(models.Model):
 
     def __str__(self):
         return self.end_to_end_id
-
-
-SERVICE_LEVEL_CHOICES = [
-    ('SEPA', 'SEPA estándar'),
-    ('URGENT', 'Urgente'),
-    ('INST', 'SEPA Instantánea'),
-]
-
-LOCAL_INSTRUMENT_CHOICES = [
-    ('INST', 'SEPA Instantáneo'),
-    ('CORE', 'Adeudo Directo SEPA CORE'),
-    ('B2B', 'Adeudo Directo SEPA B2B'),
-    ('URGP', 'Pago Urgente Europeo'),
-]
-
-CATEGORY_PURPOSE_CHOICES = [
-    ('SALA', 'Salario'),
-    ('TAXS', 'Impuestos'),
-    ('SUPP', 'Proveedores'),
-    ('CORT', 'Pago de préstamo'),
-    ('GDSV', 'Bienes y servicios'),
-]
-
-class PaymentTypeInformation(models.Model):
-    service_level_code = models.CharField(
-        max_length=10,
-        choices=SERVICE_LEVEL_CHOICES,
-        default='INST',
-    )
-    local_instrument_code = models.CharField(
-        max_length=35,
-        choices=LOCAL_INSTRUMENT_CHOICES,
-        default='INST',
-        blank=True,
-        null=True
-    )
-    category_purpose_code = models.CharField(
-        max_length=35,
-        choices=CATEGORY_PURPOSE_CHOICES,
-        default='GDSV',
-        blank=True,
-        null=True
-    )
     
 class Transfer(models.Model):
-    payment_id = models.CharField(max_length=35, unique=True)
+    payment_id = models.CharField(max_length=36, unique=True)
     debtor = models.ForeignKey(Debtor, on_delete=models.CASCADE)
     debtor_account = models.ForeignKey(DebtorAccount, on_delete=models.CASCADE)
     creditor = models.ForeignKey(Creditor, on_delete=models.CASCADE)
@@ -121,16 +78,13 @@ class Transfer(models.Model):
         ('CREA', 'Creada'),
     ])
     payment_identification = models.ForeignKey(PaymentIdentification, on_delete=models.CASCADE)
-    payment_type_information = models.ForeignKey(PaymentTypeInformation, on_delete=models.CASCADE, blank=True, null=True)
+
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    _instant_transfer_flag = False  # Propiedad temporal, no se guarda en la DB
-    def set_instant_transfer(self, value: bool):
-        self._instant_transfer_flag = bool(value)
+
         
-    def to_schema_data(self, instant_transfer=False):
-        instant_transfer = self._instant_transfer_flag
+    def to_schema_data(self):
         return {
             "purposeCode": self.purpose_code or "GDSV",
             "requestedExecutionDate": self.requested_execution_date.strftime('%Y-%m-%d'),
@@ -170,15 +124,7 @@ class Transfer(models.Model):
                 "currency": self.creditor_account.currency,
             },
             "remittanceInformationUnstructured": self.remittance_information_unstructured or "Pago de servicios",
-            "instantTransfer": instant_transfer
         }
-
-    def save(self, *args, **kwargs):
-        # Asignar automáticamente servicio INST si no se especifica
-        if not self.payment_type_information:
-            pti = PaymentTypeInformation.objects.create(service_level_code='INST')
-            self.payment_type_information = pti
-        super().save(*args, **kwargs)
 
     def get_status_color(self):
         return {

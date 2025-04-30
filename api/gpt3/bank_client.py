@@ -6,8 +6,17 @@ import xml.etree.ElementTree as ET
 from cryptography.fernet import Fernet
 from lxml import etree
 
-from api.gpt3.utils import build_complete_sepa_headers, handle_error_response, registrar_log, save_log
+from .utils2 import (
+    HEADERS_DEFAULT,
+    TIMEOUT_REQUEST,
+    build_complete_sepa_headers,
+    obtener_ruta_schema_transferencia,
+    registrar_log,
+    handle_error_response
+)
 
+# Logger para toda esta utilidad
+logger = logging.getLogger(__name__)
 
 # Configuraciones
 TIMEOUT = (5, 5)  # (connect_timeout, read_timeout)
@@ -24,10 +33,26 @@ SCHEMA_PATH_PAIN001 = os.path.join(SCHEMA_DIR, 'pain.001.001.03.xsd')
 # Asegurar que existan los directorios
 os.makedirs(LOGS_DIR, exist_ok=True)
 os.makedirs(SCHEMA_DIR, exist_ok=True)
+os.makedirs(os.path.dirname(KEY_FILE), exist_ok=True)
 
-URL = "https://api.db.com:443/gw/dbapi/banking/transactions/v2"
+URL = "https://api.db.com/gw/dbapi/banking/transactions/v2"
+
 URL2 = "https://api.db.com:443/gw/dbapi/banking/transactions/v2/sepaCreditTransfer"
 URL3 = "https://api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer"
+
+
+def _load_key():
+    if not os.path.exists(KEY_FILE):
+        key = Fernet.generate_key()
+        with open(KEY_FILE, "wb") as f:
+            f.write(key)
+    else:
+        with open(KEY_FILE, "rb") as f:
+            key = f.read()
+    return Fernet(key)
+
+encryptor = _load_key()
+
 
 
 # Función para obtener clave de cifrado de logs (o crearla)
@@ -51,69 +76,81 @@ def mask_otp(otp):
     return otp[:2] + '**' + otp[-2:]
 
 
-# Función para guardar logs cifrados
-def save_log1(payment_id, content):
-    filepath = os.path.join(LOGS_DIR, f'transferencia_{payment_id}.log')
-    encrypted_content = encryptor.encrypt(content.encode('utf-8'))
-    with open(filepath, 'wb') as f:
-        f.write(encrypted_content)
-
-
-# Función para guardar logs sin encriptar
-def save_log2(payment_id, content):
-    filepath = os.path.join(LOGS_DIR, f'transferencia_{payment_id}.log')
-    with open(filepath, 'w', encoding='utf-8') as f:
-        f.write(content)
 
 
 # Función para validar un XML contra el esquema pain.002
-def validate_pain002(xml_text):
+def validate_pain002(xml_text, payment_id):
     try:
-        xml_doc = etree.fromstring(xml_text.encode('utf-8'))
-        with open(SCHEMA_PATH, 'rb') as schema_file:
-            schema_doc = etree.parse(schema_file)
+        xml_doc = etree.fromstring(xml_text.encode("utf-8"))
+        schema_file = os.path.join("schemas", "transferencias", "pain.002.001.03.xsd")
+        with open(schema_file, "rb") as f:
+            schema_doc = etree.parse(f)
             schema = etree.XMLSchema(schema_doc)
         schema.assertValid(xml_doc)
-        print("\u2705 XML pain.002 validado exitosamente.")
-    except etree.XMLSchemaError as e:
-        raise Exception(f"\u274C Error de validaci\u00f3n en pain.002: {str(e)}")
-    except etree.XMLSyntaxError as e:
-        raise Exception(f"\u274C Error de sintaxis XML: {str(e)}")
+        registrar_log(payment_id, {}, xml_text, None)
+        return {"success": True}
+    except Exception as e:
+        registrar_log(payment_id, {}, xml_text, str(e))
+        return {"success": False, "error": str(e)}
 
 
 # Función para validar XML pain.001 contra el XSD oficial
 def validate_pain001(xml_text):
     try:
-        xml_doc = etree.fromstring(xml_text.encode('utf-8'))
-        with open(SCHEMA_PATH_PAIN001, 'rb') as schema_file:
-            schema_doc = etree.parse(schema_file)
+        xml_doc = etree.fromstring(xml_text.encode("utf-8"))
+        schema_file = os.path.join("schemas", "transferencias", "pain.001.001.03.xsd")
+        with open(schema_file, "rb") as f:
+            schema_doc = etree.parse(f)
             schema = etree.XMLSchema(schema_doc)
         schema.assertValid(xml_doc)
-        print("\u2705 XML pain.001 validado exitosamente.")
-    except etree.XMLSchemaError as e:
-        raise Exception(f"\u274C Error de validaci\u00f3n en pain.001: {str(e)}")
-    except etree.XMLSyntaxError as e:
-        raise Exception(f"\u274C Error de sintaxis XML: {str(e)}")
+        registrar_log("", {}, xml_text, None)
+        return {"success": True}
+    except Exception as e:
+        registrar_log("", {}, xml_text, str(e))
+        return {"success": False, "error": str(e)}
 
 
 # Función principal para enviar una transferencia SEPA
 def send_sepa_transfer(payment_id, payload, otp, access_token):
-    headers = build_complete_sepa_headers({
-        'otp': otp,
-        'Authorization': f'Bearer {access_token}',
-        'idempotency-id': payment_id
-    }, 'POST')  # Construir headers usando build_complete_sepa_headers
-    url = f'{URL}'
-    return _post_request(url, payment_id, payload, headers)
+    headers = HEADERS_DEFAULT.copy()
+    headers.update({
+        "otp": otp,
+        "Authorization": f"Bearer {access_token}",
+        "idempotency-id": str(payment_id),
+    })
+    try:
+        resp = requests.post(URL, json=payload, headers=headers, timeout=(5,15))
+        registrar_log(payment_id, headers, resp.text, None)
+        if resp.status_code not in (200, 201):
+            err = handle_error_response(resp)
+            registrar_log(payment_id, headers, resp.text, err)
+            return {"success": False, "error": err}
+        return {"success": True, "response": resp.json()}
+    except Exception as e:
+        registrar_log(payment_id, headers, "", str(e))
+        return {"success": False, "error": str(e)}
 
 
 # Función para obtener el estado de una transferencia SEPA
 def get_sepa_transfer_status(payment_id, access_token):
-    url = f'{URL}/{payment_id}/status'
-    headers = build_complete_sepa_headers({
-        'Authorization': f'Bearer {access_token}',
-    }, 'GET')  # Construir headers usando build_complete_sepa_headers
-    return _send_request('GET', url, headers, None, payment_id)
+    url = f"{URL}/{payment_id}/status"
+    headers = HEADERS_DEFAULT.copy()
+    headers.update({"Authorization": f"Bearer {access_token}"})
+    try:
+        resp = requests.get(url, headers=headers, timeout=(5,15))
+        registrar_log(payment_id, headers, resp.text, None)
+        if resp.status_code not in (200, 201):
+            err = handle_error_response(resp)
+            registrar_log(payment_id, headers, resp.text, err)
+            return {"success": False, "error": err}
+        data = resp.json()
+        status = data.get("transactionStatus")
+        return {"success": True, "status": status}
+    except Exception as e:
+        registrar_log(payment_id, headers, "", str(e))
+        return {"success": False, "error": str(e)}
+
+
 
 
 # Función para cancelar una transferencia SEPA
@@ -121,7 +158,7 @@ def cancel_sepa_transfer(payment_id, otp, access_token):
     url = f'{URL}/{payment_id}'
     headers = build_complete_sepa_headers({
         'Authorization': f'Bearer {access_token}',
-        'idempotency-id': payment_id,
+        'idempotency-id': str(payment_id),
         'otp': otp,
     }, 'DELETE')  # Construir headers usando build_complete_sepa_headers
     return _delete_request(url, payment_id, otp, access_token)
@@ -132,7 +169,7 @@ def retry_second_factor(payment_id, payload, otp, access_token):
     url = f'{URL}/{payment_id}'
     headers = build_complete_sepa_headers({
         'Authorization': f'Bearer {access_token}',
-        'idempotency-id': payment_id,
+        'idempotency-id': str(payment_id),
         'otp': otp,
     }, 'PATCH')  # Construir headers usando build_complete_sepa_headers
     return _patch_request(url, payment_id, payload, otp, access_token)
@@ -158,7 +195,7 @@ def _delete_request(url, payment_id, otp, access_token):
     headers = {
         'Accept': 'application/json',
         'Authorization': f'Bearer {access_token}',
-        'idempotency-id': payment_id,
+        'idempotency-id': str(payment_id),
         'otp': otp,
     }
     # Llama a _send_request con el método DELETE
@@ -170,7 +207,7 @@ def _patch_request(url, payment_id, payload, otp, access_token):
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'Authorization': f'Bearer {access_token}',
-        'idempotency-id': payment_id,
+        'idempotency-id': str(payment_id),
         'otp': otp,
     }
     # Llama a _send_request con el método PATCH

@@ -194,7 +194,7 @@ def crear_transferencia(request):
             generar_archivo_aml(transferencia, transferencia.payment_id)
 
             messages.success(request, "Transferencia creada correctamente.")
-            return redirect('listar_transferenciasGPT3')  # Sin argumentos
+            return redirect('dashboard')  # Sin argumentos
     else:
         form = SepaCreditTransferForm()
     return render(request, 'api/GPT3/crear_transferencia.html', {'form': form, 'transferencia': None})
@@ -587,7 +587,7 @@ class CrearBulkTransferView(View):
                 f.write(f"Bulk AML info for {bulk.payment_id}\n")
 
             messages.success(request, "Transferencia masiva creada y archivos generados.")
-            return redirect('listar_transferenciasGPT3')
+            return redirect('dashboard')
 
         return render(request, 'api/GPT3/crear_bulk.html', {
             'bulk_form': bulk_form,

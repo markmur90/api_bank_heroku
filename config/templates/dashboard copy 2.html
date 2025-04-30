@@ -1,0 +1,102 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="text-center mb-5 display-5 fw-bold">Panel de Control</h1>
+
+    <!-- Sección GPT4 -->
+    <section class="mb-5">
+        <h2 class="text-primary border-bottom pb-2 mb-4">Gestión GPT4</h2>
+        <div class="row g-4">
+            <!-- Clientes -->
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-people display-3 text-primary"></i>
+                        <h5 class="card-title mt-3">Clientes GPT4</h5>
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="{% url 'list_debtorsGPT4' %}" class="btn btn-primary">Ver Clientes</a>
+                            <a href="{% url 'create_debtorGPT4' %}" class="btn btn-outline-primary">Crear Cliente</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Beneficiarios -->
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-person-check display-3 text-success"></i>
+                        <h5 class="card-title mt-3">Beneficiarios GPT4</h5>
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="{% url 'list_creditorsGPT4' %}" class="btn btn-success">Ver Beneficiarios</a>
+                            <a href="{% url 'create_creditorGPT4' %}" class="btn btn-outline-success">Crear Beneficiario</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Transferencias -->
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-arrow-left-right display-3 text-danger"></i>
+                        <h5 class="card-title mt-3">Transferencias GPT4</h5>
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="{% url 'list_transfersGPT4' %}" class="btn btn-danger">Ver Transferencias</a>
+                            <a href="{% url 'create_transferGPT4' %}" class="btn btn-outline-danger">Nueva Transferencia</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Sección GPT3 -->
+    <section>
+        <h2 class="text-dark border-bottom pb-2 mb-4">Gestión GPT3</h2>
+        <div class="row g-4">
+            <!-- Clientes -->
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-people display-3 text-secondary"></i>
+                        <h5 class="card-title mt-3">Clientes GPT3</h5>
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="{% url 'debtor_listGPT3' %}" class="btn btn-secondary">Ver Clientes</a>
+                            <a href="{% url 'create_debtorGPT3' %}" class="btn btn-outline-secondary">Crear Cliente</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Beneficiarios -->
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-person-check display-3 text-info"></i>
+                        <h5 class="card-title mt-3">Beneficiarios GPT3</h5>
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="{% url 'creditor_listGPT3' %}" class="btn btn-info">Ver Beneficiarios</a>
+                            <a href="{% url 'create_creditorGPT3' %}" class="btn btn-outline-info">Crear Beneficiario</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Transferencias -->
+            <div class="col-md-4">
+                <div class="card shadow-sm h-100">
+                    <div class="card-body text-center">
+                        <i class="bi bi-arrow-left-right display-3 text-warning"></i>
+                        <h5 class="card-title mt-3">Transferencias GPT3</h5>
+                        <div class="d-grid gap-2 mt-3">
+                            <a href="{% url 'listar_transferenciasGPT3' %}" class="btn btn-warning">Ver Transferencias</a>
+                            <a href="{% url 'crear_transferenciaGPT3' %}" class="btn btn-outline-warning">Nueva Transferencia</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

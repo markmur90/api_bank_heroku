@@ -5,32 +5,6 @@
             <span class="navbar-toggler-icon"></span>
         </button>
 
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav">
-                <!-- Sección GPT4 -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="gpt4Dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-lightning"></i> GPT4
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="gpt4Dropdown">
-                        <li><a class="dropdown-item" href="{% url 'list_debtorsGPT4' %}">Clientes</a></li>
-                        <li><a class="dropdown-item" href="{% url 'list_creditorsGPT4' %}">Beneficiarios</a></li>
-                        <li><a class="dropdown-item" href="{% url 'list_transfersGPT4' %}">Transferencias</a></li>
-                    </ul>
-                </li>
-
-                <!-- Sección GPT3 -->
-                <li class="nav-item dropdown">
-                    <a class="nav-link dropdown-toggle" href="#" id="gpt3Dropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
-                        <i class="bi bi-code-slash"></i> GPT3
-                    </a>
-                    <ul class="dropdown-menu" aria-labelledby="gpt3Dropdown">
-                        <li><a class="dropdown-item" href="{% url 'listar_transferenciasGPT3' %}">Transferencias</a></li>
-                        <li><a class="dropdown-item" href="{% url 'listar_bulkGPT3' %}">Bulk</a></li>
-                    </ul>
-                </li>
-            </ul>
-
             <!-- Botón de Logout -->
             <div class="d-flex ms-auto">
                 <a class="btn btn-danger" href="{% url 'logout' %}" style="opacity: 0.6;">
