@@ -1,0 +1,79 @@
+\c api_db
+\c nombre_base_datos
+\dn+ -- Muestra los esquemas y permisos
+\du -- Muestra los usuarios y sus roles
+\l  -- Lista todas las bases de datos y sus dueños
+\q
+sudo systemctl daemon-reload
+
+1. Instalación de PostgreSQL:
+sudo apt install postgresql postgresql-contrib -y
+
+#ExecStart=/usr/lib/postgresql/12/bin/postgres -D /var/lib/postgresql/12/main -c config_file=/etc/postgresql/12/main/postgresql.conf
+#sudo nano /etc/postgresql/12/main/postgresql.conf
+#sudo nano /usr/lib/systemd/system/postgresql.service
+
+
+Datos:
+nombre_base_datos = "api_db"
+nombre_usuario = "markmur88"
+contraseña_segura "Ptf8454Jd55"
+
+1. Instalación de PostgreSQL:
+sudo apt install postgresql postgresql-contrib -y
+
+2. Habilitar y arrancar el servicio:
+service postgresql start
+service postgresql status
+
+3. Reiniciar el servicio (opcional):
+service postgresql restart
+
+4. Acceso al cliente psql como usuario postgres:
+sudo -u postgres psql
+
+5. Creación de la base de datos y usuario: Los comandos SQL tienen un pequeño error, ya que CREATE DATABASE y CREATE USER no soportan la cláusula IF NOT EXISTS. Deberías eliminarlas o verificar manualmente si ya existen antes de ejecutarlos. El bloque corregido sería:
+CREATE DATABASE nombre_base_datos;
+CREATE USER nombre_usuario WITH PASSWORD 'contraseña_segura';
+
+6. Asignación de privilegios: Los comandos para otorgar privilegios están correctos, pero asegúrate de que el esquema public sea el que deseas usar. El bloque completo sería:
+GRANT ALL PRIVILEGES ON DATABASE nombre_base_datos TO nombre_usuario;
+GRANT CONNECT ON DATABASE nombre_base_datos TO nombre_usuario;
+GRANT CREATE ON DATABASE nombre_base_datos TO nombre_usuario;
+
+GRANT USAGE, CREATE ON SCHEMA public TO nombre_usuario;
+GRANT ALL PRIVILEGES ON SCHEMA public TO nombre_usuario;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO nombre_usuario;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO nombre_usuario;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO nombre_usuario;
+
+
+
+
+
+
+CREATE DATABASE IF NOT EXISTS nombre_base_datos;
+CREATE USER IF NOT EXISTS nombre_usuario WITH PASSWORD 'contraseña_segura';
+
+GRANT ALL PRIVILEGES ON DATABASE nombre_base_datos TO nombre_usuario;
+GRANT CONNECT ON DATABASE nombre_base_datos TO nombre_usuario;
+GRANT CREATE ON DATABASE nombre_base_datos TO nombre_usuario;
+
+GRANT USAGE, CREATE ON SCHEMA public TO nombre_usuario;
+GRANT ALL PRIVILEGES ON SCHEMA public TO nombre_usuario;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO nombre_usuario;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO nombre_usuario;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO nombre_usuario;
+
+
+
+
+
+
+
+
+
+
+sudo journalctl -u postgresql
+
+sudo systemctl daemon-reload

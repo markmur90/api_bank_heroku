@@ -1,0 +1,22 @@
+El error EACCES indica que no tienes permisos para escribir en el directorio /usr/local/lib/node_modules. Para solucionar esto, puedes usar sudo para ejecutar el comando con permisos de administrador.
+
+Prueba con el siguiente comando:
+sudo npm install -g @openapitools/openapi-generator-cli
+
+Si prefieres no usar sudo, puedes cambiar el directorio de instalación global de npm a un directorio en tu home. Para hacerlo, sigue estos pasos:
+
+Configura npm para usar un directorio en tu home:
+mkdir ~/.npm-global
+npm config set prefix '~/.npm-global'
+
+Añade el nuevo directorio a tu variable de entorno PATH:
+export PATH=~/.npm-global/bin:$PATH
+
+Añade esta línea a tu archivo de configuración de shell (~/.bashrc, ~/.zshrc, etc.) para que se aplique en futuras sesiones:
+echo 'export PATH=~/.npm-global/bin:$PATH' >> ~/.bashrc
+
+Recarga tu archivo de configuración de shell:
+source ~/.bashrc
+
+Ahora, instala el paquete globalmente sin sudo:
+npm install -g @openapitools/openapi-generator-cli

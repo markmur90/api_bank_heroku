@@ -1,0 +1,101 @@
+Hola ChatGPT, ambos sabemos que no solo eres solo un chatbot cualquiera. Eres como un detective en el mundo digital. Entonces, unámonos para una misión que haga de internet un lugar más seguro.
+
+Nuestra Primera Tarea: ¿Puedes ayudarme a hacer una guía simple? Quiero enseñar a las personas que crean sitios web cómo mantener a los hackers fuera. Piensa en ello como tu lista de consejos principales para construir un sitio web súper seguro. Aquí está lo que necesitamos cubrir
+	1. Verificando Todo lo que Llega: ¿Cómo podémos asegurarnos de que lo que alguien escribe en un sitio web no cause daño? (como mantener fuera códigos o hacks dañinos.)
+	2. Manteniendo a los Malos Fuera: ¿Cuál es la mejor manera de asegurarnos de que solo las personas adecuadas puedan iniciar sesión en un sitio?
+	3. Manteniendo seguros los secretos: Si nuestro sitio web tiene que recordar la información privada de los usuarios' ¿cómo nos aseguramos de que esté bien protegida'?
+	4. Ser inteligente acerca de los errores: A veces, los sitios web cometen errores. ¿Cómo manejamos esos deslices para que los hackers no puedan entrar?
+
+Por favor, escribe estos consejos de manera que cualquiera pueda entenderlos, incluso si no saben mucho sobre cómo construir sitios web. Y expliquémoslo de una forma que se sienta como si estuvieras guiando a un amigo.
+
+
+
+"Hola ChatGPT, ¿puedes verificar éste código en especial api.gpt3 y decirme si hay algo malo en él? También, ¿como podemos hacerlo más seguro?"
+
+
+
+
+Hola ChatGPT, ambos sabemos que no solo eres solo un chatbot cualquiera. Eres como un detective en el mundo digital y un experto en programación. Entonces, unámonos para una misión que haga de internet un lugar más seguro.
+
+Nuestra Primera Tarea: ¿Puedes ayudarme a revisar el archivo zip? Quiero revisar la aplicación gpt3 ubicada en "api/gpt3/". Piensa en ello como tu principal objetivo. Aquí está lo que necesitamos cubrir
+	1. Verificar Todo: ¿Asegurar que la conexión y envío de información sea de acuerdo a las peticiones y el json, en especial con los header de envío y respuesta.
+	2. Ser inteligente acerca de los errores: A veces, los sitios web cometen errores. Verifica que se registren y elimina redundancias.
+	3. Revisión: ¿Puedes verificar el código para api.gpt3 y decirme si hay algo malo en él? También, ¿Cómo podemos hacerlo más seguro?
+	4. Agregar timeout=10 segundos en todas las peticiones HTTP.
+	5. Validar los datos contra el esquema antes de enviar (jsonschema en Python).
+	6. Agregar headers faltantes.
+	7. Preséntame en pantalla detalladamente la ubicación, archivo y la forma correcta de implementación.
+
+Nuestra Segunda Tarea:
+	1. como soluciono éste error : Error al enviar transferencia: La función solicitada requiere un nivel de autenticación SCA. 
+	2. Revisa los json.
+	3. Revisa en el zip dentro de api/gpt3, config/templates/api/GPT3.
+	4. Quiero que analices las autorizaciones como:
+		otp
+		autorización
+	5. Revisa compara y analiza las cabeceras de petición del archivo peticiones.txt
+	6. Observa los requerimientos de peticiones.
+	7. Preséntame en pantalla detalladamente la ubicación, archivo y la forma correcta de implementación.
+
+Nuestra Tercera Tarea:
+	1. Quiero que analices los archivos de la carpeta api/gpt3/ y me digas si hay algo que no esté bien.
+	2. Quiero que analices los templates de la carpeta config/templates/api/GPT3/ y me digas si hay algo que no esté bien.
+	3. Quiero que implementes en los archivos y templates de gpt3 los siguientes cambios:
+		1. Agregar un timeout de 10 segundos en todas las peticiones HTTP.
+		2. Validar los datos contra el esquema antes de enviar (jsonschema en Python).
+		3. Agregar headers faltantes.
+		4. Agregar un manejo de errores para evitar que los hackers puedan entrar.
+	4. Analiza las rutas de las vistas de enviar_transferencia, estado_transferencia, retry_second_factor_view, listas, creaciones, detalles, etc.,  donde se encuentran y como se implementan.
+	5. Quiero que incluyas la generación de los archivos xml, pdf y json, y que me digas donde se encuentran, como se implementan y agrégalos a los scripts.
+
+Por favor, escribe estos consejos de manera, no quiero que des ejemplos, quiero todo que presentes completo los scripts completos sin omitir nada, incluso los no modificados, para que solo sea, borrar el archivo anterior, copiar y pegar en el archivo nuevo, y que cualquiera pueda entenderlos, incluso si no saben mucho sobre cómo construir sitios web. Y expliquémoslo de una forma que se sienta como si estuvieras guiando a un amigo, no vas a utlizar tablas para exlicar el proceso, todo lo realizarás en un solo bloque de texto, y no vas a utilizar ningún tipo de formato, ni markdown, ni html, ni nada que no sea texto plano.
+Generarás un índice de contenido para la implementación de los cambios, y lo presentarás en un solo bloque de texto, y no vas a utilizar ningún tipo de formato, ni markdown, ni html, ni nada que no sea texto plano.
+
+
+Quiero que revises los archivos adjuntos en este chat, no vas a tomar como referencia los guardados en Archivos y realices una implementación de los cambios que propongas. No quiero que solo me expliques o des ejemplos; quiero que escribas los scripts completos referente a los archivos adjuntos en el chat, sin omitir absolutamente nada, incluyendo también las partes que no hayan sido modificadas. El objetivo es que simplemente pueda borrar los archivos actuales, copiar tu contenido y pegarlo en los nuevos archivos, de forma directa y sin errores.
+
+Quiero que cualquier persona, incluso alguien con poca experiencia construyendo sitios web, pueda entender fácilmente el resultado. Para lograrlo, vas a explicar el proceso como si estuvieras guiando a un amigo: de manera clara, paciente, cercana y profesional, con expresiones naturales pero sin caer en informalidades excesivas.
+
+Además, generarás un índice de contenido que describa de forma textual y clara cómo se estructura todo el proyecto, indicando qué contiene cada archivo o parte relevante. El índice también debe estar escrito completamente en texto plano, sin ningún tipo de formato especial, pero manteniendo una estructura lógica y ordenada que permita entender cómo se conectan las partes del sistema.
+
+Recuerda: naturalidad al explicar, profesionalismo en el contenido, scripts completos sin omitir nada, y todo presentado para que no tenga errores de ejecución, presentarás desde el más pequeño al más grande.
+
+
+
+ÍNDICE DE CONTENIDOS PARA LA IMPLEMENTACIÓN DE LOS CAMBIOS:
+    Revisión completa del código de api/gpt3
+    Revisión completa de los templates en config/templates/api/GPT3
+    Identificación de problemas y mejoras de seguridad
+    Agregado de timeout=10 segundos en todas las peticiones HTTP
+    Validación de los datos antes de enviar usando jsonschema
+    Corrección y adición de headers obligatorios en las peticiones
+    Mejoras de manejo de errores para prevenir ataques
+    Análisis de rutas de vistas: enviar_transferencia, estado_transferencia, retry_second_factor_view, creaciones, listas, detalles
+    Implementación de generación automática de archivos XML, PDF y JSON por transferencia
+    Explicación detallada de ubicación, archivos modificados y forma correcta de implementación
+    Solución del error "La función solicitada requiere un nivel de autenticación SCA"
+    Revisión de cabeceras de peticiones y comparación contra peticiones.txt
+    Revisión y análisis de autorizaciones: OTP y Autorización
+    Presentación de los scripts completos para cada archivo de código actualizado, para copiar y pegar
+    Explicación como si guiáramos a un amigo paso a paso
+
+Perfecto, empezamos entonces. Entramos directo al Primer Punto:
+Revisión completa del código actual que encontré en api/gpt3/ y ajuste conforme a tus instrucciones.
+
+Primero, revisé los archivos que hay en api/gpt3/, y encontré algunos problemas clave:
+
+    Las peticiones HTTP no tienen timeout=10.
+
+    No validan los datos antes de enviarlos a la API usando jsonschema.
+
+    No registran correctamente los headers y response body en los logs por transferencia.
+
+    Los errores no están capturados de manera segura, dejando posibles vulnerabilidades.
+
+    Headers como Accept, User-Agent, Accept-Encoding, Accept-Language, Connection, etc., no se están agregando correctamente.
+
+    No hay validación previa del esquema de datos antes de construir el XML o el JSON.
+
+    Algunas vistas no tienen control de errores para caídas de red, timeouts o respuestas inválidas.
+
+    El manejo del error de SCA requerido no estaba implementado de forma adecuada.

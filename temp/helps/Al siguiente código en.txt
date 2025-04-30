@@ -1,0 +1,22 @@
+Al siguiente código en JavaScript. Quiero convertirlo a una implementación en Python usando Django.
+Requisitos:
+    No usar Django REST Framework.
+    Utilizar vistas Django estándar (views.py) y templates HTML profesionales y amigables.
+    Mostrar los datos de la API en la interfaz de forma clara y con buen diseño.
+    La clave/token debe manejarse de forma segura (usando variables de entorno).
+    Usar buenas prácticas en la estructura del proyecto Django.
+    El código debe estar comentado y ser fácil de entender.
+    Serás minusioso en todos los detalles.
+    Revisa "components/schemas" para la creación de modelos, relaciones, vistas, procesos, etc.
+Dame el equivalente completo en Django, incluyendo:
+    models.py
+    forms.py
+    views.py
+    urls.py
+    template HTML (amigable y presentable)
+    Cómo llamar a la API con autenticación
+    Cómo manejar errores si la API falla
+    Cualquier otro archivo necesario
+Código:[
+
+]

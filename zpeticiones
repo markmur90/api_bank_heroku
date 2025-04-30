@@ -1,0 +1,90 @@
+Genera el models.py:
+	con los datos completos detallados en el archivo adjunto,
+	si tiene campos de ForeignKey aplícalos a los modelos.
+	
+Genera el forms:
+	completo para todos los modelos,
+	aplica form-control.
+	
+Genera la view completa para:
+	ingresar los datos a los modelos,
+	listar los datos ingresados a los modelos,
+	enviar al banco los datos de la transferencia en xml (pain.001) junto con el aml,
+	la respuesta esperada del banco es un xml (pain.002),
+	genera la view completa para revisar el status de la transacción,
+	si hay más views, genéralas.
+
+Genera las urls correspondientes.
+
+Genera las plantillas necesarias.
+
+Puntos Clave
+	La aplicación será desplegada con conexión real al banco.
+	No se requiere autenticación de los usuarios en el sistema Django.
+	El sistema registra localmente todas las transacciones y sus estados.
+	Debes registrar todos los schemas y sus validaciones.
+	Los xml deben generarse automáticamente al momento de enviar la transferencia, guardarlos en la carpeta schemas, y enviarlos.
+	En los formularios se permite seleccionar o crear datos.
+
+Adicionales
+	Quiero que la aplicación registre en logs el contenido de las cabeceras de respuesta.
+	Quiero que registre el cuerpo completo de la respuesta (response.text) junto con los headers.
+	Quiero que los logs se agrupen en un archivo de log especial por transferencia.
+	Aplicarás logs/transferencias/transferencia_<payment_id>.log;
+	Quiero que esos logs incluyan también los headers de la petición enviada con OTP.
+	Deseo que estos archivos se mantengan indefinidamente.
+	Me gustaría también que en la vista de detalle de cada transferencia haya un enlace para descargar o visualizar el archivo de log asociado.
+	Me gustaría también que si el log no existe (por ejemplo, por un error de sistema o eliminación manual), se muestre un mensaje claro de "log no disponible".
+
+Cabeceras
+
+{
+  "requestHeaders": {
+    "Accept": "text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8",
+    "Accept-Encoding": "gzip, deflate, br, zstd",
+    "Accept-Language": "es-CO",
+    "Connection": "keep-alive",
+    "Host": "api.db.com",
+    "Priority": "u=0, i",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0"
+  },
+  "responseHeaders": {
+    "X-Firefox-Spdy": "h2",
+    "access-control-allow-credentials": "true",
+    "access-control-allow-headers": "
+    idempotency-id, 
+    process-id, 
+    otp, 
+    Correlation-ID, 
+    Origin, 
+    Accept, 
+    X-Requested-With, 
+    Content-Type, 
+    Access-Control-Request-Method, 
+    Access-Control-Request-Headers, 
+    Authorization, 
+    Cookie, 
+    X-Frame-Options, 
+    X-Content-Type-Options, 
+    Strict-Transport-Security, 
+    previewsignature",
+    "access-control-allow-methods": "GET, POST, PATCH, HEAD, OPTIONS, DELETE",
+    "access-control-allow-origin": "",
+    "access-control-max-age": "3628800",
+    "alt-svc": "h3=\":443\"; ma=2592000, h3-29=\":443\"; ma=2592000",
+    "content-length": "173",
+    "content-type": "application/json",
+    "date": "Wed, 23 Apr 2025 22:56:07 GMT",
+    "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+    "via": "1.1 google",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY",
+    "x-request-id": "a976d5df-20e2-4e81-97f6-8d83db7c1862",
+    "x-sf-cors": "true"
+  }
+}

@@ -1,0 +1,3 @@
+Actúa como experto en programación, analisis de archivos; vas a revisar en detalle los dos archivos, y sacarás las diferencias completas, explicándo los cambios y procedimientos.
+
++
