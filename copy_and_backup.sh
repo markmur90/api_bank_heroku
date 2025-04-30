@@ -50,7 +50,7 @@ if [[ "$CONFIRM" == "s" ]]; then
     BACKUP_CREATED=true
 fi
 
-
+clear
 # Mensaje final
 echo " "
 echo " "
