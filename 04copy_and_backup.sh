@@ -42,7 +42,7 @@ if [[ "$CONFIRM" == "s" ]]; then
     echo -e "\033[1mCreando archivo ZIP de respaldo...\033[0m"
     cd "$SOURCE" || exit
     zip -r "$BACKUP_ZIP" . -x ".gitattributes" ".gitignore" "auto_commit_sync.sh" ".git/*" | pv
-    clear
+    
     echo -e "\033[1mCopia de seguridad creada exitosamente en:\033[0m"
     echo "$BACKUP_ZIP"
     BACKUP_CREATED=true
