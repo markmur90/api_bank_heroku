@@ -1,2 +1,0 @@
-hydra -L users.txt -P passlist.txt -t 4 ssh://<IP>
-

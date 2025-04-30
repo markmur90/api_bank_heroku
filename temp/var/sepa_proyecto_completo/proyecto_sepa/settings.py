@@ -1,1 +1,0 @@
-# Django settings con apps, templates, login, etc.
