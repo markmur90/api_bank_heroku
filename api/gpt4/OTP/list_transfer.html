@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-4">
+  <h2>Listado de Transferencias</h2>
+
+  <form method="get" class="row g-3 mb-4">
+    <div class="col-md-4">
+      <select name="estado" class="form-select">
+        <option value="">-- Filtrar por estado --</option>
+        <option value="PNDG" {% if request.GET.estado == 'PNDG' %}selected{% endif %}>Pendiente</option>
+        <option value="RJCT" {% if request.GET.estado == 'RJCT' %}selected{% endif %}>Rechazada</option>
+        <option value="ACSP" {% if request.GET.estado == 'ACSP' %}selected{% endif %}>Aceptada</option>
+      </select>
+    </div>
+    <div class="col-auto">
+      <button type="submit" class="btn btn-primary">Aplicar filtro</button>
+    </div>
+  </form>
+
+  <table class="table table-striped">
+    <thead>
+      <tr>
+        <th>Fecha</th>
+        <th>Payment ID</th>
+        <th>Estado</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for transfer in transfers %}
+      <tr>
+        <td>{{ transfer.created_at|date:"d/m/Y H:i" }}</td>
+        <td>{{ transfer.payment_id }}</td>
+        <td>
+          {% if transfer.status == 'RJCT' %}
+            <span class="badge bg-danger">Rechazada</span>
+          {% elif transfer.status == 'ACSP' %}
+            <span class="badge bg-success">Aceptada</span>
+          {% elif transfer.status == 'PNDG' %}
+            <span class="badge bg-warning text-dark">Pendiente</span>
+          {% else %}
+            <span class="badge bg-secondary">{{ transfer.status }}</span>
+          {% endif %}
+        </td>
+        <td>
+          <a href="{% url 'transfer_detailGPT4' transfer.id %}" class="btn btn-sm btn-outline-primary">Detalle</a>
+        </td>
+      </tr>
+      {% empty %}
+      <tr><td colspan="4" class="text-center">No hay transferencias con ese estado.</td></tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <div class="pagination">
+    {% if transfers.has_previous %}
+      <a class="btn btn-outline-secondary" href="?page={{ transfers.previous_page_number }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}">Anterior</a>
+    {% endif %}
+    <span class="mx-2">Página {{ transfers.number }} de {{ transfers.paginator.num_pages }}</span>
+    {% if transfers.has_next %}
+      <a class="btn btn-outline-secondary" href="?page={{ transfers.next_page_number }}{% if request.GET.estado %}&estado={{ request.GET.estado }}{% endif %}">Siguiente</a>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

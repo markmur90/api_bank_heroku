@@ -31,9 +31,16 @@
                 <td class="fw-bold">{{ t.instructed_amount.amount }} {{ t.instructed_amount.currency }}</td>
                 <td>
                     <span class="badge {% if t.transaction_status == 'ACSP' %}bg-success
-                                   {% elif t.transaction_status == 'RJCT' %}bg-danger
-                                   {% elif t.transaction_status == 'PDNG' %}bg-warning
-                                   {% else %}bg-secondary{% endif %}">
+                                      {% elif t.transaction_status == 'CANC' %}bg-secondary
+                                      {% elif t.transaction_status == 'ACSC' %}bg-info
+                                      {% elif t.transaction_status == 'ACWC' %}bg-primary
+                                      {% elif t.transaction_status == 'ACSP' %}bg-success
+                                      {% elif t.transaction_status == 'RCVD' %}bg-secondary
+                                      {% elif t.transaction_status == 'PDNG' %}bg-warning
+                                      {% elif t.transaction_status == 'CREA' %}bg-warning
+                                      {% elif t.transaction_status == 'RJCT' %}bg-danger
+                                      {% elif t.transaction_status == 'ERRO' %}bg-danger
+                                    {% else %}bg-secondary{% endif %}">
                         {{ t.get_transaction_status_display }}
                     </span>
                 </td>

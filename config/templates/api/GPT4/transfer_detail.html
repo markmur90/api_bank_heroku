@@ -22,7 +22,18 @@
         <h3>Detalle Transferencia</h3>
         <span class="text-muted">ID: {{ transfer.payment_id }}</span>
     </div>
-    <div class="card-body">
+    
+    {% if errores_detectados %}
+        <div class="alert alert-danger" role="alert">
+            <h5 class="alert-heading">⚠️ Se detectaron errores en el proceso de la transferencia</h5>
+            <hr>
+            {% for error in errores_detectados %}
+                <pre style="white-space: pre-wrap;">{{ error }}</pre>
+            <hr>
+            {% endfor %}
+        </div>
+    {% endif %}
+
     <div class="card-body">
         <dl class="row">
             <dt class="col-sm-3">Deudor</dt>

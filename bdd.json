@@ -3565,6 +3565,14 @@
 },
 {
   "model": "sessions.session",
+  "pk": "2bim6bju59q2bravhuckbuom7m3vll4z",
+  "fields": {
+    "session_data": ".eJxVjEEOwiAQAP_C2ZBCu5R69N43NLvLIlUDSWlPxr8bkh70OjOZt1rw2NNyVNmWNairMuryywj5KbmJ8MB8L5pL3reVdEv0aaueS5DX7Wz_BglratsxdhC97x1PQjCYKA7Ze7EsEMkbsZMgie1E4kgQEQiRLDtwvudBfb4GpTkt:1uA2Yr:cQNmTNB2PaU2vYk5Snzxt7v-GTvXHuONe-1_wbeQefY",
+    "expire_date": "2025-04-30T08:42:57.623Z"
+  }
+},
+{
+  "model": "sessions.session",
   "pk": "fbzlumw5bct9dpy0xk0qojiwtfx22scl",
   "fields": {
     "session_data": ".eJxVjEEOwiAQAP_C2ZBCu5R69N43NLvLIlUDSWlPxr8bkh70OjOZt1rw2NNyVNmWNairMuryywj5KbmJ8MB8L5pL3reVdEv0aaueS5DX7Wz_BglratsxdhC97x1PQjCYKA7Ze7EsEMkbsZMgie1E4kgQEQiRLDtwvudBfb4GpTkt:1u9xRb:Ft6SpM4G2U8qvZsp54uxvZgrrDRz8UtIuzMTBl67drU",
@@ -3576,7 +3584,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$1000000$6d5QKjVfUP7x3wUbGzDraT$ifxGUIWyN0bST36K+cwB1OHQbmGG2RL45rP98TlGFsA=",
-    "last_login": "2025-04-30T02:45:07.042Z",
+    "last_login": "2025-04-30T08:12:57.560Z",
     "is_superuser": true,
     "email": "j.moltke@db.com",
     "username": "493069k1",
@@ -3585,6 +3593,72 @@
     "is_staff": true,
     "groups": [],
     "user_permissions": []
+  }
+},
+{
+  "model": "gpt3.address",
+  "pk": 1,
+  "fields": {
+    "country": "DE",
+    "street_and_house_number": "TAUNUSANLAGE 12",
+    "zip_code_and_city": "60325 FRANKFURT"
+  }
+},
+{
+  "model": "gpt3.address",
+  "pk": 2,
+  "fields": {
+    "country": "DE",
+    "street_and_house_number": "WESELER STRABE 230",
+    "zip_code_and_city": "48151 MÜNSTER"
+  }
+},
+{
+  "model": "gpt3.debtor",
+  "pk": 1,
+  "fields": {
+    "debtor_name": "MIRYA TRADING CO LTD",
+    "postal_address": 1,
+    "customer_id": "090512DEUTDEFFXXX886479"
+  }
+},
+{
+  "model": "gpt3.creditor",
+  "pk": 1,
+  "fields": {
+    "creditor_name": "MOHAMMAD REZA NAJAFI KALASHI",
+    "postal_address": 2
+  }
+},
+{
+  "model": "gpt3.account",
+  "pk": 1,
+  "fields": {
+    "iban": "DE86500700100925993805",
+    "currency": "EUR"
+  }
+},
+{
+  "model": "gpt3.account",
+  "pk": 2,
+  "fields": {
+    "iban": "DE41400501500154813455",
+    "currency": "EUR"
+  }
+},
+{
+  "model": "gpt3.financialinstitution",
+  "pk": 1,
+  "fields": {
+    "financial_institution_id": "WELADED1XXX"
+  }
+},
+{
+  "model": "gpt3.instructedamount",
+  "pk": 1,
+  "fields": {
+    "amount": "618.50",
+    "currency": "EUR"
   }
 },
 {

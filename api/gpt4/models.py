@@ -170,6 +170,7 @@ class Transfer(models.Model):
                 "currency": self.creditor_account.currency,
             },
             "remittanceInformationUnstructured": self.remittance_information_unstructured or "Pago de servicios",
+            "instantTransfer": instant_transfer
         }
 
     def save(self, *args, **kwargs):

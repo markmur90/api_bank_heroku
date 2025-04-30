@@ -2,7 +2,7 @@ import hashlib
 import json
 import os
 import logging
-from datetime import datetime
+from datetime import datetime, timezone
 from django.conf import settings
 import xml.etree.ElementTree as ET
 import qrcode
@@ -25,11 +25,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from jsonschema import validate, ValidationError
 
-from api.gpt4.generate_aml import generar_archivo_aml, validar_aml_con_xsd
 from api.gpt4.generate_xml import generar_xml_pain001, validar_xml_con_xsd, validar_xml_pain001
-from api.gpt4.paths import obtener_ruta_schema_transferencia
-from api.gpt4.validator import preparar_request_type_y_datos
-from api.gpt4.schemas import sepa_credit_transfer_schema
 
 logger = logging.getLogger(__name__)
 
@@ -72,6 +68,204 @@ TOKEN_URL = DEUTSCHE_BANK_TOKEN_URL
 
 
 
+def obtener_ruta_schema_transferencia(payment_id):
+    carpeta = os.path.join(SCHEMA_DIR, str(payment_id))
+    os.makedirs(carpeta, exist_ok=True)
+    return carpeta
+
+
+def generar_xml_pain001(transferencia, payment_id):
+    carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
+
+    # Crear el root del XML
+    root = ET.Element("Document", xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.03")
+    cstmr_cdt_trf_initn = ET.SubElement(root, "CstmrCdtTrfInitn")
+
+    # Cabecera del grupo
+    grp_hdr = ET.SubElement(cstmr_cdt_trf_initn, "GrpHdr")
+    ET.SubElement(grp_hdr, "MsgId").text = str(transferencia.payment_id)  # Convertir UUID a cadena
+    ET.SubElement(grp_hdr, "CreDtTm").text = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    ET.SubElement(grp_hdr, "NbOfTxs").text = "1"
+    ET.SubElement(grp_hdr, "CtrlSum").text = str(transferencia.instructed_amount)
+    initg_pty = ET.SubElement(grp_hdr, "InitgPty")
+    ET.SubElement(initg_pty, "Nm").text = transferencia.debtor.name
+
+    # Información del pago
+    pmt_inf = ET.SubElement(cstmr_cdt_trf_initn, "PmtInf")
+    ET.SubElement(pmt_inf, "PmtInfId").text = str(transferencia.payment_id)  # Convertir UUID a cadena
+    ET.SubElement(pmt_inf, "PmtMtd").text = "TRF"
+    ET.SubElement(pmt_inf, "BtchBookg").text = "false"
+    ET.SubElement(pmt_inf, "NbOfTxs").text = "1"
+    ET.SubElement(pmt_inf, "CtrlSum").text = str(transferencia.instructed_amount)
+
+    # Información del tipo de pago
+    pmt_tp_inf = ET.SubElement(pmt_inf, "PmtTpInf")
+    svc_lvl = ET.SubElement(pmt_tp_inf, "SvcLvl")
+    ET.SubElement(svc_lvl, "Cd").text = (
+        transferencia.payment_type_information.service_level_code if transferencia.payment_type_information else "INST"
+    )
+    if transferencia.payment_type_information and transferencia.payment_type_information.local_instrument_code:
+        lcl_instrm = ET.SubElement(pmt_tp_inf, "LclInstrm")
+        ET.SubElement(lcl_instrm, "Cd").text = transferencia.payment_type_information.local_instrument_code
+    if transferencia.payment_type_information and transferencia.payment_type_information.category_purpose_code:
+        ctgy_purp = ET.SubElement(pmt_tp_inf, "CtgyPurp")
+        ET.SubElement(ctgy_purp, "Cd").text = transferencia.payment_type_information.category_purpose_code
+
+    # Datos del deudor
+    dbtr = ET.SubElement(pmt_inf, "Dbtr")
+    ET.SubElement(dbtr, "Nm").text = transferencia.debtor.name
+    dbtr_pstl_adr = ET.SubElement(dbtr, "PstlAdr")
+    ET.SubElement(dbtr_pstl_adr, "StrtNm").text = transferencia.debtor.postal_address_street
+    ET.SubElement(dbtr_pstl_adr, "TwnNm").text = transferencia.debtor.postal_address_city
+    ET.SubElement(dbtr_pstl_adr, "Ctry").text = transferencia.debtor.postal_address_country
+
+    dbtr_acct = ET.SubElement(pmt_inf, "DbtrAcct")
+    dbtr_acct_id = ET.SubElement(dbtr_acct, "Id")
+    ET.SubElement(dbtr_acct_id, "IBAN").text = transferencia.debtor_account.iban
+
+    # Información de la transferencia individual
+    cdt_trf_tx_inf = ET.SubElement(pmt_inf, "CdtTrfTxInf")
+    pmt_id = ET.SubElement(cdt_trf_tx_inf, "PmtId")
+    ET.SubElement(pmt_id, "EndToEndId").text = str(transferencia.payment_identification.end_to_end_id)  # Convertir UUID a cadena
+    ET.SubElement(pmt_id, "InstrId").text = str(transferencia.payment_identification.instruction_id)
+    
+    amt = ET.SubElement(cdt_trf_tx_inf, "Amt")
+    ET.SubElement(amt, "InstdAmt", Ccy=transferencia.currency).text = str(transferencia.instructed_amount)
+
+    # Datos del acreedor
+    cdtr = ET.SubElement(cdt_trf_tx_inf, "Cdtr")
+    ET.SubElement(cdtr, "Nm").text = transferencia.creditor.name
+    cdtr_pstl_adr = ET.SubElement(cdtr, "PstlAdr")
+    ET.SubElement(cdtr_pstl_adr, "StrtNm").text = transferencia.creditor.postal_address_street
+    ET.SubElement(cdtr_pstl_adr, "TwnNm").text = transferencia.creditor.postal_address_city
+    ET.SubElement(cdtr_pstl_adr, "Ctry").text = transferencia.creditor.postal_address_country
+
+    cdtr_acct = ET.SubElement(cdt_trf_tx_inf, "CdtrAcct")
+    cdtr_acct_id = ET.SubElement(cdtr_acct, "Id")
+    ET.SubElement(cdtr_acct_id, "IBAN").text = transferencia.creditor_account.iban
+
+    # Agente del acreedor
+    cdtr_agt = ET.SubElement(cdt_trf_tx_inf, "CdtrAgt")
+    fin_instn_id = ET.SubElement(cdtr_agt, "FinInstnId")
+    ET.SubElement(fin_instn_id, "BIC").text = transferencia.creditor_agent.bic
+
+    # Información de la remesa
+    rmt_inf = ET.SubElement(cdt_trf_tx_inf, "RmtInf")
+    if transferencia.remittance_information_structured:
+        ET.SubElement(rmt_inf, "Strd").text = transferencia.remittance_information_structured
+    if transferencia.remittance_information_unstructured:
+        ET.SubElement(rmt_inf, "Ustrd").text = transferencia.remittance_information_unstructured
+
+    # Guardar XML
+    xml_filename = f"pain001_{payment_id}.xml"
+    xml_path = os.path.join(carpeta_transferencia, xml_filename)
+    ET.ElementTree(root).write(xml_path, encoding='utf-8', xml_declaration=True)
+
+    logger.info(f"XML pain.001 generado en {xml_path}")
+    return xml_path
+
+
+def validar_xml_pain001(xml_path):
+    """
+    Verifica que el XML generado contenga EndToEndId e InstrId.
+    """
+    tree = ET.parse(xml_path)
+    root = tree.getroot()
+
+    ns = {'ns': "urn:iso:std:iso:20022:tech:xsd:pain.001.001.03"}
+    e2e = root.find('.//ns:EndToEndId', ns)
+    instr = root.find('.//ns:InstrId', ns)
+
+    if e2e is None or not e2e.text.strip():
+        raise ValueError("El XML no contiene un EndToEndId válido.")
+    if instr is None or not instr.text.strip():
+        raise ValueError("El XML no contiene un InstructionId válido.")
+
+
+def validar_xml_con_xsd(xml_path, xsd_path="schemas/xsd/pain.001.001.03.xsd"):
+    """
+    Valida el archivo XML `pain.001` contra el esquema XSD.
+    """
+    with open(xsd_path, 'rb') as f:
+        schema_root = etree.XML(f.read())
+        schema = etree.XMLSchema(schema_root)
+
+    with open(xml_path, 'rb') as f:
+        xml_doc = etree.parse(f)
+
+    if not schema.validate(xml_doc):
+        errors = schema.error_log
+        raise ValueError(f"El XML no es válido según el XSD: {errors}")
+    
+
+
+def generar_archivo_aml(transferencia, payment_id, instant_transfer=False):
+
+    carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
+    aml_filename = f"aml_{payment_id}.xml"
+    aml_path = os.path.join(carpeta_transferencia, aml_filename)
+
+    root = ET.Element("AMLTransactionReport")
+    transaction = ET.SubElement(root, "Transaction")
+
+    ET.SubElement(transaction, "TransactionID").text = str(transferencia.payment_id)  # Convertir UUID a cadena
+    ET.SubElement(transaction, "TransactionType").text = "INST" if instant_transfer else "SEPA" # type: ignore
+
+    ET.SubElement(transaction, "ExecutionDate").text = transferencia.requested_execution_date.strftime("%Y-%m-%dT%H:%M:%S")
+
+    amount = ET.SubElement(transaction, "Amount")
+    amount.set("currency", transferencia.currency)
+    amount.text = str(transferencia.instructed_amount)
+
+    debtor = ET.SubElement(transaction, "Debtor")
+    ET.SubElement(debtor, "Name").text = transferencia.debtor.name
+    ET.SubElement(debtor, "IBAN").text = transferencia.debtor_account.iban
+    ET.SubElement(debtor, "Country").text = transferencia.debtor.postal_address_country
+    ET.SubElement(debtor, "CustomerID").text = transferencia.debtor.customer_id
+    ET.SubElement(debtor, "KYCVerified").text = "true"
+
+    creditor = ET.SubElement(transaction, "Creditor")
+    ET.SubElement(creditor, "Name").text = transferencia.creditor.name
+    ET.SubElement(creditor, "IBAN").text = transferencia.creditor_account.iban
+    ET.SubElement(creditor, "BIC").text = transferencia.creditor_agent.financial_institution_id
+    ET.SubElement(creditor, "Country").text = transferencia.creditor.postal_address_country
+
+    ET.SubElement(transaction, "Purpose").text = transferencia.purpose_code or "N/A"
+    ET.SubElement(transaction, "Channel").text = "Online"
+    ET.SubElement(transaction, "RiskScore").text = "3"
+    ET.SubElement(transaction, "PEP").text = "false"
+    ET.SubElement(transaction, "SanctionsCheck").text = "clear"
+    ET.SubElement(transaction, "HighRiskCountry").text = "false"
+
+    flags = ET.SubElement(transaction, "Flags")
+    ET.SubElement(flags, "UnusualAmount").text = "false"
+    ET.SubElement(flags, "FrequentTransfers").text = "false"
+    ET.SubElement(flags, "ManualReviewRequired").text = "false"
+
+    ET.ElementTree(root).write(aml_path, encoding="utf-8", xml_declaration=True)
+    return aml_path
+
+
+from lxml import etree
+
+def validar_aml_con_xsd(aml_path, xsd_path="schemas/xsd/aml_transaction_report.xsd"):
+    """
+    Valida el archivo AML generado contra su esquema XSD.
+    """
+    with open(xsd_path, 'rb') as f:
+        schema_root = etree.XML(f.read())
+        schema = etree.XMLSchema(schema_root)
+
+    with open(aml_path, 'rb') as f:
+        xml_doc = etree.parse(f)
+
+    if not schema.validate(xml_doc):
+        errors = schema.error_log
+        raise ValueError(f"El archivo AML no es válido según el XSD: {errors}")
+
+
+
+
 # ===========================
 # LOGS Y HEADERS
 # ===========================
@@ -109,7 +303,7 @@ def read_log_file(payment_id):
 
 def default_request_headers():
     return {
-        "Accept": "text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8",
+        "Accept": "application/json, text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8",
         "Accept-Encoding": "gzip, deflate, br, zstd",
         "Accept-Language": "es-CO",
         "Connection": "keep-alive",
@@ -166,8 +360,8 @@ def registrar_log(payment_id, headers_enviados, response_text="", error=None, ex
 
 
 # Variables internas
-_access_token = TOKEN
-_token_expiry = 600  # 1 hora por defecto
+_access_token = None
+_token_expiry = 3600  # 1 hora por defecto
 
 def get_access_token():
     global _access_token, _token_expiry
@@ -182,7 +376,7 @@ def get_access_token():
     auth = (CLIENT_ID, CLIENT_SECRET)
     try:
         response = requests.post(TOKEN_URL, data=data, auth=auth, timeout=10)
-        response.raise_for_status()
+
         token_data = response.json()
         _access_token = token_data['access_token']
         _token_expiry = current_time + token_data.get('expires_in', 3600)
@@ -222,32 +416,29 @@ def generate_payment_id_uuid() -> str:
 # ===========================
 # OTP
 # ===========================
+def preparar_request_type_y_datos(schema_data):
+    """
+    Determina el tipo de request para la generación del OTP o autorización de transacción
+    en función del campo `instantTransfer` y prepara los datos básicos requeridos por la API.
+    """
+    instant_transfer_value = schema_data.get("instantTransfer", False)
 
-# def get_otp_for_transfer(transfer, token):
-#     headers = {
-#         'Authorization': f'Bearer {token}',
-#         'Content-Type': 'application/json',
-#         'Correlation-Id': generate_correlation_id(),
-#     }
-#     body = {
-#         "method": "MTAN",
-#         "requestType": "INSTANT_SEPA_CREDIT_TRANSFERS",
-#         "requestData": {
-#             "type": "challengeRequestDataInstantSepaCreditTransfers",
-#             "targetIban": transfer.creditor_account.iban,
-#             "amountCurrency": transfer.currency,
-#             "amountValue": float(transfer.instructed_amount)
-#         },
-#         "language": "es"
-#     }
+    # Validar que instantTransfer sea booleano
+    if not isinstance(instant_transfer_value, bool):
+        raise ValueError("El campo 'instantTransfer' debe ser un valor booleano.")
 
-#     try:
-#         response = requests.post(OTP_URL, json=body, headers=headers, timeout=10)
-#         response.raise_for_status()
-#         otp_data = response.json()
-#         return otp_data['id']
-#     except requests.RequestException as e:
-#         raise Exception(f"Error solicitando OTP: {e}")
+    is_instant = instant_transfer_value
+    request_type = "INSTANT_SEPA_CREDIT_TRANSFERS" if is_instant else "SEPA_TRANSFER_GRANT"
+
+    datos = {
+        "type": "challengeRequestDataInstantSepaCreditTransfers" if is_instant else "challengeRequestDataSepaPaymentTransfer",
+        "targetIban": schema_data["creditorAccount"]["iban"],
+        "amountCurrency": schema_data["instructedAmount"]["currency"],
+        "amountValue": schema_data["instructedAmount"]["amount"]
+    }
+
+    return request_type, datos
+
 
 def get_otp_for_transfer(transfer, token):
     schema_data = transfer.to_schema_data()  # Supongamos que esta función extrae el esquema
@@ -259,143 +450,32 @@ def get_otp_for_transfer(transfer, token):
         'Correlation-Id': generate_correlation_id(),
     }
     body = {
-        "method": "MTAN",
-        "requestType": request_type,
+        "method": "PHOTOTAN",
+        "requestType": "SEPA_TRANSFER_GRANT",
         "requestData": request_data,
         "language": "es"
     }
 
     try:
         response = requests.post(OTP_URL, json=body, headers=headers, timeout=10)
-        response.raise_for_status()
+        if response.status_code != 200:
+            error_message = handle_error_response(response)
+            registrar_log(payment_id=body.get("paymentIdentification", {}).get("endToEndIdentification", "unknown"),
+                          headers=default_request_headers(), response_text=response.text, error=error_message)
+            return {"error": error_message}        
+        
         otp_data = response.json()
         return otp_data['id']
     except requests.RequestException as e:
         raise Exception(f"Error solicitando OTP: {e}")
 
 
-# ===========================
-# ENVIO DE TRANSFERENCIAS
-# ===========================
 
-# def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False, regenerate_otp=False):
-#     payment_id = transfer.payment_id
-
-#     token = None
-#     if regenerate_token:
-#         token = get_access_token()
-#     else:
-#         token = use_token
-
-#     if not token:
-#         raise Exception("TOKEN no disponible.")
-
-#     otp = None
-#     if regenerate_otp:
-#         otp = get_otp_for_transfer(transfer, token)
-#     else:
-#         otp = use_otp
-
-#     if not otp:
-#         raise Exception("OTP no disponible.")
-
-#     # (Sigue aquí construyendo el body y enviando la transferencia normalmente)
-
-#     # Generar archivos
-#     xml_path = generate_pain_001(transfer)
-#     aml_path = generate_aml_file(transfer)
-
-#     with open(xml_path, 'r', encoding='utf-8') as xml_file:
-#         xml_content = xml_file.read()
-#     with open(aml_path, 'r', encoding='utf-8') as aml_file:
-#         aml_content = aml_file.read()
-    
-#     # Preparar headers
-#     headers = default_request_headers()
-#     headers.update({
-#         'Authorization': f'Bearer {token}',
-#         'Content-Type': 'application/json',
-#         'idempotency-id': payment_id,
-#         'otp': otp,
-#     })
-
-#     # Construir body
-#     body = {
-#         "purposeCode": transfer.purpose_code or "BKDF",
-#         "requestedExecutionDate": transfer.requested_execution_date.strftime('%Y-%m-%d'),
-#         "debtor": {
-#             "debtorName": transfer.debtor.name,
-#             "debtorPostalAddress": {
-#                 "country": transfer.debtor.postal_address_country,
-#                 "addressLine": {
-#                     "streetAndHouseNumber": transfer.debtor.postal_address_street,
-#                     "zipCodeAndCity": transfer.debtor.postal_address_city,
-#                 }
-#             }
-#         },
-#         "debtorAccount": {
-#             "iban": transfer.debtor_account.iban,
-#             "currency": transfer.debtor_account.currency,
-#         },
-#         "paymentIdentification": {
-#             "endToEndIdentification": generate_end_to_end_id(),
-#             "instructionId": generate_instruction_id(),
-#         },
-#         "instructedAmount": {
-#             "amount": float(transfer.instructed_amount),
-#             "currency": transfer.currency,
-#         },
-#         "creditorAgent": {
-#             "financialInstitutionId": transfer.creditor_agent.financial_institution_id or "",
-#         },
-#         "creditor": {
-#             "creditorName": transfer.creditor.name,
-#             "creditorPostalAddress": {
-#                 "country": transfer.creditor.postal_address_country,
-#                 "addressLine": {
-#                     "streetAndHouseNumber": transfer.creditor.postal_address_street,
-#                     "zipCodeAndCity": transfer.creditor.postal_address_city,
-#                 }
-#             }
-#         },
-#         "creditorAccount": {
-#             "iban": transfer.creditor_account.iban,
-#             "currency": transfer.creditor_account.currency,
-#         },
-#         "remittanceInformationUnstructured": transfer.remittance_information_unstructured or "Pago de servicios",
-#     }
-
-#     # Validar contra el schema
-#     try:
-#         validate(instance=body, schema=sepa_credit_transfer_schema)
-#     except ValidationError as e:
-#         raise Exception(f"El cuerpo de la transferencia no cumple con el esquema SEPA: {e.message}")
-
-#     # Enviar petición
-#     response = requests.post(BANK_API_URL, json=body, headers=headers)
-
-#     # Guardar en logs
-#     save_log(
-#         payment_id,
-#         request_headers=headers,
-#         request_body=body,
-#         response_headers=dict(response.headers),
-#         response_body=response.text
-#     )
-
-#     # Actualizar estado de la transferencia
-#     if response.status_code == 201:
-#         transfer.status = 'ENVIADO'
-#     else:
-#         transfer.status = 'ERROR'
-#     transfer.save()
-
-#     return response
 
 
 def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False, regenerate_otp=False):
     schema_data = transfer.to_schema_data()
-    request_type, request_data = preparar_request_type_y_datos(schema_data)
+    # request_type, request_data = preparar_request_type_y_datos(schema_data)
 
     payment_id = transfer.payment_id
 
@@ -427,10 +507,6 @@ def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False
 
     body = schema_data
 
-    try:
-        validate(instance=body, schema=sepa_credit_transfer_schema)
-    except ValidationError as e:
-        raise Exception(f"El cuerpo de la transferencia no cumple con el esquema SEPA: {e.message}")
 
     response = requests.post(BANK_API_URL, json=body, headers=headers)
 
@@ -443,9 +519,9 @@ def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False
     )
 
     if response.status_code == 201:
-        transfer.status = 'ENVIADO'
+        transfer.status = 'PNDG'
     else:
-        transfer.status = 'ERROR'
+        transfer.status = 'RJCT'
     transfer.save()
 
     # 💡 Aquí generamos XML reales después del envío

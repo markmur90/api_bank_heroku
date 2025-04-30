@@ -6,7 +6,7 @@ import xml.etree.ElementTree as ET
 from cryptography.fernet import Fernet
 from lxml import etree
 
-from api.gpt3.utils import build_complete_sepa_headers, save_log
+from api.gpt3.utils import build_complete_sepa_headers, handle_error_response, registrar_log, save_log
 
 
 # Configuraciones
@@ -27,7 +27,7 @@ os.makedirs(SCHEMA_DIR, exist_ok=True)
 
 URL = "https://api.db.com:443/gw/dbapi/banking/transactions/v2"
 URL2 = "https://api.db.com:443/gw/dbapi/banking/transactions/v2/sepaCreditTransfer"
-URL3 = "https://simulator-api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer"
+URL3 = "https://api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer"
 
 
 # Función para obtener clave de cifrado de logs (o crearla)
@@ -197,14 +197,18 @@ def _send_request(method, url, headers, payload, payment_id):
             # Guarda los logs de la solicitud y la respuesta
             request_info = f"Request Headers: {headers}\nPayload: {payload}"
             response_info = f"Response Status: {response.status_code}\nResponse Headers: {dict(response.headers)}\nResponse Body: {response.text}"
-            save_log(payment_id, request_info + '\n' + response_info)
+            registrar_log(payment_id, headers, response.text)
 
             # Valida el XML si el contenido es de tipo XML
             if 'xml' in response.headers.get('Content-Type', ''):
                 validate_pain002(response.text)
 
             # Verifica si la respuesta tiene errores
-            response.raise_for_status()
+            if response.status_code not in [200, 201]:
+                mensaje = handle_error_response(response)
+                registrar_log(payment_id, headers, response.text, error=mensaje)
+                return {"error": mensaje}
+
             return response  # Devuelve el objeto response completo
         except requests.RequestException as e:
             # Manejo de errores y reintentos
@@ -213,9 +217,10 @@ def _send_request(method, url, headers, payload, payment_id):
             error_log_path = os.path.join(carpeta_transferencia, f"error_{payment_id}.log")
             with open(error_log_path, 'a', encoding='utf-8') as error_file:
                 error_file.write(f"Intento {attempt + 1} fallido: {str(e)}\n")
+            registrar_log(payment_id, headers, "", error=str(e))
             logging.error(f"Intento {attempt + 1} fallido: {e}")
             attempt += 1
             if attempt >= RETRY_COUNT:
-                raise Exception("No se pudo completar la operación tras varios intentos.")
+                return {"error": "No se pudo completar la operación tras varios intentos."}
 
 

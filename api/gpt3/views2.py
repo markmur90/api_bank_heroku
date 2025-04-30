@@ -157,7 +157,7 @@ def enviar_transferencia(request, payment_id):
 
     if not otp_token:
         messages.error(request, "No se pudo obtener el OTP.")
-        return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
+        return redirect('listar_transferenciasGPT3')
 
     headers = HEADERS_DEFAULT.copy()
     headers.update({
@@ -174,7 +174,7 @@ def enviar_transferencia(request, payment_id):
         validate_schema(payload, sepa_credit_transfer_schema)
     except ValidationError as e:
         messages.error(request, f"Error de validación JSON: {str(e)}")
-        return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
+        return redirect('listar_transferenciasGPT3')
 
     try:
         response = requests.post(f"{API_URL}/", json=payload, headers=headers, timeout=(5, 15))
@@ -183,20 +183,22 @@ def enviar_transferencia(request, payment_id):
         if response.status_code not in [200, 201]:
             mensaje = handle_error_response(response)
             messages.error(request, f"Error al enviar transferencia: {mensaje}")
-            return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
+            transferencia.transaction_status = "ERRO"
+            transferencia.save()
+            return redirect('listar_transferenciasGPT3')
 
         respuesta_json = response.json()
         transferencia.transaction_status = respuesta_json.get('transactionStatus', 'PDNG')
         transferencia.save()
 
         guardar_pain002_si_aplica(response, payment_id)
-
         messages.success(request, "Transferencia enviada correctamente.")
     except Exception as e:
         registrar_log(payment_id, headers, "", error=str(e))
+        transferencia.transaction_status = "ERROR"
+        transferencia.save()
         messages.error(request, f"Error interno al enviar: {str(e)}")
-
-    return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
+    return redirect('listar_transferenciasGPT3')
 
 # ===========================
 # CONSULTAR ESTADO, CANCELAR Y RETRY 2FA

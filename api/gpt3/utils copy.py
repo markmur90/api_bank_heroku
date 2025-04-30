@@ -557,7 +557,7 @@ HEADERS_DEFAULT = {
 }
 
 def generar_otp_sepa_transfer():
-    url = "https://simulator-api.db.com//gw/dbapi/others/onetimepasswords/v2/single"
+    url = "https://api.db.com//gw/dbapi/others/onetimepasswords/v2/single"
 
     payload = {
         "method": "PUSHTAN",

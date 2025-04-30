@@ -8,7 +8,7 @@ from api.gpt4.generate_aml import generar_archivo_aml
 from api.gpt4.generate_xml import generar_xml_pain001
 from api.gpt4.models import Debtor, DebtorAccount, Creditor, CreditorAccount, CreditorAgent, PaymentIdentification, Transfer
 from api.gpt4.forms import DebtorForm, DebtorAccountForm, CreditorForm, CreditorAccountForm, CreditorAgentForm, SendTransferForm, TransferForm
-from api.gpt4.utils import generar_pdf_transferencia, generate_deterministic_id, generate_payment_id_uuid, obtener_ruta_schema_transferencia, read_log_file, registrar_log, save_log, send_transfer, ZCOD_DIR
+from api.gpt4.utils import generar_pdf_transferencia, generate_deterministic_id, generate_payment_id_uuid, generate_unique_code, obtener_ruta_schema_transferencia, read_log_file, registrar_log, save_log, send_transfer, ZCOD_DIR
 
 
 # ==== DEBTOR ====
@@ -92,7 +92,7 @@ def create_transfer(request):
         form = TransferForm(request.POST)
         if form.is_valid():
             transfer = form.save(commit=False)
-            transfer.payment_id = generate_payment_id_uuid()            
+            transfer.payment_id = generate_unique_code()            
             payment_identification = PaymentIdentification.objects.create(
                 instruction_id=generate_deterministic_id(
                     transfer.payment_id,
@@ -132,31 +132,41 @@ def list_transfers(request):
 def transfer_detail(request, transfer_id):
     transfer = get_object_or_404(Transfer, id=transfer_id)
     log_content = read_log_file(transfer.payment_id)
-    
-    
     carpeta = obtener_ruta_schema_transferencia(transfer.payment_id)
 
+    # Carga archivos .log
     archivos_logs = {
         archivo: os.path.join(carpeta, archivo)
         for archivo in os.listdir(carpeta)
         if archivo.endswith(".log")
     }
+
     log_files_content = {}
     for nombre, ruta in archivos_logs.items():
         if os.path.exists(ruta):
             with open(ruta, 'r', encoding='utf-8') as f:
                 log_files_content[nombre] = f.read()
 
+    # Carga de archivos XML
     archivos = {
         'pain001': os.path.join(carpeta, f"pain001_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"pain001_{transfer.payment_id}.xml")) else None,
         'aml': os.path.join(carpeta, f"aml_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"aml_{transfer.payment_id}.xml")) else None,
         'pain002': os.path.join(carpeta, f"pain002_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"pain002_{transfer.payment_id}.xml")) else None,
     }
+
+    # Busca errores en logs
+    errores_detectados = []
+    for contenido in log_files_content.values():
+        if "Error" in contenido or "Traceback" in contenido or "no válido según el XSD" in contenido:
+            errores_detectados.append(contenido)
+
     return render(request, 'api/GPT4/transfer_detail.html', {
         'transfer': transfer,
         'log_files_content': log_files_content,
         'archivos': archivos,
+        'errores_detectados': errores_detectados,
     })
+
 
 
 def send_transfer_view(request, transfer_id):
@@ -195,7 +205,6 @@ def send_transfer_view(request, transfer_id):
             # Envio transferencia con señal de PDNG
             transfer.status = 'PDNG'
             transfer.save()
-
 
             response = send_transfer(
                 transfer,

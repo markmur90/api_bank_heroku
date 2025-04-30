@@ -19,6 +19,7 @@ from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from jsonschema import validate, ValidationError
+from requests_oauthlib import OAuth2Session
 
 from api.gpt3.helpers import obtener_ruta_schema_transferencia
 from api.gpt3.models import SepaCreditTransfer
@@ -48,11 +49,11 @@ os.makedirs(LOGS_DIR, exist_ok=True)
 
 # Headers genéricos base
 HEADERS_DEFAULT = {
-    "Accept": "application/json",
-    "Content-Type": "application/json",
+    "Accept": "application/json, text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8",
     "Accept-Encoding": "gzip, deflate, br, zstd",
     "Accept-Language": "es-CO",
     "Connection": "keep-alive",
+    "Host": "api.db.com",
     "Priority": "u=0, i",
     "Sec-Fetch-Dest": "document",
     "Sec-Fetch-Mode": "navigate",
@@ -60,7 +61,10 @@ HEADERS_DEFAULT = {
     "Sec-Fetch-User": "?1",
     "Upgrade-Insecure-Requests": "1",
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
-    "Origin": ORIGIN
+    "Origin": ORIGIN,
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+    "X-Frame-Options": "DENY",
+    "X-Content-Type-Options": "nosniff",
 }
 
 # =========================
@@ -122,29 +126,6 @@ def build_headers(idempotency_id=None, otp=None, correlation_id=None):
         headers["Correlation-Id"] = correlation_id
     return headers
 
-# ==========================
-# 3. Manejo de Errores de API
-# ==========================
-
-def handle_error_response(response):
-    """
-    Devuelve un mensaje amigable basado en el status code del response.
-    """
-    error_messages = {
-        2: "Valor inválido para parámetro.",
-        16: "OTP inválido.",
-        17: "Respuesta de desafío OTP inválida.",
-        114: "Transacción no encontrada por ID.",
-        127: "Fecha de ejecución inválida.",
-        131: "Valor inválido para 'sortBy'.",
-        132: "Operación no soportada.",
-        138: "Desafío no pushTAN iniciado, usar PATCH.",
-        139: "Desafío pushTAN iniciado, usar GET.",
-        401: "Requiere autenticación SCA.",
-        404: "Recurso no encontrado.",
-        409: "Conflicto: recurso ya existe o inconsistencia de datos."
-    }
-    return error_messages.get(response.status_code, f"Error desconocido: {response.text}")
 
 # ==================================
 # 4. Validaciones de Headers Manual
@@ -175,25 +156,32 @@ def generar_otp_sepa_transfer():
     """
     Genera un OTP para una transferencia SEPA usando el endpoint oficial.
     """
-    url = "https://simulator-api.db.com/gw/dbapi/others/onetimepasswords/v2/single"
+    url = "https://api.db.com/gw/dbapi/others/onetimepasswords/v2/single"
     payload = {
         "method": "PUSHTAN",
         "requestType": "SEPA_TRANSFER_GRANT",
-        "requestData": {},
+        "requestData": {
+            
+            },
         "language": "es"
     }
 
     try:
         response = requests.post(url, json=payload, headers=HEADERS_DEFAULT, timeout=TIMEOUT_REQUEST)
-        response.raise_for_status()
+        if response.status_code != 200:
+            error_message = handle_error_response(response)
+            registrar_log(payment_id=payload.get("paymentIdentification", {}).get("endToEndIdentification", "unknown"),
+                          headers=HEADERS_DEFAULT, response_text=response.text, error=error_message)
+            return {"error": error_message}
         data = response.json()
         otp_token = data.get('challengeProofToken')
         if not otp_token:
             raise Exception("OTP Token no recibido del banco.")
         return otp_token
     except Exception as e:
-        logger.error(f"Error generando OTP: {str(e)}")
-        raise
+        registrar_log(payment_id=payload.get("paymentIdentification", {}).get("endToEndIdentification", "unknown"),
+                      headers=HEADERS_DEFAULT, error=str(e))
+        return {"error": str(e)}
 
 def obtener_otp(session):
     """
@@ -221,13 +209,17 @@ def obtener_otp(session):
 
     try:
         response = requests.post(url, headers=headers, json=payload, timeout=TIMEOUT_REQUEST)
-        response.raise_for_status()
-        if response.status_code == 201:
-            otp = response.json().get('challengeProofToken')
-            return otp
-        return None
-    except (requests.RequestException, requests.HTTPError, requests.Timeout, ConnectionError):
-        return None
+        if response.status_code != 201:
+            error_message = handle_error_response(response)
+            registrar_log(payment_id=payload.get("requestData", {}).get("paymentId", "unknown"),
+                          headers=headers, response_text=response.text, error=error_message)
+            return {"error": error_message}
+        otp = response.json().get('challengeProofToken')
+        return otp
+    except Exception as e:
+        registrar_log(payment_id=payload.get("requestData", {}).get("paymentId", "unknown"),
+                      headers=headers, error=str(e))
+        return {"error": str(e)}
 
 def get_oauth_session(request=None):
     """
@@ -391,33 +383,26 @@ def guardar_pain002_si_aplica(response, payment_id):
 # 9. Registro de Logs de Transferencias
 # ========================
 
-def registrar_log(payment_id, headers_enviados, response_text="", error=None, extra_info=None):
-    """
-    Guarda un log detallado por transferencia, incluyendo headers, respuesta y errores si aplica.
-    """
+def registrar_log(payment_id, headers, response_text="", error=None):
     carpeta = obtener_ruta_schema_transferencia(payment_id)
     if not os.path.exists(carpeta):
         os.makedirs(carpeta)
 
     log_path = os.path.join(carpeta, f"transferencia_{payment_id}.log")
-
     with open(log_path, 'a', encoding='utf-8') as log:
-        log.write("\n" + "="*80 + "\n")
+        log.write("\n" + "=" * 80 + "\n")
         log.write(f"Fecha y hora: {datetime.now()}\n")
-        log.write("="*80 + "\n")
+        log.write("=" * 80 + "\n")
         log.write("=== Headers enviados ===\n")
-        log.write(json.dumps(headers_enviados, indent=4))
+        log.write(json.dumps(headers, indent=4))
         log.write("\n\n")
-        if extra_info:
-            log.write("=== Información adicional ===\n")
-            log.write(f"{extra_info}\n\n")
         if error:
             log.write("=== Error ===\n")
             log.write(f"{error}\n")
         else:
             log.write("=== Respuesta ===\n")
-            log.write(f"{response_text}\n")
-        log.write("="*80 + "\n\n")
+            log.write(response_text)
+        log.write("\n" + "=" * 80 + "\n")
 
 def save_log(payment_id, request_headers, response_headers, response_text):
     """
@@ -525,3 +510,44 @@ def construir_payload(transferencia: SepaCreditTransfer) -> dict:
     payload = preparar_payload_transferencia(transferencia)
     return payload
 
+def handle_error_response(response):
+    """Maneja los códigos de error específicos de la API."""
+    error_messages = {
+        2: "Valor inválido para uno de los parámetros.",
+        16: "Respuesta de desafío OTP inválida.",
+        17: "OTP inválido.",
+        114: "No se pudo identificar la transacción por Id.",
+        127: "La fecha de reserva inicial debe preceder a la fecha de reserva final.",
+        131: "Valor inválido para 'sortBy'. Valores válidos: 'bookingDate[ASC]' y 'bookingDate[DESC]'.",
+        132: "No soportado.",
+        138: "Parece que inició un desafío no pushTAN. Use el endpoint PATCH para continuar.",
+        139: "Parece que inició un desafío pushTAN. Use el endpoint GET para continuar.",
+        6500: "Parámetros en la URL o tipo de contenido incorrectos. Por favor, revise y reintente.",
+        6501: "Detalles del banco contratante inválidos o faltantes.",
+        6502: "La moneda aceptada para el monto instruido es EUR. Por favor, corrija su entrada.",
+        6503: "Parámetros enviados son inválidos o faltantes.",
+        6504: "Los parámetros en la solicitud no coinciden con la solicitud inicial.",
+        6505: "Fecha de ejecución inválida.",
+        6506: "El IdempotencyId ya está en uso.",
+        6507: "No se permite la cancelación para esta transacción.",
+        6508: "Pago SEPA no encontrado.",
+        6509: "El parámetro en la solicitud no coincide con el último Auth id.",
+        6510: "El estado actual no permite la actualización del segundo factor con la acción proporcionada.",
+        6511: "Fecha de ejecución inválida.",
+        6515: "El IBAN de origen o el tipo de cuenta son inválidos.",
+        6516: "No se permite la cancelación para esta transacción.",
+        6517: "La moneda aceptada para la cuenta del acreedor es EUR. Por favor, corrija su entrada.",
+        6518: "La fecha de recolección solicitada no debe ser un día festivo o fin de semana. Por favor, intente nuevamente.",
+        6519: "La fecha de ejecución solicitada no debe ser mayor a 90 días en el futuro. Por favor, intente nuevamente.",
+        6520: "El valor de 'requestedExecutionDate' debe coincidir con el formato yyyy-MM-dd.",
+        6521: "La moneda aceptada para la cuenta del deudor es EUR. Por favor, corrija su entrada.",
+        6523: "No hay una entidad legal presente para el IBAN de origen. Por favor, corrija su entrada.",
+        6524: "Ha alcanzado el límite máximo permitido para el día. Espere hasta mañana o reduzca el monto de la transferencia.",
+        6525: "Por el momento, no soportamos photo-tan para pagos masivos.",
+        6526: "El valor de 'createDateTime' debe coincidir con el formato yyyy-MM-dd'T'HH:mm:ss.",
+        401: "La función solicitada requiere un nivel de autenticación SCA.",
+        404: "No se encontró el recurso solicitado.",
+        409: "Conflicto: El recurso ya existe o no se puede procesar la solicitud."
+    }
+    error_code = response.status_code
+    return error_messages.get(error_code, f"Error desconocido: {response.text}")

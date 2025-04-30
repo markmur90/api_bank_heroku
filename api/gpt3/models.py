@@ -114,7 +114,9 @@ class SepaCreditTransfer(models.Model):
         ('ACWP', 'Pendiente de aprobación'),
         ('ACCC', 'Concluida'),
         ('CANC', 'Cancelada'),
-        ('PDNG', 'Pendiente')
+        ('PDNG', 'Pendiente'),
+        ('ERRO', 'Error'),
+        ('CREA', 'Creada'),
     ])
     purpose_code = models.CharField(max_length=4, default='GDSV')
     requested_execution_date = models.DateField()
@@ -150,7 +152,8 @@ class SepaCreditTransfer(models.Model):
             'PDNG': 'warning',
             'ACSC': 'success',
             'RJCT': 'danger',
-            'CANC': 'secondary'
+            'CANC': 'secondary',
+            'ERRO': 'danger',
         }.get(self.transaction_status, 'dark')
 
     def get_absolute_url(self):

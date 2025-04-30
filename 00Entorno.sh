@@ -1,6 +1,8 @@
 #!/bin/bash
 # Inicio
 
+export DATABASE_URL="postgres://markmur88:Ptf8454Jd55@localhost:5432/mydatabase"
+
 
 python3 -m venv $HOME/Documentos/Entorno/venvAPI
 
@@ -10,7 +12,7 @@ source $HOME/Documentos/Entorno/venvAPI/bin/activate
 
 echo " ------------------------------------------- " 
 
-pip3 install -r $HOME/Documentos/GitHub/api_bank_h/requirements.txt
+pip3 install -r $HOME/Documentos/GitHub/api_bank_h2/requirements.txt
 
 echo " ------------------------------------------- " 
 

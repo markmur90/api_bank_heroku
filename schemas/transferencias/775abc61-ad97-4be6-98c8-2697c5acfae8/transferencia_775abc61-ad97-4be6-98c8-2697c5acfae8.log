@@ -1,0 +1,72 @@
+
+================================================================================
+Fecha y hora: 2025-04-30 08:47:27.064904
+================================================================================
+=== Headers enviados ===
+{
+    "Accept": "application/json",
+    "Accept-Encoding": "gzip, deflate, br, zstd",
+    "Accept-Language": "es-CO",
+    "Connection": "keep-alive",
+    "Host": "api.db.com",
+    "Priority": "u=0, i",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+    "Origin": "https://api-bank-heroku-72c443ab11d3.herokuapp.com",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+    "X-Frame-Options": "DENY",
+    "X-Content-Type-Options": "nosniff",
+    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg",
+    "x-request-id": "6b1534d7-fee3-47bd-8390-4fbe66f6873b",
+    "X-Requested-With": "XMLHttpRequest"
+}
+
+=== Respuesta ===
+{
+            "error":{
+                "code": "401.02.03",
+                "message": "Unknown issuer ",
+                "details": ""
+            }
+        }
+================================================================================
+
+================================================================================
+Fecha y hora: 2025-04-30 08:47:47.180495
+================================================================================
+=== Headers enviados ===
+{
+    "Accept": "application/json",
+    "Accept-Encoding": "gzip, deflate, br, zstd",
+    "Accept-Language": "es-CO",
+    "Connection": "keep-alive",
+    "Host": "api.db.com",
+    "Priority": "u=0, i",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
+    "Origin": "https://api-bank-heroku-72c443ab11d3.herokuapp.com",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+    "X-Frame-Options": "DENY",
+    "X-Content-Type-Options": "nosniff",
+    "Authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg",
+    "x-request-id": "2dee3ee3-9577-4cc9-977a-5bf7add70ac2",
+    "X-Requested-With": "XMLHttpRequest"
+}
+
+=== Respuesta ===
+{
+            "error":{
+                "code": "401.02.03",
+                "message": "Unknown issuer ",
+                "details": ""
+            }
+        }
+================================================================================

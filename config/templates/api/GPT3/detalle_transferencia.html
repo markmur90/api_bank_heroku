@@ -3,218 +3,230 @@
 {% block title %}Detalle de Transferencia{% endblock %}
 
 {% block content %}
-<style>
-/* Scroll bonito para los logs */
-.log-content::-webkit-scrollbar {
-    width: 6px;
-}
-.log-content::-webkit-scrollbar-thumb {
-    background-color: rgba(0,0,0,0.3);
-    border-radius: 3px;
-}
-.log-content {
-    scrollbar-width: thin;
-    scrollbar-color: rgba(0,0,0,0.3) transparent;
-}
-</style>
+<div class="contenido">
+    <style>
+        /* Scroll bonito para los logs */
+        .log-content::-webkit-scrollbar {
+            width: 6px;
+        }
+        .log-content::-webkit-scrollbar-thumb {
+            background-color: rgba(0,0,0,0.3);
+            border-radius: 3px;
+        }
+        .log-content {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0,0,0,0.3) transparent;
+        }
 
-<div class="card mb-4">
+        /* Contenedor principal con restricciones de tamaño */
+        .main-container {
+            max-width: 1200px;
+            max-height: 1150px;
+            margin: 0 auto;
+            overflow-y: auto;
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            background-color: #fff;
+            border-radius: 8px;
+        }
+    </style>
+    <div class="main-container">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h3 class="mb-0">Transferencia {{ transferencia.payment_id }}</h3>
+            </div>
+            
+            <div class="card-footer d-grid gap-2 d-md-flex justify-content-md-end">
+                <a href="{% url 'listar_transferenciasGPT3' %}" class="btn btn-outline-info">
+                    <i class="bi bi-arrow-left"></i> Volver al Listado
+                </a>
+                <a href="{% url 'descargar_pdfGPT3' transferencia.payment_id %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+                </a>
+            </div>
 
-    <div class="card-header">
-        <h3 class="mb-0">Transferencia {{ transferencia.payment_id }}</h3>
-    </div>
-    
-    <div class="card-footer d-grid gap-2 d-md-flex justify-content-md-end">
-        <a href="{% url 'listar_transferenciasGPT3' %}" class="btn btn-outline-info">
-            <i class="bi bi-arrow-left"></i> Volver al Listado
-        </a>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-3">Fecha de ejecución</dt>
+                    <dd class="col-sm-9">{{ transferencia.requested_execution_date|default:"-" }}</dd>
 
-        <a href="{% url 'descargar_pdfGPT3' transferencia.payment_id %}" class="btn btn-outline-secondary">
-            <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
-        </a>
-    </div>
+                    <dt class="col-sm-3">Estado</dt>
+                    <dd class="col-sm-9">
+                        <span class="badge bg-{{ transferencia.get_status_color }}">
+                            {{ transferencia.get_transaction_status_display }}
+                        </span>
+                    </dd>
 
-    <div class="card-body">
-        <dl class="row">
-            <dt class="col-sm-3">Fecha de ejecución</dt>
-            <dd class="col-sm-9">{{ transferencia.requested_execution_date|default:"-" }}</dd>
+                    <dt class="col-sm-3">Auth ID</dt>
+                    <dd class="col-sm-9">{{ transferencia.auth_id }}</dd>
 
-            <dt class="col-sm-3">Estado</dt>
-            <dd class="col-sm-9">
-                <span class="badge bg-{{ transferencia.get_status_color }}">
-                    {{ transferencia.get_transaction_status_display }}
-                </span>
-            </dd>
+                    <dt class="col-sm-3">Instruction ID</dt>
+                    <dd class="col-sm-9">{{ transferencia.payment_identification.instruction_id }}</dd>
 
-            <dt class="col-sm-3">Auth ID</dt>
-            <dd class="col-sm-9">{{ transferencia.auth_id }}</dd>
+                    <dt class="col-sm-3">End-to-End ID</dt>
+                    <dd class="col-sm-9">{{ transferencia.payment_identification.end_to_end_id }}</dd>
 
-            <dt class="col-sm-3">Instruction ID</dt>
-            <dd class="col-sm-9">{{ transferencia.payment_identification.instruction_id }}</dd>
+                    <dt class="col-sm-3">Tipo de Transferencia</dt>
+                    <dd class="col-sm-9">
+                        {{ transferencia.payment_type_information.service_level_code }}
+                        {{ transferencia.payment_type_information.local_instrument_code }}
+                        {{ transferencia.payment_type_information.category_purpose_code }}
+                    </dd>
 
-            <dt class="col-sm-3">End-to-End ID</dt>
-            <dd class="col-sm-9">{{ transferencia.payment_identification.end_to_end_id }}</dd>
+                    <dt class="col-sm-3">Monto</dt>
+                    <dd class="col-sm-9">
+                        {{ transferencia.instructed_amount.amount }} {{ transferencia.instructed_amount.currency }}
+                    </dd>
 
-            <dt class="col-sm-3">Tipo de Transferencia</dt>
-            <dd class="col-sm-9">
-                {{ transferencia.payment_type_information.service_level_code }}
-                {{ transferencia.payment_type_information.local_instrument_code }}
-                {{ transferencia.payment_type_information.category_purpose_code }}
-            </dd>
+                    <dt class="col-sm-3">Beneficiario</dt>
+                    <dd class="col-sm-9">
+                        {{ transferencia.creditor.creditor_name }} {{ transferencia.credito_account.iban }}
+                    </dd>            
+                </dl>
 
-            <dt class="col-sm-3">Monto</dt>
-            <dd class="col-sm-9">
-                {{ transferencia.instructed_amount.amount }} {{ transferencia.instructed_amount.currency }}
-            </dd>
-
-            <dt class="col-sm-3">Beneficiario</dt>
-            <dd class="col-sm-9">
-                {{ transferencia.creditor.creditor_name }} {{ transferencia.credito_account.iban }}
-            </dd>            
-        </dl>
-
-        <!-- Bloque de Logs -->
-        <div class="mt-4 p-3 bg-light border rounded">
-            <h5>Logs de Transacción</h5>
-            {% if log_files_content %}
-                {% for nombre, contenido in log_files_content.items %}
-                    <div class="mb-3">
-                        <h6 class="text-primary">{{ nombre }}</h6>
-                        <div class="border rounded p-2 bg-white log-content" style="max-height: 300px; overflow-y: auto;">
-                            <pre class="mb-0">{{ contenido }}</pre>
-                        </div>
-                    </div>
-                {% endfor %}
-            {% else %}
-                <p class="text-muted">No hay logs disponibles para esta transferencia.</p>
-            {% endif %}
-        </div>
-
-        <!-- Bloque de Archivos Relacionados -->
-        <div class="mt-4 p-3 bg-light border rounded">
-            <h5>Archivos Relacionados</h5>
-            {% for archivo, contenido in archivos.items %}
-                <div class="mb-3">
-                    <h6 class="text-primary">{{ archivo|capfirst }}</h6>
-                    {% if contenido %}
-                        <div class="border rounded p-2 bg-white log-content" style="max-height: 300px; overflow-y: auto;">
-                            <pre class="mb-0">{{ contenido }}</pre>
-                        </div>
+                <!-- Bloque de Logs -->
+                <div class="mt-4 p-3 bg-light border rounded">
+                    <h5>Logs de Transacción</h5>
+                    {% if log_files_content %}
+                        {% for nombre, contenido in log_files_content.items %}
+                            <div class="mb-3">
+                                <h6 class="text-primary">{{ nombre }}</h6>
+                                <div class="border rounded p-2 bg-white log-content" style="max-height: 300px; overflow-y: auto;">
+                                    <pre class="mb-0">{{ contenido }}</pre>
+                                </div>
+                            </div>
+                        {% endfor %}
                     {% else %}
-                        <p class="text-muted">El archivo {{ archivo }} no contiene información.</p>
+                        <p class="text-muted">No hay logs disponibles para esta transferencia.</p>
                     {% endif %}
                 </div>
-            {% endfor %}
-           </div>
 
-
-        <!-- Bloque de Errores -->
-        <div class="mt-4 p-3 bg-light border rounded">
-            <h5>Errores</h5>
-            {% if transferencia.error %}
-                <div class="alert alert-danger">
-                    {{ transferencia.error }}
+                <!-- Bloque de Archivos Relacionados -->
+                <div class="mt-4 p-3 bg-light border rounded">
+                    <h5>Archivos Relacionados</h5>
+                    {% for archivo, contenido in archivos.items %}
+                        <div class="mb-3">
+                            <h6 class="text-primary">{{ archivo|capfirst }}</h6>
+                            {% if contenido %}
+                                <div class="border rounded p-2 bg-white log-content" style="max-height: 300px; overflow-y: auto;">
+                                    <pre class="mb-0">{{ contenido }}</pre>
+                                </div>
+                            {% else %}
+                                <p class="text-muted">El archivo {{ archivo }} no contiene información.</p>
+                            {% endif %}
+                        </div>
+                    {% endfor %}
                 </div>
-            {% else %}
-                <p class="text-muted">No hay errores registrados para esta transferencia.</p>
-            {% endif %}
+
+                <!-- Bloque de Errores -->
+                <div class="mt-4 p-3 bg-light border rounded">
+                    <h5>Errores</h5>
+                    {% if transferencia.error %}
+                        <div class="alert alert-danger">
+                            {{ transferencia.error }}
+                        </div>
+                    {% else %}
+                        <p class="text-muted">No hay errores registrados para esta transferencia.</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <hr class="my-5">
+
+            <!-- Accordion para Enviar/Cancelar/Reintentar usando OTP -->
+            <div class="accordion" id="accordionOTP">
+            
+              <!-- Formulario Enviar -->
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingEnviar">
+                  <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEnviar" aria-expanded="true" aria-controls="collapseEnviar">
+                    Enviar Transferencia
+                  </button>
+                </h2>
+                <div id="collapseEnviar" class="accordion-collapse collapse show" aria-labelledby="headingEnviar" data-bs-parent="#accordionOTP">
+                  <div class="accordion-body">
+                    {% if transferencia and transferencia.payment_id %}
+                    <form method="post" action="{% url 'enviar_transferenciaGPT3' transferencia.payment_id %}" class="row g-3">
+                      {% csrf_token %}
+                      <div class="col-md-6">
+                        <label for="otpEnviar" class="form-label">Código OTP</label>
+                        <input type="text" class="form-control" id="otpEnviar" name="otp" placeholder="Introduce tu OTP" required maxlength="8">
+                      </div>
+                      <div class="col-12 d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-send-check"></i> Enviar Transferencia
+                        </button>
+                      </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">No se puede enviar la transferencia porque no tiene un ID válido.</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Formulario Cancelar -->
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingCancelar">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCancelar" aria-expanded="false" aria-controls="collapseCancelar">
+                    Cancelar Transferencia
+                  </button>
+                </h2>
+                <div id="collapseCancelar" class="accordion-collapse collapse" aria-labelledby="headingCancelar" data-bs-parent="#accordionOTP">
+                  <div class="accordion-body">
+                    {% if transferencia and transferencia.payment_id %}
+                    <form method="post" action="{% url 'cancelar_transferenciaGPT3' transferencia.payment_id %}" class="row g-3">
+                      {% csrf_token %}
+                      <div class="col-md-6">
+                        <label for="otpCancelar" class="form-label">Código OTP</label>
+                        <input type="text" class="form-control" id="otpCancelar" name="otp" placeholder="Introduce tu OTP para cancelar" required maxlength="8">
+                      </div>
+                      <div class="col-12 d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-x-octagon"></i> Cancelar Transferencia
+                        </button>
+                      </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">No se puede cancelar la transferencia porque no tiene un ID válido.</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+              <!-- Formulario Reintentar Segundo Factor -->
+              <div class="accordion-item">
+                <h2 class="accordion-header" id="headingRetry">
+                  <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRetry" aria-expanded="false" aria-controls="collapseRetry">
+                    Reintentar Segundo Factor (OTP Retry)
+                  </button>
+                </h2>
+                <div id="collapseRetry" class="accordion-collapse collapse" aria-labelledby="headingRetry" data-bs-parent="#accordionOTP">
+                  <div class="accordion-body">
+                    {% if transferencia and transferencia.payment_id %}
+                    <form method="post" action="{% url 'retry_second_factorGPT3' transferencia.payment_id %}" class="row g-3">
+                      {% csrf_token %}
+                      <div class="col-md-6">
+                        <label for="otpRetry" class="form-label">Código OTP</label>
+                        <input type="text" class="form-control" id="otpRetry" name="otp" placeholder="Introduce tu nuevo OTP" required maxlength="8">
+                      </div>
+                      <input type="hidden" name="action" value="CREATE">
+                      <input type="hidden" name="authId" value="{{ transferencia.auth_id }}">
+                      <div class="col-12 d-grid gap-2 d-md-flex justify-content-md-end mt-3">
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-arrow-repeat"></i> Reintentar Segundo Factor
+                        </button>
+                      </div>
+                    </form>
+                    {% else %}
+                    <div class="alert alert-warning">No se puede reintentar el segundo factor porque no tiene un ID válido.</div>
+                    {% endif %}
+                  </div>
+                </div>
+              </div>
+
+            </div>
         </div>
-    </div>
-
-    <hr class="my-5">
-
-    <!-- Accordion para Enviar/Cancelar/Reintentar usando OTP -->
-    <div class="accordion" id="accordionOTP">
-    
-      <!-- Formulario Enviar -->
-      <div class="accordion-item">
-        <h2 class="accordion-header" id="headingEnviar">
-          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseEnviar" aria-expanded="true" aria-controls="collapseEnviar">
-            Enviar Transferencia
-          </button>
-        </h2>
-        <div id="collapseEnviar" class="accordion-collapse collapse show" aria-labelledby="headingEnviar" data-bs-parent="#accordionOTP">
-          <div class="accordion-body">
-            {% if transferencia and transferencia.payment_id %}
-            <form method="post" action="{% url 'enviar_transferenciaGPT3' transferencia.payment_id %}" class="row g-3">
-              {% csrf_token %}
-              <div class="col-md-6">
-                <label for="otpEnviar" class="form-label">Código OTP</label>
-                <input type="text" class="form-control" id="otpEnviar" name="otp" placeholder="Introduce tu OTP" required maxlength="8">
-              </div>
-              <div class="col-12 d-grid gap-2 d-md-flex justify-content-md-end mt-3">
-                <button type="submit" class="btn btn-success">
-                    <i class="bi bi-send-check"></i> Enviar Transferencia
-                </button>
-              </div>
-            </form>
-            {% else %}
-            <div class="alert alert-warning">No se puede enviar la transferencia porque no tiene un ID válido.</div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      <!-- Formulario Cancelar -->
-      <div class="accordion-item">
-        <h2 class="accordion-header" id="headingCancelar">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseCancelar" aria-expanded="false" aria-controls="collapseCancelar">
-            Cancelar Transferencia
-          </button>
-        </h2>
-        <div id="collapseCancelar" class="accordion-collapse collapse" aria-labelledby="headingCancelar" data-bs-parent="#accordionOTP">
-          <div class="accordion-body">
-            {% if transferencia and transferencia.payment_id %}
-            <form method="post" action="{% url 'cancelar_transferenciaGPT3' transferencia.payment_id %}" class="row g-3">
-              {% csrf_token %}
-              <div class="col-md-6">
-                <label for="otpCancelar" class="form-label">Código OTP</label>
-                <input type="text" class="form-control" id="otpCancelar" name="otp" placeholder="Introduce tu OTP para cancelar" required maxlength="8">
-              </div>
-              <div class="col-12 d-grid gap-2 d-md-flex justify-content-md-end mt-3">
-                <button type="submit" class="btn btn-danger">
-                    <i class="bi bi-x-octagon"></i> Cancelar Transferencia
-                </button>
-              </div>
-            </form>
-            {% else %}
-            <div class="alert alert-warning">No se puede cancelar la transferencia porque no tiene un ID válido.</div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
-      <!-- Formulario Reintentar Segundo Factor -->
-      <div class="accordion-item">
-        <h2 class="accordion-header" id="headingRetry">
-          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRetry" aria-expanded="false" aria-controls="collapseRetry">
-            Reintentar Segundo Factor (OTP Retry)
-          </button>
-        </h2>
-        <div id="collapseRetry" class="accordion-collapse collapse" aria-labelledby="headingRetry" data-bs-parent="#accordionOTP">
-          <div class="accordion-body">
-            {% if transferencia and transferencia.payment_id %}
-            <form method="post" action="{% url 'retry_second_factorGPT3' transferencia.payment_id %}" class="row g-3">
-              {% csrf_token %}
-              <div class="col-md-6">
-                <label for="otpRetry" class="form-label">Código OTP</label>
-                <input type="text" class="form-control" id="otpRetry" name="otp" placeholder="Introduce tu nuevo OTP" required maxlength="8">
-              </div>
-              <input type="hidden" name="action" value="CREATE">
-              <input type="hidden" name="authId" value="{{ transferencia.auth_id }}">
-              <div class="col-12 d-grid gap-2 d-md-flex justify-content-md-end mt-3">
-                <button type="submit" class="btn btn-warning">
-                    <i class="bi bi-arrow-repeat"></i> Reintentar Segundo Factor
-                </button>
-              </div>
-            </form>
-            {% else %}
-            <div class="alert alert-warning">No se puede reintentar el segundo factor porque no tiene un ID válido.</div>
-            {% endif %}
-          </div>
-        </div>
-      </div>
-
     </div>
 </div>
 {% endblock %}
