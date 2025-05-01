@@ -366,7 +366,7 @@ def get_access_token():
 # GENERADORES DE ID
 # ===========================
 
-def generate_unique_code(length=36):
+def generate_unique_code(length=35):
     characters = string.ascii_letters + string.digits
     return ''.join(random.choice(characters) for _ in range(length))
 
@@ -385,7 +385,7 @@ def generate_correlation_id():
 def generate_deterministic_id(*args, prefix=""):
     raw = ''.join(str(a) for a in args)
     hash_val = hashlib.sha256(raw.encode()).hexdigest()
-    return (prefix + hash_val)[:36]
+    return (prefix + hash_val)[:35]
 
 def generate_payment_id_uuid() -> str:
     return uuid.uuid4()

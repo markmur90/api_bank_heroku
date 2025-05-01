@@ -20,5 +20,8 @@
         "titleBar.inactiveForeground": "#15202b99"
     },
     "peacock.color": "#61dafb",
+    "python.analysis.extraPaths": [
+        "./schemas/04_generator_"
+    ],
 
 }

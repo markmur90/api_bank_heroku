@@ -1,0 +1,202 @@
+{
+  "fields": [
+    {
+      "name": "streetAndHouseNumber",
+      "type": "string",
+      "maxLength": 70,
+      "description": "Street name and house number."
+    },
+    {
+      "name": "zipCodeAndCity",
+      "type": "string",
+      "maxLength": 70,
+      "description": "Zip code and city name."
+    },
+    {
+      "name": "EndToEndIdentification",
+      "type": "string",
+      "maxLength": 35,
+      "pattern": "[a-zA-Z0-9.-]{1,35}",
+      "description": "Unique identification assigned by the initiating party to unambiguously identify the transaction."
+    },
+    {
+      "name": "InstructionId",
+      "type": "string",
+      "maxLength": 35,
+      "pattern": "[a-zA-Z0-9.-]{1,35}",
+      "description": "Instruction identification."
+    },
+    {
+      "name": "Currency",
+      "type": "string",
+      "pattern": "[A-Z]{3}",
+      "description": "ISO 4217 Alpha 3 currency code.",
+      "example": "EUR"
+    },
+    {
+      "name": "country",
+      "type": "string",
+      "maxLength": 2,
+      "minLength": 2,
+      "description": "ISO 3166-1 alpha-2 country code",
+      "example": "DE"
+    },
+    {
+      "name": "DebtorName",
+      "type": "string",
+      "maxLength": 140,
+      "description": "Name of the debtor."
+    },
+    {
+      "name": "IBAN",
+      "type": "string",
+      "pattern": "[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}",
+      "description": "The IBAN of this account."
+    },
+    {
+      "name": "BIC",
+      "type": "string",
+      "description": "Bank Identifier Code."
+    },
+    {
+      "name": "CreateDateTime",
+      "type": "string",
+      "description": "Must match yyyy-MM-dd'T'HH:mm:ss format. Timestamp of request creation date and time."
+    },
+    {
+      "name": "RequestedExecutionDate",
+      "type": "string",
+      "description": "Must match yyyy-MM-dd format, also in CET timezone."
+    },
+    {
+      "name": "ControlSum",
+      "type": "integer",
+      "description": "The total sum of all instructed amounts within this request."
+    },
+    {
+      "name": "NumberOfTransactions",
+      "type": "integer",
+      "description": "The total number of payment instructions within this request."
+    },
+    {
+      "name": "PaymentMethod",
+      "type": "string",
+      "maxLength": 35,
+      "description": "Specifies the means of payment that will be used to move the amount of money. Only TRF allowed for now."
+    },
+    {
+      "name": "BatchBooking",
+      "type": "boolean",
+      "description": "Validated as true or false. If present and contains 'true', batch booking is requested. If present and contains 'false', booking per transaction is requested."
+    },
+    {
+      "name": "ChargeBearer",
+      "type": "string",
+      "maxLength": 35,
+      "description": "Specifies which party/parties will bear the charges associated with the processing of the payment transaction."
+    },
+    {
+      "name": "TransactionStatus",
+      "type": "string",
+      "description": "Specifies the status of a transaction in a coded form based on Sepa Rulebook.",
+      "example": "ACCP",
+      "enum": [
+        "RJCT",
+        "RCVD",
+        "ACCP",
+        "ACTC",
+        "ACSP",
+        "ACSC",
+        "ACWC",
+        "ACWP",
+        "ACCC",
+        "CANC",
+        "PDNG"
+      ]
+    },
+    {
+      "name": "AuthId",
+      "type": "string",
+      "description": "Authentication ID used to update the SCA status of a SEPA payment. Valid for 5 minutes.",
+      "example": "232ed5b7-fc70-4c67-98bb-bf95b3300001"
+    },
+    {
+      "name": "PaymentId",
+      "type": "string",
+      "description": "Payment resource ID generated ('Transaction ID' from the header populated with the intra-bank ID).",
+      "example": "232ed5b7-fc70-4c67-98bb-bf95b3300001"
+    },
+    {
+      "name": "PaymentProduct",
+      "type": "string",
+      "description": "The payment product used for the transaction.",
+      "example": "SEPA"
+    },
+    {
+      "name": "PaymentTypeInformation",
+      "type": "string",
+      "description": "Specifies the type of payment transaction.",
+      "example": "SCT"
+    },
+    {
+      "name": "RemittanceInformation",
+      "type": "string",
+      "maxLength": 140,
+      "description": "Information about the purpose of the payment."
+    },
+    {
+      "name": "CreditorName",
+      "type": "string",
+      "maxLength": 140,
+      "description": "Name of the creditor."
+    },
+    {
+      "name": "CreditorIBAN",
+      "type": "string",
+      "pattern": "[A-Z]{2}[0-9]{2}[A-Z0-9]{1,30}",
+      "description": "The IBAN of the creditor's account."
+    },
+    {
+      "name": "CreditorBIC",
+      "type": "string",
+      "description": "Bank Identifier Code of the creditor."
+    },
+    {
+      "name": "EndToEndId",
+      "type": "string",
+      "maxLength": 35,
+      "pattern": "[a-zA-Z0-9.-]{1,35}",
+      "description": "Unique identification assigned by the initiating party to unambiguously identify the transaction."
+    },
+    {
+      "name": "PaymentStatus",
+      "type": "string",
+      "description": "The status of the payment.",
+      "example": "COMPLETED"
+    },
+    {
+      "name": "TransactionReference",
+      "type": "string",
+      "description": "Reference for the transaction.",
+      "example": "1234567890"
+    },
+    {
+      "name": "TransactionAmount",
+      "type": "number",
+      "description": "The amount of the transaction.",
+      "example": 100.00
+    },
+    {
+      "name": "TransactionDate",
+      "type": "string",
+      "description": "The date of the transaction.",
+      "example": "2023-10-01"
+    },
+    {
+      "name": "TransactionType",
+      "type": "string",
+      "description": "The type of the transaction.",
+      "example": "CREDIT_TRANSFER"
+    }
+  ]
+}
