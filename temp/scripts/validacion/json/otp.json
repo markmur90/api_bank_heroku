@@ -1,0 +1,245 @@
+{
+    "payload_structure": {
+        "/": {
+            "get": {
+                "parameters": [
+                    {
+                        "name": "Correlation-Id",
+                        "in": "header",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": 50,
+                        "minLength": null,
+                        "enum": null,
+                        "required": false
+                    }
+                ]
+            }
+        },
+        "/single": {
+            "post": {
+                "parameters": [
+                    {
+                        "name": "Correlation-Id",
+                        "in": "header",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": 50,
+                        "minLength": null,
+                        "enum": null,
+                        "required": false
+                    },
+                    {
+                        "name": "method",
+                        "in": "body",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": [
+                            "MTAN",
+                            "PHOTOTAN",
+                            "PUSHTAN"
+                        ],
+                        "required": true
+                    },
+                    {
+                        "name": "requestType",
+                        "in": "body",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": [
+                            "TRANSFER_PARTNER_LEGI_DATA",
+                            "SECURITIES_ORDER_ENTRY",
+                            "SECURITIES_ORDER_MODIFY",
+                            "SECURITIES_ORDER_DELETE",
+                            "INSTANT_SEPA_CREDIT_TRANSFERS"
+                        ],
+                        "required": true
+                    },
+                    {
+                        "name": "requestData",
+                        "in": "body",
+                        "type": "object",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": null,
+                        "required": true
+                    },
+                    {
+                        "name": "language",
+                        "in": "body",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": [
+                            "de",
+                            "en"
+                        ],
+                        "required": false
+                    }
+                ]
+            }
+        },
+        "/single/{id}": {
+            "patch": {
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": null,
+                        "required": true
+                    },
+                    {
+                        "name": "Correlation-Id",
+                        "in": "header",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": 50,
+                        "minLength": null,
+                        "enum": null,
+                        "required": false
+                    },
+                    {
+                        "name": "response",
+                        "in": "body",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": null,
+                        "required": true
+                    }
+                ]
+            }
+        },
+        "/single/{id}/switchMethod": {
+            "patch": {
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": null,
+                        "required": true
+                    },
+                    {
+                        "name": "Correlation-Id",
+                        "in": "header",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": 50,
+                        "minLength": null,
+                        "enum": null,
+                        "required": false
+                    },
+                    {
+                        "name": "method",
+                        "in": "body",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": [
+                            "MTAN",
+                            "PHOTOTAN",
+                            "PUSHTAN"
+                        ],
+                        "required": true
+                    }
+                ]
+            }
+        }
+    },
+    "grouped_by_tag": {
+        "One-Time Passwords": {
+            "Correlation-Id": {
+                "in": "header",
+                "type": "string",
+                "format": null,
+                "maxLength": 50,
+                "minLength": null,
+                "enum": null,
+                "required": false
+            },
+            "method": {
+                "in": "body",
+                "type": "string",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": [
+                    "MTAN",
+                    "PHOTOTAN",
+                    "PUSHTAN"
+                ],
+                "required": true
+            },
+            "requestType": {
+                "in": "body",
+                "type": "string",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": [
+                    "TRANSFER_PARTNER_LEGI_DATA",
+                    "SECURITIES_ORDER_ENTRY",
+                    "SECURITIES_ORDER_MODIFY",
+                    "SECURITIES_ORDER_DELETE",
+                    "INSTANT_SEPA_CREDIT_TRANSFERS"
+                ],
+                "required": true
+            },
+            "requestData": {
+                "in": "body",
+                "type": "object",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            },
+            "language": {
+                "in": "body",
+                "type": "string",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": [
+                    "de",
+                    "en"
+                ],
+                "required": false
+            },
+            "id": {
+                "in": "path",
+                "type": "string",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            },
+            "response": {
+                "in": "body",
+                "type": "string",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            }
+        }
+    }
+}

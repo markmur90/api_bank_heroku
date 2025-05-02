@@ -17,6 +17,7 @@ echo " "
 
 # **🧹 Reseteando base de datos remota**
 echo "🧹 **Reseteando base de datos remota...**"
+echo " "
 psql "$REMOTE_DB_URL" -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" \
   || { echo "❌ **Error al resetear la DB remota. Abortando.**"; exit 1; }
 
@@ -24,9 +25,12 @@ echo " "
 
 # **📦 Generando backup local**
 echo "📦 **Generando backup local...**"
+echo " "
 pg_dump --no-owner --no-acl -U "$LOCAL_DB_USER" -h "$LOCAL_DB_HOST" -d "$LOCAL_DB_NAME" > "$BACKUP_FILE"
 if [ $? -ne 0 ]; then
+    echo " "
     echo "❌ **Error haciendo el backup local. Abortando.**"
+    echo " "
     exit 1
 fi
 
@@ -34,9 +38,11 @@ echo " "
 
 # **🌐 Importando backup en la base de datos remota**
 echo "🌐 **Importando backup en la base de datos remota...**"
+echo " "
 psql "$REMOTE_DB_URL" < "$BACKUP_FILE"
 if [ $? -ne 0 ]; then
     echo "❌ **Error al importar el backup en la base de datos remota.**"
+    echo " "
     exit 1
 fi
 

@@ -1,5 +1,3 @@
-# api/gpt3/utils.py
-
 import os
 import re
 import json
@@ -7,7 +5,6 @@ import uuid
 import logging
 import qrcode
 import requests
-
 from datetime import datetime
 from requests.structures import CaseInsensitiveDict
 from django.conf import settings
@@ -20,27 +17,21 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
 from jsonschema import validate as json_validate, ValidationError
 from requests_oauthlib import OAuth2Session
-
 from api.gpt3.helpers import obtener_ruta_schema_transferencia
 from api.gpt3.models import SepaCreditTransfer
+from api.gpt3.schemas import sepa_credit_transfer_schema
 
-# Logger para toda esta utilidad
 logger = logging.getLogger(__name__)
 
 # Configuraciones iniciales
 ORIGIN = "https://api-bank-heroku-72c443ab11d3.herokuapp.com"
-
 ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg"
-
 API_CLIENT_ID = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
 API_CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzsniABTiDYl7QCh6XXEXzgDrjBD4zSvtHbP0Qa707g3eYbmKxO'
-
 DEUTSCHE_BANK_CLIENT_ID='SE0IWHFHJFHB848R9E0R9FRUFBCJHW0W9FHF008E88W0457338ASKH64880'
 DEUTSCHE_BANK_CLIENT_SECRET='H858hfhg0ht40588hhfjpfhhd9944940jf'
-
 CLIENT_ID = API_CLIENT_ID
 CLIENT_SECRET = API_CLIENT_SECRET
-
 TIMEOUT_REQUEST = 10
 
 # Directorio de logs
@@ -51,9 +42,20 @@ os.makedirs(SCHEMA_DIR, exist_ok=True)
 
 # Headers genéricos base
 HEADERS_DEFAULT = {
-    "Accept": "application/json",
+    "Accept-Language": "es-CO",
+    "Connection": "keep-alive",
+    "Host": "api.db.com",
+    "Priority": "u=0, i",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0",
     "Origin": ORIGIN,
-    "X-Requested-With": "XMLHttpRequest"
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains; preload",
+    "X-Frame-Options": "DENY",
+    "X-Content-Type-Options": "nosniff",
 }
 
 def validate_headers(headers):
@@ -94,6 +96,14 @@ def build_complete_sepa_headers(request, method: str) -> CaseInsensitiveDict:
     if errors:
         raise ValueError(f"Errores en headers: {', '.join(errors)}")
     return headers
+
+
+def validate_schema(data, schema):
+    try:
+        json_validate(instance=data, schema=schema)
+        return {"success": True}
+    except ValidationError as e:
+        return {"success": False, "error": str(e)}
 
 
 def obtener_ruta_schema_transferencia(payment_id):
@@ -184,9 +194,9 @@ def handle_error_response(response):
     return error_messages.get(response.status_code, response.text)
 
 def preparar_payload_transferencia(transferencia, request=None):
-    return {
+    payload = {
         "creditor": {
-            "creditorName": {"name": transferencia.creditor_name}, #
+            "creditorName": {"name": transferencia.creditor_name},
             "creditorPostalAddress": {
                 "country": transferencia.creditor.postal_address.country,
                 "addressLine": {
@@ -203,7 +213,7 @@ def preparar_payload_transferencia(transferencia, request=None):
             "financialInstitutionId": transferencia.creditor_agent.financial_institution_id
         },
         "debtor": {
-            "debtorName": {"name": transferencia.debtor_name}, #
+            "debtorName": {"name": transferencia.debtor_name},
             "debtorPostalAddress": {
                 "country": transferencia.debtor.postal_address.country,
                 "addressLine": {
@@ -218,7 +228,7 @@ def preparar_payload_transferencia(transferencia, request=None):
         },
         "instructedAmount": {
             "amount": float(transferencia.amount),
-            "currency": transferencia.currency,
+            "currency": transferencia.currency
         },
         "paymentIdentification": {
             "endToEndIdentification": transferencia.payment_identification.end_to_end_id,
@@ -227,19 +237,13 @@ def preparar_payload_transferencia(transferencia, request=None):
         "purposeCode": transferencia.purpose_code,
         "requestedExecutionDate": transferencia.requested_date.strftime("%Y-%m-%d"),
         "remittanceInformationStructured": transferencia.remittance_information_structured,
-        "remittanceInformationUnstructured": transferencia.remittance_information_unstructured,
-        "paymentTypeInformation": {
-            "serviceLevel": {
-                "serviceLevelCode": request.POST.get('payment_type_information_service_level', 'INST') if request else 'INST'
-            },
-            "localInstrument": {
-                "localInstrumentCode": request.POST.get('payment_type_information_local_instrument', 'INST') if request else 'INST'
-            },
-            "categoryPurpose": {
-                "categoryPurposeCode": request.POST.get('payment_type_information_category_purpose', 'GDSV') if request else 'GDSV'
-            }
-        }
+        "remittanceInformationUnstructured": transferencia.remittance_information_unstructured
     }
+    result = validate_schema(payload, sepa_credit_transfer_schema)
+    if not result["success"]:
+        raise ValueError(f"Error de validación JSON: {result['error']}")
+    return payload
+
 
 def construir_payload(transferencia: SepaCreditTransfer) -> dict:
     """
@@ -264,12 +268,7 @@ def registrar_log(payment_id, headers, response_text="", error=None):
             log.write("=== Response ===\n")
             log.write(response_text + "\n")
 
-def validate_schema(data, schema):
-    try:
-        json_validate(instance=data, schema=schema)
-        return {"success": True}
-    except ValidationError as e:
-        return {"success": False, "error": str(e)}
+
 
 # Guardar pain.002 si el banco responde en XML
 def guardar_pain002_si_aplica(response, payment_id):

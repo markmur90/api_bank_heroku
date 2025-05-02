@@ -8,16 +8,17 @@ DEST="/home/markmur88/Documentos/GitHub/api_bank_heroku/"
 BACKUP_DIR="/home/markmur88/Documentos/GitHub/backup/"
 BACKUP_ZIP="${BACKUP_DIR}$(date +%Y%m%d__%H-%M-%S)_backup_api_bank_h2.zip"
 
+echo " "
 # Confirmar antes de proceder con la copia del proyecto
 echo -e "\033[1m¿Desea proceder con la copia del proyecto? (s/n):\033[0m"
 read -r CONFIRM
 PROJECT_COPIED=false
 if [[ "$CONFIRM" != "s" ]]; then
+    echo " "
     echo "Operación cancelada. Continuando con la copia de seguridad..."
 else
     # Crear el directorio de destino si no existe
     mkdir -p "$DEST"
-
     # Copiar archivos excluyendo .gitattributes, .gitignore y la carpeta .git
     rsync -av --exclude=".gitattributes" --exclude=".gitignore" --exclude="auto_commit_sync.sh" --exclude=".git/" "$SOURCE" "$DEST"
     echo " "
@@ -38,20 +39,23 @@ if [[ "$CONFIRM" == "s" ]]; then
     # Crear el directorio de copia de seguridad si no existe
     mkdir -p "$BACKUP_DIR"
 
+    echo " "
     # Solicitar si se desea agregar un campo adicional al nombre del archivo ZIP
     echo -e "\033[1m¿Desea agregar un campo adicional al nombre del archivo ZIP? (s/n):\033[0m"
     read -r ADD_FIELD
     if [[ "$ADD_FIELD" == "s" ]]; then
+        echo " "
         echo -e "\033[1mIngrese el campo adicional:\033[0m"
         read -r EXTRA_FIELD
         BACKUP_ZIP="${BACKUP_DIR}$(date +%Y%m%d__%H-%M-%S)_backup_api_bank_h2_${EXTRA_FIELD}.zip"
     fi
+    echo " "
 
     # Realizar la copia de seguridad en formato ZIP excluyendo archivos y carpetas específicos
     echo -e "\033[1mCreando archivo ZIP de respaldo...\033[0m"
     cd "$SOURCE" || exit
     zip -r "$BACKUP_ZIP" . -x ".gitattributes" ".gitignore" "auto_commit_sync.sh" ".git/*" | pv
-    
+    echo " "
     echo -e "\033[1mCopia de seguridad creada exitosamente en:\033[0m"
     echo "$BACKUP_ZIP"
     BACKUP_CREATED=true

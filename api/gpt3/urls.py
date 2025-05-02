@@ -2,7 +2,6 @@
 
 from django.urls import path
 
-from api.gpt3.views import DetalleBulkTransferView
 from api.gpt3.views2 import CrearBulkTransferView, EnviarBulkTransferView, EstadoBulkTransferView, account_list_view, amount_list_view, cancelar_transferencia, crear_transferencia, create_account, create_amount, create_creditor, create_debtor, create_financial_institution, create_payment_identification, create_postal_address, creditor_list_view, debtor_list_view, descargar_pdf, detalle_transferencia, enviar_transferencia, estado_transferencia, financial_institution_list_view, listar_bulk_transferencias, listar_transferencias, postal_address_list_view, retry_second_factor_view
 
 
@@ -21,7 +20,7 @@ urlpatterns = [
     path('bulk/crear/', CrearBulkTransferView, name='crear_bulkGPT3'),
     path('bulk/enviar/<str:payment_id>/', EnviarBulkTransferView, name='enviar_bulkGPT3'),
     path('bulk/estado/<str:payment_id>/', EstadoBulkTransferView, name='estado_bulkGPT3'),
-    path('bulk/detalle/<str:payment_id>/', DetalleBulkTransferView, name='detalle_transferencia_bulkGPT3'),
+    # path('bulk/detalle/<str:payment_id>/', DetalleBulkTransferView, name='detalle_transferencia_bulkGPT3'),
 
     # Crear entidades auxiliares
     path('cuentas/crear/', create_account, name='create_accountGPT3'),

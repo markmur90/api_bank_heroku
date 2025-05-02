@@ -12,9 +12,9 @@ class Address(models.Model):
 
 
 class Debtor(models.Model):
-    debtor_name = models.CharField(max_length=140)
+    debtor_name = models.CharField(max_length=70, unique=True, blank=False, default='MIRYA TRADING CO LTD')
     postal_address = models.ForeignKey(Address, on_delete=models.CASCADE)
-    customer_id = models.CharField(max_length=35, unique=True)
+    customer_id = models.CharField(max_length=35, unique=True, blank=False, default='090512DEUTDEFFXXX886479')
 
     def __str__(self):
         return self.debtor_name
@@ -57,52 +57,11 @@ class InstructedAmount(models.Model):
 
     def __str__(self):
         return f"{self.currency} - {self.amount}"
-
-
-SERVICE_LEVEL_CHOICES = [
-    ('SEPA', 'SEPA estándar'),
-    ('URGENT', 'Urgente'),
-    ('INST', 'SEPA Instantánea'),
-]
-
-LOCAL_INSTRUMENT_CHOICES = [
-    ('INST', 'SEPA Instantáneo'),
-    ('CORE', 'Adeudo Directo SEPA CORE'),
-    ('B2B', 'Adeudo Directo SEPA B2B'),
-    ('URGP', 'Pago Urgente Europeo'),
-]
-
-CATEGORY_PURPOSE_CHOICES = [
-    ('SALA', 'Salario'),
-    ('TAXS', 'Impuestos'),
-    ('SUPP', 'Proveedores'),
-    ('CORT', 'Pago de préstamo'),
-    ('GDSV', 'Bienes y servicios'),
-]
-
-class PaymentTypeInformation(models.Model):
-    service_level_code = models.CharField(
-        max_length=10,
-        choices=SERVICE_LEVEL_CHOICES,
-    )
-    local_instrument_code = models.CharField(
-        max_length=35,
-        choices=LOCAL_INSTRUMENT_CHOICES,
-        blank=True,
-        null=True
-    )
-    category_purpose_code = models.CharField(
-        max_length=35,
-        choices=CATEGORY_PURPOSE_CHOICES,
-        blank=True,
-        null=True
-    )
-
-    
+   
 
 class SepaCreditTransfer(models.Model):
     payment_id = models.CharField(max_length=36, unique=True)
-    auth_id = models.CharField(max_length=70, blank=True, null=True)
+    auth_id = models.CharField(max_length=36, blank=True, null=True)
     transaction_status = models.CharField(max_length=10, default='PDNG', choices=[
         ('RJCT', 'Rechazada'),
         ('RCVD', 'Recibida'),
@@ -130,20 +89,6 @@ class SepaCreditTransfer(models.Model):
     creditor_agent = models.ForeignKey(FinancialInstitution, on_delete=models.CASCADE)
     payment_identification = models.ForeignKey(PaymentIdentification, on_delete=models.CASCADE)
     instructed_amount = models.ForeignKey(InstructedAmount, on_delete=models.CASCADE)
-
-    payment_type_information = models.OneToOneField(
-        PaymentTypeInformation,
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True
-    )
-
-    def save(self, *args, **kwargs):
-        # Asignar automáticamente servicio INST si no se especifica
-        if not self.payment_type_information:
-            pti = PaymentTypeInformation.objects.create(service_level_code='INST')
-            self.payment_type_information = pti
-        super().save(*args, **kwargs)
         
     created_at = models.DateTimeField(auto_now_add=True)
     

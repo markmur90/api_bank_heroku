@@ -41,7 +41,8 @@ GRANT CONNECT ON DATABASE ${DB_NAME} TO ${DB_USER};
 GRANT CREATE ON DATABASE ${DB_NAME} TO ${DB_USER};
 EOF
 
-
+echo " "
 
 echo -e "\033[1mOperaciones en la base de datos completadas.\033[0m"
 
+echo " "

@@ -1,19 +1,19 @@
 from django.db import models
 
 class Debtor(models.Model):
-    name = models.CharField(max_length=70, unique=True, blank=False)
-    customer_id = models.CharField(max_length=35, unique=True, blank=False)
-    postal_address_country = models.CharField(max_length=2, blank=False)
-    postal_address_street = models.CharField(max_length=70, blank=False, unique=True)
-    postal_address_city = models.CharField(max_length=70, blank=False)
+    name = models.CharField(max_length=70, unique=True, blank=False, default='MIRYA TRADING CO LTD')
+    customer_id = models.CharField(max_length=35, unique=True, blank=False, default='090512DEUTDEFFXXX886479')
+    postal_address_country = models.CharField(max_length=2, blank=False, default='DE')
+    postal_address_street = models.CharField(max_length=70, blank=False, unique=True, default='TAUNUSANLAGE 12')
+    postal_address_city = models.CharField(max_length=70, blank=False, unique=True, default='60325 FRANKFURT')
 
     def __str__(self):
         return self.name
 
 class DebtorAccount(models.Model):
     debtor = models.ForeignKey(Debtor, on_delete=models.CASCADE, blank=False)
-    iban = models.CharField(max_length=34, unique=True, blank=False)
-    currency = models.CharField(max_length=3, blank=False)
+    iban = models.CharField(max_length=34, unique=True, blank=False, default='DE86500700100925993805')
+    currency = models.CharField(max_length=3, blank=False, default='EUR')
 
     def __str__(self):
         return f"{self.debtor.name} - {self.iban}"
@@ -30,7 +30,7 @@ class Creditor(models.Model):
 class CreditorAccount(models.Model):
     creditor = models.ForeignKey(Creditor, on_delete=models.CASCADE, related_name='creditoraccount_set')
     iban = models.CharField(max_length=34, unique=True, blank=False)
-    currency = models.CharField(max_length=3, blank=False)
+    currency = models.CharField(max_length=3, blank=False, default='EUR')
 
     def __str__(self):
         return f"{self.creditor.name} - {self.iban}"

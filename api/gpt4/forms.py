@@ -95,11 +95,6 @@ class TransferForm(forms.ModelForm):
 
 
 class SendTransferForm(forms.Form):
-    instant_transfer = forms.BooleanField(
-        required=False,
-        label="¿Transferencia Instantánea?",
-        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})
-    )
     obtain_token = forms.BooleanField(
         required=False,
         label='Obtener nuevo TOKEN',

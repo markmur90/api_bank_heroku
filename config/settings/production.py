@@ -44,7 +44,7 @@ INSTALLED_APPS = [
     'markdownify',
     'api.accounts',
     'api.collection',
-    'api.transactions',
+    # 'api.transactions',
     'api.transfers',
     'api.core',
     'api.authentication',

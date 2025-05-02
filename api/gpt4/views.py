@@ -7,7 +7,7 @@ from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 from api.gpt4.models import Debtor, DebtorAccount, Creditor, CreditorAccount, CreditorAgent, PaymentIdentification, Transfer
 from api.gpt4.forms import DebtorForm, DebtorAccountForm, CreditorForm, CreditorAccountForm, CreditorAgentForm, SendTransferForm, TransferForm
-from api.gpt4.utils import generar_pdf_transferencia, generate_deterministic_id, generate_unique_code, obtener_otp_automatico_con_challenge, obtener_ruta_schema_transferencia, read_log_file, send_transfer, ZCOD_DIR
+from api.gpt4.utils import generar_pdf_transferencia, generate_deterministic_id, generate_payment_id_uuid, generate_unique_code, obtener_otp_automatico_con_challenge, obtener_ruta_schema_transferencia, read_log_file, send_transfer, ZCOD_DIR
 
 logger = logging.getLogger(__name__)
 
@@ -93,7 +93,7 @@ def create_transfer(request):
         form = TransferForm(request.POST)
         if form.is_valid():
             transfer = form.save(commit=False)
-            transfer.payment_id = generate_unique_code()
+            transfer.payment_id = generate_payment_id_uuid()
             payment_identification = PaymentIdentification.objects.create(
                 instruction_id=generate_deterministic_id(
                     transfer.payment_id,

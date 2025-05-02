@@ -1,12 +1,9 @@
-# api/gpt3/views2.py
-
 import logging
 import os
 import uuid
 import json
 import requests
 from datetime import datetime
-
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, HttpResponse, JsonResponse
 from django.contrib import messages
@@ -15,44 +12,17 @@ from django.views.decorators.http import require_http_methods
 from django.views import View
 from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
-
 from api.core.services import generar_pdf_transferencia
-from api.gpt3.helpers import generate_payment_id_uuid, obtener_ruta_schema_transferencia
-from api.gpt3.utils2 import generar_otp_sepa_transfer, get_oauth_session, guardar_pain002_si_aplica, handle_error_response, preparar_payload_transferencia, registrar_log, validate_schema
+from api.gpt3.helpers import generate_deterministic_id, generate_payment_id_uuid, obtener_ruta_schema_transferencia
+from api.gpt3.utils2 import generar_otp_sepa_transfer, get_oauth_session, guardar_pain002_si_aplica, handle_error_response, preparar_payload_transferencia, registrar_log
 from api.gpt3.schemas import sepa_credit_transfer_schema
-
-
-from .models import (
-    SepaCreditTransfer,
-    PaymentIdentification,
-    BulkTransfer,
-    Address,
-    Debtor,
-    Creditor,
-    FinancialInstitution,
-    InstructedAmount
-)
-from .forms import (
-    SepaCreditTransferForm,
-    AccountForm,
-    AddressForm,
-    PaymentIdentificationForm,
-    DebtorForm,
-    CreditorForm,
-    FinancialInstitutionForm,
-    InstructedAmountForm,
-    BulkTransferForm,
-    GroupHeaderForm,
-    PaymentInformationForm
-)
+from .models import SepaCreditTransfer, PaymentIdentification, BulkTransfer, Address, Debtor, Creditor, FinancialInstitution, InstructedAmount
+from .forms import SepaCreditTransferForm, AccountForm, AddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm, FinancialInstitutionForm, InstructedAmountForm, BulkTransferForm, GroupHeaderForm, PaymentInformationForm
 
 logger = logging.getLogger(__name__)
 
-
 ORIGIN = "https://api-bank-heroku-72c443ab11d3.herokuapp.com"
-
-API_URL = "https://api.db.com/gw/dbapi/banking/transactions/v2/sepaCreditTransfer"
-
+API_URL = "https://api.db.com:443/gw/dbapi/banking/transactions/v2/sepaCreditTransfer"
 HEADERS_DEFAULT = {
     "Accept": "application/json, text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8",
     "Accept-Language": "es-CO",
@@ -81,8 +51,19 @@ def crear_transferencia(request):
             transferencia.auth_id = generate_payment_id_uuid()
             transferencia.transaction_status = "PDNG"
             payment_identification = PaymentIdentification.objects.create(
-                instruction_id=transferencia.payment_id,
-                end_to_end_id=transferencia.auth_id
+                instruction_id=generate_deterministic_id(
+                    transferencia.payment_id,
+                    transferencia.creditor.iban,
+                    transferencia.debtor.iban,
+                ),
+                end_to_end_id=generate_deterministic_id(
+                    transferencia.payment_id,
+                    transferencia.creditor.iban,
+                    transferencia.debtor.iban,
+                    transferencia.instructed_amount.amount,
+                    transferencia.requested_execution_date,
+                    prefix="E2E",
+                ),
             )
             transferencia.payment_identification = payment_identification
             transferencia.save()
@@ -103,6 +84,7 @@ def crear_transferencia(request):
     else:
         form = SepaCreditTransferForm()
     return render(request, 'api/GPT3/crear_transferencia.html', {'form': form, 'transferencia': None})
+
 
 @login_required
 def listar_transferencias(request):
@@ -149,24 +131,26 @@ def enviar_transferencia(request, payment_id):
     headers = HEADERS_DEFAULT.copy()
     headers.update({
         "Authorization": f"Bearer {get_oauth_session(request).token['access_token']}",
-        "idempotency-id": payment_id,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'idempotency-id': str(payment_id),
+        'Correlation-Id': str(payment_id),
+        'x-request-Id': str(uuid.uuid4()),
+        "X-Requested-With": "XMLHttpRequest",
         "otp": otp_token,
-        "x-request-id": str(uuid.uuid4()),
-        "X-Requested-With": "XMLHttpRequest"
     })
-    payload = preparar_payload_transferencia(transferencia, request)
     try:
-        validate_schema(payload, sepa_credit_transfer_schema)
-    except Exception as e:
-        messages.error(request, f"Error de validación JSON: {str(e)}")
+        payload = preparar_payload_transferencia(transferencia, request)
+    except ValueError as e:
+        messages.error(request, str(e))
         return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
     try:
         response = requests.post(f"{API_URL}/", json=payload, headers=headers, timeout=(5, 15))
         registrar_log(payment_id, headers, response.text)
         if response.status_code not in [200, 201]:
             mensaje = handle_error_response(response)
-            transferencia.transaction_status = "ERRO"
-            transferencia.save()
+            # transferencia.transaction_status = "ERRO"
+            # transferencia.save()
             messages.error(request, f"Error al enviar transferencia: {mensaje}")
             return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
         respuesta_json = response.json()
@@ -176,8 +160,8 @@ def enviar_transferencia(request, payment_id):
         messages.success(request, "Transferencia enviada correctamente.")
     except Exception as e:
         registrar_log(payment_id, headers, "", error=str(e))
-        transferencia.transaction_status = "ERRO"
-        transferencia.save()
+        # transferencia.transaction_status = "ERRO"
+        # transferencia.save()
         messages.error(request, f"Error interno al enviar: {str(e)}")
     return redirect('detalle_transferenciaGPT3', payment_id=payment_id)
 
@@ -190,9 +174,12 @@ def estado_transferencia(request, payment_id):
     headers = HEADERS_DEFAULT.copy()
     headers.update({
         "Authorization": f"Bearer {session.token['access_token']}",
-        "Accept": "application/json",
-        "x-request-id": str(uuid.uuid4()),
-        "X-Requested-With": "XMLHttpRequest"
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'idempotency-id': str(payment_id),
+        'Correlation-Id': str(payment_id),
+        'x-request-Id': str(uuid.uuid4()),
+        "X-Requested-With": "XMLHttpRequest",
     })
     try:
         response = requests.get(f"{API_URL}/{payment_id}", headers=headers, timeout=(5, 15))
@@ -226,10 +213,13 @@ def cancelar_transferencia(request, payment_id):
     headers = HEADERS_DEFAULT.copy()
     headers.update({
         "Authorization": f"Bearer {session.token['access_token']}",
-        "idempotency-id": payment_id,
-        "otp": otp,
-        "x-request-id": str(uuid.uuid4()),
-        "X-Requested-With": "XMLHttpRequest"
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'idempotency-id': str(payment_id),
+        'Correlation-Id': str(payment_id),
+        'x-request-Id': str(uuid.uuid4()),
+        "X-Requested-With": "XMLHttpRequest",
+        'otp': otp,
     })
     try:
         response = requests.delete(f"{API_URL}/{payment_id}", headers=headers, timeout=(5, 15))
@@ -257,12 +247,16 @@ def retry_second_factor_view(request, payment_id):
     headers = HEADERS_DEFAULT.copy()
     headers.update({
         "Authorization": f"Bearer {session.token['access_token']}",
-        "idempotency-id": payment_id,
+
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'idempotency-id': str(payment_id),
+        'Correlation-Id': str(payment_id),
+        'x-request-Id': str(uuid.uuid4()),
+        "X-Requested-With": "XMLHttpRequest",
+        
         "otp": otp_token,
-        "Content-Type": "application/json",
-        "Accept": "application/json",
-        "x-request-id": str(uuid.uuid4()),
-        "X-Requested-With": "XMLHttpRequest"
+        
     })
     payload = {"action": "CREATE", "authId": transferencia.auth_id}
     try:
@@ -285,7 +279,7 @@ def create_account(request):
         form = AccountForm(request.POST)
         if form.is_valid():
             form.save()
-            messages.success(request, "Monto creado correctamente.")
+            messages.success(request, "Cuenta creada correctamente.")
             return redirect('account_listGPT3')
         else:
             messages.error(request, "Por favor corrige los errores en el formulario.")

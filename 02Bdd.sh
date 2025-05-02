@@ -8,11 +8,10 @@ python3 manage.py migrate
 echo "  "
 echo -e "\033[1mIniciando subida de datos de bdd.json\033[0m"
 
-#python3 manage.py createsuperuser
 python3 manage.py loaddata bdd.json
 
 echo "  "
 
-echo -e "\033[1mBase de datos LOCAL inicializada\033[0m"
+echo -e "\033[1mSubida de datos LOCAL completada.\033[0m"
 
 echo "  "

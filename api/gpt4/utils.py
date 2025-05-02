@@ -46,7 +46,7 @@ DEUTSCHE_BANK_CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8A
 ORIGIN = "https://api-bank-heroku-72c443ab11d3.herokuapp.com"
 
 DEUTSCHE_BANK_TOKEN_URL = 'https://api.db.com:443/gw/oidc/token'
-URL = "https://api.db.com:443/gw/dbapi/banking/transactions/v2"
+URL = "https://api.db.com:443/gw/dbapi/banking/transactions/v2/sepaCreditTransfer"
 API = "https://api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer"
 
 BANK_API_URL = URL
@@ -394,7 +394,6 @@ def generate_payment_id_uuid() -> str:
 # OTP
 # ===========================
 def preparar_request_type_y_datos(schema_data):
-
     request_type = "SEPA_TRANSFER_GRANT"
     datos = {
         "type": "challengeRequestDataSepaPaymentTransfer",
@@ -402,26 +401,23 @@ def preparar_request_type_y_datos(schema_data):
         "amountCurrency": schema_data["instructedAmount"]["currency"],
         "amountValue": schema_data["instructedAmount"]["amount"]
     }
-
     return request_type, datos
 
 
 def get_otp_for_transfer(transfer, token):
     schema_data = transfer.to_schema_data()  # Supongamos que esta función extrae el esquema
     request_type, request_data = preparar_request_type_y_datos(schema_data)
-
     headers = {
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json',
-        'Correlation-Id': generate_correlation_id(),
+        'Correlation-Id': str(transfer.payment_id),
     }
     body = {
         "method": "PHOTOTAN",
-        "requestType": "SEPA_TRANSFER_GRANT",
+        "requestType": request_type,
         "requestData": request_data,
         "language": "es"
     }
-
     try:
         response = requests.post(OTP_URL, json=body, headers=headers, timeout=10)
         if response.status_code != 200:
@@ -429,53 +425,44 @@ def get_otp_for_transfer(transfer, token):
             registrar_log(payment_id=body.get("paymentIdentification", {}).get("endToEndIdentification", "unknown"),
                           headers=default_request_headers(), response_text=response.text, error=error_message)
             return {"error": error_message}        
-        
         otp_data = response.json()
         return otp_data['id']
     except requests.RequestException as e:
         raise Exception(f"Error solicitando OTP: {e}")
 
 
-
-
-
 def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False, regenerate_otp=False):
     schema_data = transfer.to_schema_data()
-    # request_type, request_data = preparar_request_type_y_datos(schema_data)
-
-    payment_id = transfer.payment_id
-
+    payment_id = str(transfer.payment_id)
     token = None
     if regenerate_token:
         token = get_access_token()
     else:
         token = use_token
-
     if not token:
         raise Exception("TOKEN no disponible.")
-
     otp = None
     if regenerate_otp:
         otp = get_otp_for_transfer(transfer, token)
     else:
         otp = use_otp
-
     if not otp:
         raise Exception("OTP no disponible.")
-
     headers = default_request_headers()
     headers.update({
         'Authorization': f'Bearer {token}',
+        
+        'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'idempotency-id': payment_id,
+        'idempotency-id': str(payment_id),
+        'Correlation-Id': str(payment_id),
+        'x-request-Id': str(uuid.uuid4()),
+        "X-Requested-With": "XMLHttpRequest", 
+
         'otp': otp,
     })
-
     body = schema_data
-
-
     response = requests.post(BANK_API_URL, json=body, headers=headers)
-
     save_log(
         payment_id,
         request_headers=headers,
@@ -483,31 +470,23 @@ def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False
         response_headers=dict(response.headers),
         response_body=response.text
     )
-
     if response.status_code == 201:
         transfer.status = 'PNDG'
     else:
         transfer.status = 'RJCT'
     transfer.save()
-
-    # 💡 Aquí generamos XML reales después del envío
     try:
         generar_xml_pain001(transfer, payment_id)
         generar_archivo_aml(transfer, payment_id, instant_transfer=transfer._instant_transfer_flag)
         aml_path = generar_archivo_aml(transfer, payment_id, instant_transfer=transfer._instant_transfer_flag)
         xml_path = generar_xml_pain001(transfer, payment_id)
-
         validar_xml_pain001(xml_path)
         validar_xml_con_xsd(xml_path)
-
         validar_aml_con_xsd(aml_path)
-
         logger = setup_logger(payment_id)
         logger.info("Validación de XML pain.001 superada correctamente.")
-
     except Exception as e:
         save_log(payment_id, response_body=f"Error generando XML posterior: {str(e)}")
-
     return response
 
 
@@ -666,7 +645,7 @@ def crear_challenge_autorizacion(transfer, token):
         'Correlation-Id': generate_correlation_id(),
     }
     payload = {
-        "method": "PHOTOTAN",
+        "method": "PUSHTAN",
         "requestType": request_type,
         "requestData": request_data,
         "language": "es"

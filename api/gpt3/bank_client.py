@@ -1,4 +1,5 @@
 import json
+import uuid
 import requests
 import logging
 import os
@@ -35,11 +36,11 @@ os.makedirs(LOGS_DIR, exist_ok=True)
 os.makedirs(SCHEMA_DIR, exist_ok=True)
 os.makedirs(os.path.dirname(KEY_FILE), exist_ok=True)
 
-URL = "https://api.db.com/gw/dbapi/banking/transactions/v2"
-
+URL1 = "https://api.db.com/gw/dbapi/banking/transactions/v2"
 URL2 = "https://api.db.com:443/gw/dbapi/banking/transactions/v2/sepaCreditTransfer"
 URL3 = "https://api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer"
 
+URL = URL2
 
 def _load_key():
     if not os.path.exists(KEY_FILE):
@@ -114,9 +115,15 @@ def validate_pain001(xml_text):
 def send_sepa_transfer(payment_id, payload, otp, access_token):
     headers = HEADERS_DEFAULT.copy()
     headers.update({
-        "otp": otp,
         "Authorization": f"Bearer {access_token}",
-        "idempotency-id": str(payment_id),
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'idempotency-id': str(payment_id),
+        'Correlation-Id': str(payment_id),
+        'x-request-Id': str(uuid.uuid4()),
+        "X-Requested-With": "XMLHttpRequest",
+        
+        'otp': otp,
     })
     try:
         resp = requests.post(URL, json=payload, headers=headers, timeout=(5,15))
@@ -135,7 +142,15 @@ def send_sepa_transfer(payment_id, payload, otp, access_token):
 def get_sepa_transfer_status(payment_id, access_token):
     url = f"{URL}/{payment_id}/status"
     headers = HEADERS_DEFAULT.copy()
-    headers.update({"Authorization": f"Bearer {access_token}"})
+    headers.update({
+        "Authorization": f"Bearer {access_token}",
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'idempotency-id': str(payment_id),
+        'Correlation-Id': str(payment_id),
+        'x-request-Id': str(uuid.uuid4()),
+        "X-Requested-With": "XMLHttpRequest",
+        })
     try:
         resp = requests.get(url, headers=headers, timeout=(5,15))
         registrar_log(payment_id, headers, resp.text, None)

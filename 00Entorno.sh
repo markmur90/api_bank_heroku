@@ -3,6 +3,7 @@
 
 export DATABASE_URL="postgres://markmur88:Ptf8454Jd55@localhost:5432/mydatabase"
 
+echo "  "
 
 python3 -m venv $HOME/Documentos/Entorno/venvAPI
 
@@ -25,8 +26,6 @@ sudo systemctl start postgresql
 
 echo "  "
 
-# sudo systemctl status postgresql
-
-
 echo -e "\033[1m✅ ✅ ✅ Environment setup complete. You can now run your Django application.✅ ✅ ✅\033[0m"
 
+echo "  "
