@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <h2>Deudores</h2>
+    <a href="{% url 'create_debtorGPT' %}" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Nuevo Deudor
+    </a>
+</div>
+
+<div class="table-responsive">
+    <table class="table table-hover align-middle">
+        <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Nombre</th>
+                <th>Dirección Postal</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for debtor in debtors %}
+            <tr>
+                <td>{{ debtor.id }}</td>
+                <td>{{ debtor.debtor_name }}</td>
+                <td>{{ debtor.postal_address }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="3" class="text-center py-4">
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle"></i> No se encontraron deudores
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}
