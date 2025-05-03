@@ -1,0 +1,53 @@
+
+https://api.db.com/gw/dbapi/banking/transactions/v2
+
+{
+  "requestHeaders": {
+    "Accept": "text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8",
+    "Accept-Encoding": "gzip, deflate, br, zstd",
+    "Accept-Language": "es-CO",
+    "Connection": "keep-alive",
+    "Host": "api.db.com",
+    "Priority": "u=0, i",
+    "Sec-Fetch-Dest": "document",
+    "Sec-Fetch-Mode": "navigate",
+    "Sec-Fetch-Site": "none",
+    "Sec-Fetch-User": "?1",
+    "Upgrade-Insecure-Requests": "1",
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:128.0) Gecko/20100101 Firefox/128.0"
+  },
+  "responseHeaders": {
+    "X-Firefox-Spdy": "h2",
+    "access-control-allow-credentials": "true",
+    "access-control-allow-headers": "
+    idempotency-id, 
+    process-id, 
+    otp, 
+    Correlation-ID, 
+    Origin, 
+    Accept, 
+    X-Requested-With, 
+    Content-Type, 
+    Access-Control-Request-Method, 
+    Access-Control-Request-Headers, 
+    Authorization, 
+    Cookie, 
+    X-Frame-Options, 
+    X-Content-Type-Options, 
+    Strict-Transport-Security, 
+    previewsignature",
+    "access-control-allow-methods": "GET, POST, PATCH, HEAD, OPTIONS, DELETE",
+    "access-control-allow-origin": "",
+    "access-control-max-age": "3628800",
+    "alt-svc": "h3=\":443\"; ma=2592000, h3-29=\":443\"; ma=2592000",
+    "content-length": "173",
+    "content-type": "application/json",
+    "date": "Wed, 23 Apr 2025 22:56:07 GMT",
+    "strict-transport-security": "max-age=31536000; includeSubDomains; preload",
+    "via": "1.1 google",
+    "x-content-type-options": "nosniff",
+    "x-frame-options": "DENY",
+    "x-request-id": "a976d5df-20e2-4e81-97f6-8d83db7c1862",
+    "x-sf-cors": "true"
+  }
+}

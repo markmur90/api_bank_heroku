@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2 class="mb-4">Crear Institución Financiera</h2>
+    <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+        <div class="card mb-4">
+            <div class="card-header">Información de la Institución Financiera</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="id_financial_institution_id" class="form-label">ID de la Institución</label>
+                        {{ form.financial_institution_id }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a href="{% url 'financial_institution_listGPT' %}" class="btn btn-secondary me-2">
+                <i class="bi bi-arrow-left"></i> Volver al Listado
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-save"></i> Guardar
+            </button>
+        </div>
+    </form>
+{% endblock %}
+

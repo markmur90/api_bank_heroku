@@ -1,0 +1,67 @@
+¿Cuál es el comando similar en Kali Linux como Hydra?”
+00:05
+ChatGPT dijo:
+
+En Kali Linux, puedes usar herramientas similares a Hydra para realizar pruebas de fuerza en contraseñas. Una de las más conocidas es Medusa. Medusa es una herramienta de fuerza bruta que permite atacar múltiples protocolos de red, como SSH, FTP, HTTP, entre otros. Otra opción popular es Ncrack, que también es muy efectiva para realizar pruebas de fuerza en contraseñas en diferentes servicios de red.
+Dijiste:
+“¿Cuál me recomiendas?”
+00:01
+ChatGPT dijo:
+
+Si estás buscando una herramienta de fuerza bruta para probar la seguridad de contraseñas, tanto Medusa como Ncrack son buenas opciones. Aquí te dejo algunas consideraciones:
+
+    Medusa: Es muy versátil y soporta muchos protocolos de red. Si necesitas realizar pruebas de fuerza en diferentes servicios (como SSH, FTP, HTTP, etc.), Medusa es una excelente elección.
+
+    Ncrack: Está especialmente diseñado para ser rápido y eficiente en la realización de ataques de fuerza bruta. Es una buena opción si te enfocas en la velocidad y en ataques más específicos.
+
+Si es tu primera vez utilizando estas herramientas, podrías empezar con Medusa por su versatilidad. Sin embargo, si buscas velocidad y eficiencia, Ncrack podría ser la mejor opción.
+Dijiste:
+Dame los comandos de Medusa y de MCRAC.
+ChatGPT dijo:
+
+Aquí tienes los comandos básicos para Medusa y Ncrack:
+Medusa
+
+Medusa es una herramienta de fuerza bruta para varios protocolos. Su sintaxis básica es:
+
+medusa -h <IP> -u <usuario> -P <diccionario> -M <servicio>
+
+Ejemplo para SSH
+
+medusa -h 192.168.1.1 -u admin -P passwords.txt -M ssh
+
+Ejemplo para FTP
+
+medusa -h 192.168.1.1 -u admin -P passwords.txt -M ftp
+
+Parámetros clave:
+
+    -h → Host de destino
+    -u → Usuario
+    -P → Archivo de contraseñas
+    -M → Módulo de servicio (ssh, ftp, telnet, etc.)
+    -t → Número de hilos para acelerar la prueba
+    -n → Número de puerto personalizado
+
+Ncrack
+
+Ncrack está optimizado para ataques rápidos en múltiples protocolos. Su sintaxis básica es:
+
+ncrack -p <puerto> <IP>
+
+Ejemplo para SSH
+
+ncrack -p 22 --user admin -P passwords.txt 192.168.1.1
+
+Ejemplo para FTP
+
+ncrack -p 21 --user admin -P passwords.txt 192.168.1.1
+
+Parámetros clave:
+
+    -p → Puerto del servicio
+    --user → Usuario objetivo
+    -P → Diccionario de contraseñas
+    -T → Nivel de velocidad (1-5, donde 5 es el más rápido)
+
+Si necesitas más detalles sobre cada herramienta, dime qué servicio específico quieres atacar.

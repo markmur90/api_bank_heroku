@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<a href="{% url 'sct_list5' %}" class="btn btn-secondary mb-3">Regresar al Listado</a>
+<br><br>
+
+<h1>Enviar Transferencia SEPA</h1>
+
+{% if success %}
+<div class="alert alert-success" role="alert">
+    {{ success }}
+</div>
+{% endif %}
+
+{% if error %}
+<div class="alert alert-danger" role="alert">
+    {{ error }}
+</div>
+{% endif %}
+
+{% if not success and not error %}
+<p>Procesando la transferencia...</p>
+{% endif %}
+{% endblock %}
