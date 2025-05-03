@@ -1,0 +1,694 @@
+Sistema de Transferencias SEPA con Django
+Introducción
+
+En este proyecto crearemos una aplicación web completa en Django (sin utilizar REST, solo renderizado HTML tradicional) para iniciar transferencias SEPA. La aplicación permitirá capturar los datos de una transferencia, enviarla a un servicio bancario real (siguiendo la especificación OpenAPI proporcionada para SepaCreditTransferRequest y SepaCreditTransferResponse), guardar en la base de datos todas las transacciones con sus estados y generar automáticamente los archivos XML pain.001 (solicitud de transferencia) y pain.002 (respuesta o estado de la transferencia). No se implementará autenticación de usuarios en Django (se asume uso interno o red segura), y se proporcionarán páginas HTML para crear una transferencia, ver el detalle (incluida la respuesta del banco) y consultar el estado de una transferencia usando su paymentId. Al final, se incluyen recomendaciones técnicas y de seguridad, así como un diagrama de flujo de todo el proceso.
+
+A continuación se detalla la estructura del proyecto, seguido de explicaciones y fragmentos de código para cada componente clave.
+Estructura del Proyecto Django
+
+Supondremos un proyecto Django básico con una aplicación llamada transferencias. La estructura relevante de archivos podría ser:
+
+transferencias/        <-- Aplicación Django para transferencias SEPA
+├── models.py         <-- Definición del modelo de Transferencia (campos de la transacción SEPA)
+├── forms.py          <-- Definición de formularios para capturar datos de la transferencia
+├── views.py          <-- Vistas Django (funciones) para manejar solicitudes (crear, detalle, estado, etc.)
+├── urls.py           <-- Rutas URL de la aplicación `transferencias`
+└── templates/
+    └── transferencias/
+         ├── crear.html      <-- Plantilla HTML para formulario de nueva transferencia
+         ├── detalle.html    <-- Plantilla HTML para mostrar detalles de una transferencia (respuesta del banco)
+         ├── estado.html     <-- Plantilla HTML para consultar el estado de una transferencia por paymentId
+         └── lista.html      <-- (Opcional) Plantilla HTML para listar todas las transferencias registradas
+
+También se asume que en el proyecto principal (settings.py) la app transferencias está incluida en INSTALLED_APPS, y que existe un template base (base.html) simple para extender en las plantillas (con un bloque content). A continuación, describimos cada parte del sistema:
+Modelo de Datos (models.py)
+
+Definimos un modelo Django llamado Transferencia para registrar cada transferencia SEPA y su estado. Este modelo contendrá los campos necesarios para almacenar la información del ordenante (deudor) y beneficiario (acreedor), monto, identificadores de la transacción, estado, y los archivos XML generados. También incluiremos campos de marca de tiempo para seguimiento. Por simplicidad, fijaremos la moneda en EUR (según la especificación del API, solo se admite EUR​
+file-uadlswpqtz3sp9iz9egad6
+). A continuación el código del modelo:
+
+# transferencias/models.py
+from django.db import models
+
+class Transferencia(models.Model):
+    # Datos del deudor (ordenante)
+    nombre_deudor = models.CharField(max_length=140)  # Nombre del ordenante
+    iban_deudor = models.CharField(max_length=34)     # IBAN de la cuenta ordenante (hasta 34 caracteres)
+    bic_deudor = models.CharField(max_length=11)      # BIC del banco ordenante (8 u 11 caracteres)
+    # Datos del acreedor (beneficiario)
+    nombre_acreedor = models.CharField(max_length=140) # Nombre del beneficiario
+    iban_acreedor = models.CharField(max_length=34)    # IBAN de la cuenta beneficiaria
+    bic_acreedor = models.CharField(max_length=11)     # BIC del banco beneficiario
+    # Detalles de la transferencia
+    importe = models.DecimalField(max_digits=15, decimal_places=2)  # Monto en EUR
+    concepto = models.CharField(max_length=140, blank=True)         # Concepto (remittance information, opcional)
+    # Campos de respuesta del banco
+    payment_id = models.CharField(max_length=50, blank=True, null=True)  # ID de pago asignado por el banco (UUID)
+    auth_id = models.CharField(max_length=50, blank=True, null=True)     # ID de autorización (para OTP, si aplica)
+    estado = models.CharField(max_length=10, default="")                 # Estado actual de la transacción (código SEPA, ej. ACSP, RJCT, PDNG...)
+    # Archivos XML generados
+    pain001 = models.TextField(blank=True, null=True)  # Contenido XML del mensaje enviado (pain.001)
+    pain002 = models.TextField(blank=True, null=True)  # Contenido XML de la respuesta/estado (pain.002)
+    # Marcas de tiempo
+    fecha_creacion = models.DateTimeField(auto_now_add=True)
+    fecha_actualizacion = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"Transferencia {self.id} - {self.nombre_deudor} -> {self.nombre_acreedor} ({self.importe} EUR)"
+
+Explicación: Este modelo permite registrar todas las transferencias SEPA iniciadas. Incluimos campos para los datos mínimos requeridos por el API de transferencia SEPA: nombre y cuenta (IBAN) del deudor y acreedor, el importe (monto) de la transferencia (en euros), y un concepto opcional (información de remesa) de hasta 140 caracteres​
+file-uadlswpqtz3sp9iz9egad6
+. Además, tras enviar la transferencia al banco, almacenaremos:
+
+    payment_id: Identificador de la transferencia asignado por el banco (formato UUID). Este valor se obtiene de la respuesta del API (SepaCreditTransferResponse) y es fundamental para luego consultar el estado​
+    file-uadlswpqtz3sp9iz9egad6
+    ​
+    file-uadlswpqtz3sp9iz9egad6
+    .
+
+    auth_id: Identificador de autenticación devuelto por el banco. Se usa en escenarios de autenticación de segundo factor (por ejemplo, photoTAN/pushTAN) para autorizar la transacción si quedó pendiente. En nuestro flujo básico almacenamos este valor por completitud, aunque si la transferencia se confirma en un solo paso, podría no requerirse usarlo inmediatamente.
+
+    estado: Estado de la transacción en formato codificado SEPA. Según la especificación, este campo indicará el estado actual del pago (por ejemplo, ACSP – aceptado para procesamiento, PDNG – pendiente, RJCT – rechazado, etc. siguiendo los códigos ISO 20022)​
+    file-uadlswpqtz3sp9iz9egad6
+    ​
+    file-uadlswpqtz3sp9iz9egad6
+    . Inicialmente, tomaremos el valor devuelto en la respuesta inmediata del banco.
+
+    pain001 y pain002: Campos de texto para almacenar los contenidos XML generados. pain001 corresponde al mensaje ISO 20022 de Customer Credit Transfer Initiation que enviamos al banco (con los datos del pago), y pain002 corresponde al mensaje de Payment Status Report que representa la respuesta del banco (estado de la orden de pago). Estos archivos XML se generan automáticamente al enviar la transferencia y al obtener una respuesta, respectivamente, para fines de registro y auditoría.
+
+    fecha_creacion y fecha_actualizacion: timestamps automáticos para saber cuándo se creó la transacción en nuestro sistema y cuándo se actualizó por última vez (por ejemplo, tras consultar un cambio de estado).
+
+Nota: No almacenamos la OTP utilizada para autorizar la transferencia por seguridad (solo se usa en la llamada al API). Tampoco almacenamos explícitamente la moneda de las cuentas o del importe porque, según la especificación del banco, la única moneda permitida es EUR​
+file-uadlswpqtz3sp9iz9egad6
+​
+file-uadlswpqtz3sp9iz9egad6
+. Por lo tanto, asumimos EUR en todos los casos (el código lo fija así) y no pedimos al usuario elegir moneda para evitar errores.
+Formularios HTML (forms.py)
+
+Para capturar los datos de la transferencia, utilizaremos un formulario de Django. Podemos emplear un ModelForm basado en el modelo Transferencia para aprovechar la validación automática de campos básicos, agregando un campo extra para la OTP (One-Time Password) que no forma parte del modelo pero es requerido por la API del banco.
+
+# transferencias/forms.py
+from django import forms
+from .models import Transferencia
+
+class TransferenciaForm(forms.ModelForm):
+    otp = forms.CharField(label="OTP/TAN", max_length=10, required=True,
+                          help_text="Contraseña de un solo uso para autorizar la transferencia (ej: código TAN). Para pushTAN usar 'PUSHTAN'.")
+    class Meta:
+        model = Transferencia
+        # Campos del modelo que serán rellenados por el usuario en el formulario
+        fields = ['nombre_deudor', 'iban_deudor', 'bic_deudor',
+                  'nombre_acreedor', 'iban_acreedor', 'bic_acreedor',
+                  'importe', 'concepto']  # Nota: 'otp' no es del modelo, se define aparte
+        widgets = {
+            'concepto': forms.TextInput(attrs={'maxlength': 140}),
+        }
+
+Explicación: El TransferenciaForm incluye campos para todos los datos requeridos de la transferencia:
+
+    Datos del deudor y acreedor: nombre, IBAN y BIC. Se definen como campos de texto (CharField) con longitudes máximas apropiadas (p.ej. IBAN hasta 34 caracteres, BIC 8 u 11 caracteres). De ser necesario, podríamos agregar validaciones adicionales, por ejemplo usar una expresión regular para validar el formato IBAN (o emplear una librería como django-localflavor para IBAN específico de cada país) y el formato BIC. En este ejemplo básico confiamos en que el usuario introducirá datos correctos; sin embargo, es muy recomendable implementar validaciones (IBAN tiene patrón definido​
+    file-uadlswpqtz3sp9iz9egad6
+    ).
+
+    Importe: se captura como número decimal (Django lo maneja con DecimalField en el modelo y en el form). Podríamos añadir validación para que sea positivo y con dos decimales.
+
+    Concepto: texto opcional hasta 140 caracteres, para la información de remesa (concepto de la transferencia). Este campo no es obligatorio.
+
+    OTP: campo adicional (no ligado al modelo) para ingresar la contraseña de un solo uso requerida por el banco. Según la especificación, esta OTP es obligatoria en la cabecera de la petición para crear la transferencia​
+    file-uadlswpqtz3sp9iz9egad6
+    . El usuario deberá obtener este código según su método de autenticación (ejemplo: una coordenada de tarjeta, código SMS, app de autenticación, etc.). Si el usuario utiliza un método de PushTAN (autorización push), deberá introducir literal "PUSHTAN" como valor de OTP​
+    file-uadlswpqtz3sp9iz9egad6
+    – esto indica al banco que inicie un flujo de autenticación push, y no requiere un código numérico en ese momento. Hemos indicado esta instrucción en el help_text del campo OTP para guiar al usuario.
+
+Al usar ModelForm, Django generará automáticamente campos HTML con etiquetas y validación básica (longitudes, tipos) para los campos del modelo. En la plantilla utilizaremos {{ form.as_p }} o similar para renderizar rápidamente estos campos.
+
+Sin autenticación de usuario: Dado que no se requiere login, este formulario estará accesible sin credenciales. En un entorno real, se debería restringir de otro modo, ya que permite enviar órdenes de pago.
+Vistas (lógica de negocio en views.py)
+
+Definiremos varias vistas (funciones) de Django para manejar las operaciones solicitadas:
+
+    Crear una nueva transferencia (mostrar formulario y procesar el envío).
+
+    Mostrar detalle de una transferencia (incluyendo la respuesta del banco y archivos generados).
+
+    Consultar el estado de una transferencia por paymentId (llamando al API del banco con dicho identificador).
+
+    (Opcional) Listar transferencias registradas en la base de datos.
+
+A continuación, implementamos cada vista con su respectiva lógica:
+
+# transferencias/views.py
+import uuid, requests
+from datetime import datetime, date
+from django.shortcuts import render, redirect, get_object_or_404
+from .forms import TransferenciaForm
+from .models import Transferencia
+
+# URL base del API del banco para transferencias SEPA (según la especificación OpenAPI)
+API_URL = "https://simulator-api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer"
+# NOTA: Esta URL es un ejemplo (simulador). En producción usar la URL real del banco.
+# Se asume que ya tenemos un token de acceso válido para la API:
+API_TOKEN = "<token_de_acceso_o_autorización>"  # Debe obtenerse mediante OAuth2 u otro mecanismo y almacenarse de forma segura.
+
+def crear_transferencia(request):
+    """Vista para crear/iniciar una nueva transferencia SEPA."""
+    if request.method == 'POST':
+        form = TransferenciaForm(request.POST)
+        if form.is_valid():
+            # Extraer datos del formulario
+            otp = form.cleaned_data['otp']  # One-Time Password proporcionado por el usuario
+            nombre_deudor = form.cleaned_data['nombre_deudor']
+            iban_deudor = form.cleaned_data['iban_deudor']
+            bic_deudor = form.cleaned_data['bic_deudor']
+            nombre_acreedor = form.cleaned_data['nombre_acreedor']
+            iban_acreedor = form.cleaned_data['iban_acreedor']
+            bic_acreedor = form.cleaned_data['bic_acreedor']
+            importe = form.cleaned_data['importe']
+            concepto = form.cleaned_data['concepto']
+
+            # Generar identificadores únicos requeridos:
+            idempotencia = str(uuid.uuid4())  # Idempotency-ID para evitar procesar duplicados&#8203;:contentReference[oaicite:11]{index=11}
+            end_to_end = str(uuid.uuid4())    # EndToEnd ID único para identificar la transacción (PaymentIdentification)
+
+            # Construir el payload JSON conforme a SepaCreditTransferRequest
+            payload = {
+                "debtor": {"debtorName": nombre_deudor},
+                "debtorAccount": {"iban": iban_deudor, "currency": "EUR"},
+                "debtorAgent": {"financialInstitutionId": {"bic": bic_deudor}},
+                "creditor": {"creditorName": nombre_acreedor},
+                "creditorAccount": {"iban": iban_acreedor, "currency": "EUR"},
+                "creditorAgent": {"financialInstitutionId": {"bic": bic_acreedor}},
+                "instructedAmount": {"amount": float(importe), "currency": "EUR"},
+                "paymentIdentification": {"endToEndIdentification": end_to_end},
+                "remittanceInformationUnstructured": concepto or ""
+            }
+
+            # Construir cabeceras HTTP, incluyendo OTP e Idempotency-ID según API
+            headers = {
+                "Authorization": f"Bearer {API_TOKEN}",
+                "idempotency-id": idempotencia,
+                "otp": otp,
+                "Content-Type": "application/json"
+            }
+
+            # Llamar al API del banco para crear la transferencia (petición HTTP POST)
+            try:
+                response = requests.post(API_URL, json=payload, headers=headers)
+            except Exception as e:
+                # Manejo básico de error de conexión
+                error_msg = f"Error de conexión con el banco: {e}"
+                return render(request, 'transferencias/crear.html', {'form': form, 'error': error_msg})
+
+            if response.status_code == 201:
+                # Transferencia iniciada exitosamente (HTTP 201 Created)
+                data = response.json()  # Respuesta esperada con SepaCreditTransferResponse
+                # Crear registro en la base de datos con los datos de la transferencia
+                transferencia = Transferencia.objects.create(
+                    nombre_deudor=nombre_deudor,
+                    iban_deudor=iban_deudor,
+                    bic_deudor=bic_deudor,
+                    nombre_acreedor=nombre_acreedor,
+                    iban_acreedor=iban_acreedor,
+                    bic_acreedor=bic_acreedor,
+                    importe=importe,
+                    concepto=concepto,
+                    payment_id=data.get("paymentId"),
+                    auth_id=data.get("authId"),
+                    estado=data.get("transactionStatus", "")
+                )
+                # Generar archivos XML pain.001 y pain.002
+                transferencia.pain001 = generar_pain001(transferencia, end_to_end)
+                transferencia.pain002 = generar_pain002(transferencia, transferencia.estado)
+                transferencia.save()
+                # Redirigir a la página de detalle para mostrar la respuesta del banco
+                return redirect('transferencias:detalle', pk=transferencia.pk)
+            else:
+                # Hubo un error en la petición (p.ej., datos inválidos u OTP incorrecta)
+                # Obtener mensaje de error devuelto por el API (si existe)
+                try:
+                    error_data = response.json()
+                except ValueError:
+                    error_data = {}
+                mensaje_error = error_data.get("message") or error_data.get("errors") or "Error al enviar la transferencia."
+                return render(request, 'transferencias/crear.html', {'form': form, 'error': mensaje_error})
+    else:
+        # Método GET: mostrar formulario vacío
+        form = TransferenciaForm()
+    return render(request, 'transferencias/crear.html', {'form': form})
+
+def detalle_transferencia(request, pk):
+    """Vista para mostrar el detalle de una transferencia específica."""
+    transferencia = get_object_or_404(Transferencia, pk=pk)
+    return render(request, 'transferencias/detalle.html', {'transferencia': transferencia})
+
+def consultar_estado(request):
+    """Vista para consultar el estado de una transferencia existente mediante paymentId."""
+    status_info = None
+    error = None
+    payment_id = None
+    # Si se pasó un paymentId por GET (p.ej., via URL con query) o por formulario (POST):
+    if ('payment_id' in request.GET and request.GET['payment_id']) or request.method == 'POST':
+        # Obtener el paymentId ya sea de GET o POST
+        payment_id = request.GET.get('payment_id') or request.POST.get('payment_id')
+        if payment_id:
+            # Llamar al API de estado del banco (GET /{paymentId}/status)
+            try:
+                resp = requests.get(f"{API_URL}/{payment_id}/status", 
+                                     headers={"Authorization": f"Bearer {API_TOKEN}"})
+            except Exception as e:
+                error = f"Error de conexión al consultar estado: {e}"
+            else:
+                if resp.status_code == 200:
+                    data = resp.json()  # SepaCreditTransferResponse con posiblemente nuevo estado
+                    status_info = data.get("transactionStatus")
+                    # Actualizar el registro en BD si existe
+                    try:
+                        trans = Transferencia.objects.get(payment_id=payment_id)
+                        trans.estado = status_info or trans.estado
+                        # Generar nuevo pain.002 con el estado actualizado
+                        trans.pain002 = generar_pain002(trans, trans.estado)
+                        trans.save()
+                    except Transferencia.DoesNotExist:
+                        pass  # Si no existe en BD (posible pero no común), ignoramos
+                else:
+                    # Manejar error (por ejemplo, paymentId no encontrado o sin autorización)
+                    try:
+                        err_data = resp.json()
+                        error = err_data.get("message", "No se pudo consultar el estado (error API).")
+                    except ValueError:
+                        error = "No se pudo consultar el estado. Verifique el Payment ID."
+    return render(request, 'transferencias/estado.html', {
+        'payment_id': payment_id,
+        'status': status_info,
+        'error': error
+    })
+
+def lista_transferencias(request):
+    """Vista para listar todas las transferencias registradas."""
+    transferencias = Transferencia.objects.all().order_by('-fecha_creacion')
+    return render(request, 'transferencias/lista.html', {'transferencias': transferencias})
+
+
+# Funciones auxiliares para generar archivos pain.001 y pain.002 en formato XML:
+import xml.etree.ElementTree as ET
+
+def generar_pain001(transferencia, end_to_end_id):
+    """Genera el contenido XML de un mensaje pain.001 (CustomerCreditTransferInitiation) para la transferencia dada."""
+    NS = "urn:iso:std:iso:20022:tech:xsd:pain.001.001.03"
+    ET.register_namespace('', NS)
+    # Elemento raíz Document
+    root = ET.Element(f'{{{NS}}}Document')
+    cct = ET.SubElement(root, 'CstmrCdtTrfInitn')
+    # Grupo de encabezado (GrpHdr)
+    grp_hdr = ET.SubElement(cct, 'GrpHdr')
+    ET.SubElement(grp_hdr, 'MsgId').text = str(uuid.uuid4())  # identificador único del mensaje
+    ET.SubElement(grp_hdr, 'CreDtTm').text = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    ET.SubElement(grp_hdr, 'NbOfTxs').text = "1"
+    ET.SubElement(grp_hdr, 'CtrlSum').text = str(transferencia.importe)
+    initg_p = ET.SubElement(grp_hdr, 'InitgPty')
+    ET.SubElement(initg_p, 'Nm').text = transferencia.nombre_deudor
+    # Información de pago (PmtInf)
+    pmt_inf = ET.SubElement(cct, 'PmtInf')
+    ET.SubElement(pmt_inf, 'PmtInfId').text = str(uuid.uuid4())  # identificador del lote de pago
+    ET.SubElement(pmt_inf, 'PmtMtd').text = "TRF"
+    ET.SubElement(pmt_inf, 'ReqdExctnDt').text = date.today().strftime("%Y-%m-%d")
+    # Deudor (Dbtr)
+    dbtr = ET.SubElement(pmt_inf, 'Dbtr')
+    ET.SubElement(dbtr, 'Nm').text = transferencia.nombre_deudor
+    # Cuenta del deudor (DbtrAcct)
+    dbtr_acct = ET.SubElement(pmt_inf, 'DbtrAcct')
+    ET.SubElement(ET.SubElement(dbtr_acct, 'Id'), 'IBAN').text = transferencia.iban_deudor
+    ET.SubElement(dbtr_acct, 'Ccy').text = "EUR"
+    # Agente del deudor (DbtrAgt)
+    dbtr_agt = ET.SubElement(pmt_inf, 'DbtrAgt')
+    ET.SubElement(ET.SubElement(dbtr_agt, 'FinInstnId'), 'BIC').text = transferencia.bic_deudor
+    # Información de la transacción de crédito (CdtTrfTxInf)
+    cdt_trf = ET.SubElement(pmt_inf, 'CdtTrfTxInf')
+    pmt_id = ET.SubElement(cdt_trf, 'PmtId')
+    ET.SubElement(pmt_id, 'EndToEndId').text = end_to_end_id  # identificador de la transacción de extremo a extremo
+    # Monto instruido
+    amt = ET.SubElement(cdt_trf, 'Amt')
+    ET.SubElement(amt, 'InstdAmt', Ccy="EUR").text = str(transferencia.importe)
+    # Agente del acreedor (CdtrAgt)
+    cdtr_agt = ET.SubElement(cdt_trf, 'CdtrAgt')
+    ET.SubElement(ET.SubElement(cdtr_agt, 'FinInstnId'), 'BIC').text = transferencia.bic_acreedor
+    # Acreedor (Cdtr)
+    cdtr = ET.SubElement(cdt_trf, 'Cdtr')
+    ET.SubElement(cdtr, 'Nm').text = transferencia.nombre_acreedor
+    # Cuenta del acreedor (CdtrAcct)
+    cdtr_acct = ET.SubElement(cdt_trf, 'CdtrAcct')
+    ET.SubElement(ET.SubElement(cdtr_acct, 'Id'), 'IBAN').text = transferencia.iban_acreedor
+    ET.SubElement(cdtr_acct, 'Ccy').text = "EUR"
+    # Información de remesa (concepto), opcional
+    if transferencia.concepto:
+        rmt_inf = ET.SubElement(cdt_trf, 'RmtInf')
+        ET.SubElement(rmt_inf, 'Ustrd').text = transferencia.concepto
+
+    # Convertir el árbol XML a string con declaración XML
+    xml_bytes = ET.tostring(root, encoding='utf-8', xml_declaration=True)
+    return xml_bytes.decode('utf-8')
+
+def generar_pain002(transferencia, estado_tx):
+    """Genera el contenido XML de un mensaje pain.002 (CustomerPaymentStatusReport) con el estado dado."""
+    NS2 = "urn:iso:std:iso:20022:tech:xsd:pain.002.001.03"
+    ET.register_namespace('', NS2)
+    root = ET.Element(f'{{{NS2}}}Document')
+    cpsr = ET.SubElement(root, 'CstmrPmtStsRpt')
+    # Encabezado del reporte (GrpHdr)
+    grp_hdr = ET.SubElement(cpsr, 'GrpHdr')
+    ET.SubElement(grp_hdr, 'MsgId').text = str(uuid.uuid4())
+    ET.SubElement(grp_hdr, 'CreDtTm').text = datetime.now().strftime("%Y-%m-%dT%H:%M:%S")
+    # Información original del grupo (OrgnlGrpInfAndSts)
+    orgnl_grp = ET.SubElement(cpsr, 'OrgnlGrpInfAndSts')
+    ET.SubElement(orgnl_grp, 'OrgnlMsgId').text = transferencia.payment_id or ""
+    ET.SubElement(orgnl_grp, 'OrgnlNbOfTxs').text = "1"
+    ET.SubElement(orgnl_grp, 'OrgnlCtrlSum').text = str(transferencia.importe)
+    # Estado del grupo (si toda la orden fue rechazada o aceptada)
+    ET.SubElement(orgnl_grp, 'GrpSts').text = "RJCT" if estado_tx == "RJCT" else "ACTC"
+    # Información original del pago y estado (OrgnlPmtInfAndSts)
+    orgnl_pmt = ET.SubElement(cpsr, 'OrgnlPmtInfAndSts')
+    ET.SubElement(orgnl_pmt, 'OrgnlPmtInfId').text = ""  # no usamos PaymentInfoId explícito
+    tx_inf = ET.SubElement(orgnl_pmt, 'TxInfAndSts')
+    ET.SubElement(tx_inf, 'OrgnlEndToEndId').text = ""  # podríamos almacenar y usar el EndToEndId aquí
+    ET.SubElement(tx_inf, 'TxSts').text = estado_tx or ""
+    # Nota: Se podría añadir <StsRsnInf> con código de rechazo si estado = RJCT
+    xml_bytes = ET.tostring(root, encoding='utf-8', xml_declaration=True)
+    return xml_bytes.decode('utf-8')
+
+Explicación de las vistas y la lógica:
+
+    crear_transferencia: maneja tanto la visualización del formulario (GET) como el procesamiento de la solicitud (POST). Cuando el usuario envía el formulario, extraemos los datos y construimos el JSON (payload) conforme a la especificación SepaCreditTransferRequest. Observaciones importantes:
+
+        Generamos un Idempotency-ID único para la llamada usando uuid.uuid4(). El API del banco requiere este identificador en la cabecera para evitar procesar la misma solicitud dos veces en caso de reintentos​
+        file-uadlswpqtz3sp9iz9egad6
+        . Nuestro sistema siempre envía uno nuevo por cada transferencia iniciada.
+
+        Incluimos la OTP proporcionada por el usuario en la cabecera de la petición ("otp": otp). Sin este valor, el banco rechazaría la operación porque es obligatorio autenticar la transferencia con un segundo factor​
+        file-uadlswpqtz3sp9iz9egad6
+        . Si el OTP es incorrecto o expiró, el banco responderá con código de error (por ejemplo, código 17 "Invalid OTP"​
+        file-uadlswpqtz3sp9iz9egad6
+        ). En caso de PushTAN, enviamos "PUSHTAN" para indicar al banco que use autorización por notificación​
+        file-uadlswpqtz3sp9iz9egad6
+        .
+
+        Construimos el cuerpo JSON con los campos esperados: debtor, debtorAccount, debtorAgent, creditor, creditorAccount, creditorAgent, instructedAmount, paymentIdentification y remittanceInformationUnstructured. Nótese que:
+
+            currency se fija a "EUR" en cuentas e importe (por la restricción comentada).
+
+            Usamos el End-to-End Identification generado (end_to_end) para paymentIdentification.endToEndIdentification. Este identificador sirve para ligar la transacción de punta a punta (ordenante-beneficiario) y suele ser un código único por transferencia. En este ejemplo simplemente usamos un UUID, pero podría ser algún identificador significativo (ej: número de factura).
+
+            El campo remittanceInformationUnstructured lleva el concepto o referencia libre de la transferencia, hasta 140 caracteres.
+
+            No estamos enviando requestedExecutionDate en el payload; si se quisiera permitir programar la transferencia para una fecha futura, podríamos añadirlo (formato AAAA-MM-DD). En ausencia de este campo, el banco suele procesar la transferencia lo antes posible (misma fecha, si aún es día hábil).
+
+            Los campos purposeCode o remittanceInformationStructured no se usan en este formulario para simplificar.
+
+        Realizamos la llamada HTTP POST al API del banco usando la librería requests. Se incluye la cabecera Authorization: Bearer <token> con un token de acceso válido (en un entorno real, este token se obtiene previamente vía OAuth2 con las credenciales del cliente y debe manejarse con seguridad).
+
+        Si la respuesta es exitosa (201 Created), extraemos los datos JSON devueltos. Según la especificación, la respuesta exitosa (SepaCreditTransferResponse) contiene al menos:
+
+            paymentId: el identificador único de la transferencia registrada en el banco (lo guardamos).
+
+            authId: un identificador de autenticación (lo guardamos por si se requiere continuar un flujo SCA).
+
+            transactionStatus: estado inicial de la transacción. Por ejemplo, puede ser "ACSP" (aceptada para procesamiento) si todo está correcto, o "PDNG" si quedó pendiente de autorización adicional, etc.​
+            file-uadlswpqtz3sp9iz9egad6
+            .
+
+        Creamos la instancia Transferencia en la base de datos con todos los datos: los del formulario más los campos de respuesta (payment_id, auth_id, estado). Esto garantiza que toda transferencia enviada quede registrada junto a su estado inicial.
+
+        Generamos los archivos XML:
+
+            pain.001: Llamamos a generar_pain001(), pasando la instancia de Transferencia y el end_to_end_id que usamos en la solicitud. Esta función construye el XML de acuerdo al esquema ISO 20022 CustomerCreditTransferInitiation (pain.001.001.03) con los datos de la transferencia. Incluimos un único pago en el mensaje (NbOfTxs = 1). En la implementación, se crean elementos XML para Group Header (MsgId, CreDtTm, etc.), Payment Information (datos del deudor, cuenta deudor, agente deudor, etc.) y Credit Transfer Transaction Information (importe, acreedor, cuenta acreedor, agente acreedor, referencia EndToEnd, y concepto de pago). El resultado es una cadena XML que almacenamos en transferencia.pain001.
+
+            pain.002: Llamamos a generar_pain002(), pasando la instancia y el estado actual (transactionStatus). Esta función construye un XML CustomerPaymentStatusReport (pain.002.001.03). Aquí simplificamos: colocamos el estado de la transacción (TxSts) y marcamos el estado del grupo (GrpSts) como ACTC (Accepted Technical) si no es rechazo, o RJCT si fue rechazado. En un escenario real, un pain.002 podría contener más información (por ejemplo, códigos de motivo de rechazo). Al guardar este pain002, estamos registrando la respuesta inmediata del banco. Más adelante, si la transacción evoluciona (por ejemplo, de PDNG a ACSP o a RJCT), podemos generar un nuevo pain.002 actualizado.
+
+        Finalmente, redirigimos al usuario a la vista de detalle de la transferencia recién creada, para mostrarle la información y confirmación.
+
+    Si la respuesta del API no es 201 (por ejemplo, error 400 por datos inválidos, 401 por token inválido, 409 por OTP incorrecto, etc.), capturamos el mensaje de error devuelto (si lo hay) y lo mostramos en la plantilla de creación. De este modo, el usuario podría corregir la información y reintentar. Por ejemplo, si el código OTP es erróneo, el banco podría devolver "Invalid OTP."​
+    file-uadlswpqtz3sp9iz9egad6
+    , que pasaríamos a la plantilla como error.
+
+    detalle_transferencia: recupera de la base de datos la transferencia solicitada (por pk) y renderiza la plantilla de detalle. Esta plantilla mostrará todos los campos de la transferencia, incluyendo el estado actual y los contenidos de los archivos XML guardados. No hay lógica adicional aquí, solo lectura de datos. (Si la transferencia no existe, get_object_or_404 regresará un 404).
+
+    consultar_estado: permite al usuario consultar el estado actualizado de una transferencia usando su paymentId. Esta vista maneja tanto GET (si se pasa un payment_id en la URL, por ejemplo como query string) como POST (si se envía desde un formulario).
+
+        Cuando recibe un paymentId, realiza una petición GET al endpoint de estado del banco: GET /{paymentId}/status. Si la llamada es exitosa (código 200), obtenemos un SepaCreditTransferResponse con (posiblemente actualizado) transactionStatus​
+        file-uadlswpqtz3sp9iz9egad6
+        ​
+        file-uadlswpqtz3sp9iz9egad6
+        . Actualizamos el campo estado de nuestra Transferencia en BD si la encontramos por payment_id, y también generamos un nuevo pain.002 con el estado actualizado (sobrescribiendo el anterior en transferencia.pain002). Así mantenemos un registro del último estado conocido en formato XML. Luego, pasamos el nuevo estado a la plantilla.
+
+        Si hay un error (por ejemplo, se consulta un paymentId inexistente o sin autorización), capturamos el mensaje de error para mostrar. Un error común sería consultar antes de haber enviado correctamente la transferencia o un ID mal copiado.
+
+        La plantilla estado.html muestra un simple formulario donde ingresar el Payment ID y, tras consultar, el resultado (estado) obtenido.
+
+    Consideración: Si la transferencia fue iniciada usando PushTAN (es decir, se envió OTP = "PUSHTAN"), es probable que el estado inicial fuera PDNG (pendiente), esperando a que el usuario autorice la notificación. En tal caso, la aplicación debería seguir consultando el estado hasta que cambie a ACSP (aceptada) o RJCT (rechazada), o implementar un mecanismo de notificación. Nuestra vista de consulta permite al usuario manualmente verificar el estado. Una mejora sería implementar un auto-refresh o una tarea programada que consulte el estado en segundo plano. Asimismo, si el flujo SCA exige un PATCH con authId (ej. para photoTAN), habría que implementar otra vista/función para completar la autorización. En este proyecto nos centramos en el flujo simple (OTP conocida o pushTAN).
+
+    lista_transferencias: lista todas las transferencias guardadas, ordenadas por fecha de creación descendente. Esta vista no era requerida explícitamente, pero es útil para la navegación (por ejemplo, una página principal donde ver todas las transacciones iniciadas, con enlaces a sus detalles). Así podemos verificar rápidamente las transferencias registradas y sus estados.
+
+    Funciones generar_pain001 y generar_pain002: Son funciones de ayuda para convertir los datos de la transferencia en XML ISO20022. Se podría ubicar estas funciones en un archivo utilitario separado o incluso implementarlas como métodos del modelo Transferencia. Aquí se incluyen en la vista para ilustrar su implementación. Usamos Python xml.etree.ElementTree para construir el XML nodo por nodo:
+
+        En generar_pain001, se construye un árbol XML que sigue la estructura del mensaje pain.001.001.03, incluyendo:
+
+            <GrpHdr> (Group Header): contiene identificador de mensaje (MsgId), fecha/hora de creación (CreDtTm), número de transacciones (NbOfTxs =1), suma de montos (CtrlSum) y la identidad del iniciador (InitgPty.Nm = nombre del deudor).
+
+            <PmtInf> (Payment Information): agrupa los detalles de la orden de pago, con un ID de pago (PmtInfId), método de pago TRF (transferencia), fecha de ejecución requerida (ReqdExctnDt = hoy, si es inmediata), datos del deudor (nombre, cuenta IBAN, moneda, agente/BIC) y finalmente la sección de la transacción individual <CdtTrfTxInf>.
+
+            Dentro de <CdtTrfTxInf>: el PaymentId con el EndToEndId que generamos (este identificador viajará con la transacción hasta el beneficiario, suele aparecer en los extractos del beneficiario), el monto (InstdAmt con currency EUR), los datos del acreedor (agente/BIC, nombre, cuenta IBAN) y la información de remesa <RmtInf> si hay un concepto.
+
+            Esta estructura refleja los campos que enviamos en JSON al API (deudor, acreedor, importe, etc.), por lo que sirve para auditoría. Finalmente convertimos el árbol a texto XML (con declaración <?xml ...?> incluida) para almacenamiento.
+
+        En generar_pain002, creamos un XML con estructura pain.002.001.03, que es un informe de estado de pago:
+
+            <GrpHdr>: identificador y fecha del mensaje de estado.
+
+            <OrgnlGrpInfAndSts>: información del mensaje original – en un escenario completo incluiría el MsgId original del pain.001 (aquí usamos payment_id como referencia, aunque estrictamente payment_id es más bien el identificador del recurso en el banco, no el MsgId del XML original; en un caso real podríamos almacenar también el MsgId del pain.001). También se pone OrgnlCtrlSum y OrgnlNbOfTxs (suma e número de transacciones originales).
+
+            Indicamos un GrpSts (estado del grupo de pagos). Ponemos "ACTC" (Accepted Technical) si la transacción no fue rechazada, lo cual indica que la orden pasó validaciones técnicas y está aceptada para ser procesada. Si el estado es rechazo (RJCT), marcamos el grupo como rechazado. Nota: En SEPA, ACTC se usa para confirmar recepción técnica; ACSP suele indicar que el pago fue aceptado para ejecución. Aquí usamos ACTC como estado genérico de aceptación técnica inmediata.
+
+            <OrgnlPmtInfAndSts> y <TxInfAndSts>: contienen el estado de cada transacción individual. Ponemos el TxSts igual al estado actual (estado_tx). Por simplicidad no agregamos códigos de razón (StsRsnInf), aunque si estado_tx fuera "RJCT" podríamos añadir un motivo de rechazo (por ejemplo código AM04 si fondos insuficientes, etc., dependiendo de la causa).
+
+            Este pain.002 permite al usuario ver un comprobante formal del estado. Por ejemplo, si estado_tx es ACSP, significa que el banco aceptó procesar la transferencia; si es RJCT, significa que la transferencia fue rechazada (el XML podría incluir la razón, no implementada aquí).
+
+    En ambos casos registramos el namespace adecuado (ISO 20022) para que el XML resulte conforme al esquema estándar.
+
+Con estas vistas implementadas, cubrimos la lógica de negocio: creación, visualización de detalle y consulta de estado. A continuación definimos las URLs y las plantillas HTML para completar el sistema.
+URLs (urls.py)
+
+Configuramos las rutas de la app transferencias en transferencias/urls.py e incluimos este módulo en el urls.py global del proyecto. Usamos nombres de ruta para poder referenciarlas fácilmente en las plantillas (por ejemplo, transferencias:detalle):
+
+# transferencias/urls.py
+from django.urls import path
+from . import views
+
+app_name = 'transferencias'
+urlpatterns = [
+    path('', views.lista_transferencias, name='lista'),          # Listado de transferencias
+    path('crear/', views.crear_transferencia, name='crear'),     # Formulario de nueva transferencia
+    path('<int:pk>/', views.detalle_transferencia, name='detalle'),  # Detalle de una transferencia específica
+    path('estado/', views.consultar_estado, name='estado'),      # Consulta de estado por paymentId
+]
+
+En el urls.py principal del proyecto, incluiríamos algo como path('transferencias/', include('transferencias.urls')) para montar estas rutas.
+
+Explicación: Las rutas quedan definidas de la siguiente forma:
+
+    La raíz de la app ('') muestra la lista de transferencias registradas.
+
+    crear/ muestra el formulario y procesa la creación de una nueva transferencia.
+
+    <int:pk>/ muestra el detalle de la transferencia con ID (primaria) = pk en nuestra base de datos.
+
+    estado/ muestra la página de consulta de estado (y procesa la consulta).
+
+Hemos asignado el namespace transferencias al incluir app_name, de modo que en las plantillas podemos referirnos a estas rutas con el prefijo, por ejemplo {% url 'transferencias:detalle' transferencia.id %}.
+Plantillas HTML (templates/transferencias/)
+
+A continuación, se presentan las plantillas HTML principales del sistema. Están estructuradas de forma sencilla para demostrar la funcionalidad. Se asume que existe un base.html con el bloque content donde insertaremos el contenido de cada página, y posiblemente incluye referencias a estilos CSS (por ejemplo, clases alert alert-danger usadas para mensajes de error, etc., asumiendo uso de Bootstrap u otro framework para la estética).
+
+Plantilla crear.html – Formulario para crear una nueva transferencia:
+
+{% extends 'base.html' %}
+{% block content %}
+<h1>Crear Transferencia SEPA</h1>
+<p>Ingrese los datos de la transferencia y confirme para enviarla al banco.</p>
+{% if error %}
+  <div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+<form method="post">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Enviar Transferencia</button>
+</form>
+<p><a href="{% url 'transferencias:lista' %}">← Volver al listado</a></p>
+{% endblock %}
+
+Explicación: Se muestra un título y el formulario generado por TransferenciaForm. form.as_p renderiza cada campo dentro de un <p> con su etiqueta y control de entrada apropiado. El campo OTP aparecerá junto con su ayuda (por ejemplo, "Para pushTAN usar 'PUSHTAN'"). Incluimos csrf_token por seguridad contra ataques CSRF (Django lo requiere en formularios POST). Si la vista detectó un error (por ejemplo, respuesta de error del API), lo muestra en un cuadro rojo. Al enviar, se realizará la creación y luego se redirigirá a la página de detalle.
+
+Plantilla detalle.html – Muestra los detalles de una transferencia y la respuesta del banco:
+
+{% extends 'base.html' %}
+{% block content %}
+<h1>Detalle de Transferencia</h1>
+<p><strong>ID de Pago (paymentId):</strong> {{ transferencia.payment_id }}</p>
+<p><strong>Estado actual:</strong> {{ transferencia.estado }}</p>
+<p><strong>Deudor:</strong> {{ transferencia.nombre_deudor }} — IBAN {{ transferencia.iban_deudor }}, BIC {{ transferencia.bic_deudor }}</p>
+<p><strong>Acreedor:</strong> {{ transferencia.nombre_acreedor }} — IBAN {{ transferencia.iban_acreedor }}, BIC {{ transferencia.bic_acreedor }}</p>
+<p><strong>Importe:</strong> {{ transferencia.importe }} EUR</p>
+<p><strong>Concepto:</strong> {{ transferencia.concepto|default:"(Sin concepto)" }}</p>
+
+<h3>Archivo pain.001 (Solicitud XML enviada):</h3>
+<pre style="background: #f8f8f8; padding: 10px; white-space: pre-wrap;">{{ transferencia.pain001|escape }}</pre>
+
+<h3>Archivo pain.002 (Respuesta XML recibida):</h3>
+<pre style="background: #f8f8f8; padding: 10px; white-space: pre-wrap;">{{ transferencia.pain002|escape }}</pre>
+
+<p><a href="{% url 'transferencias:estado' %}?payment_id={{ transferencia.payment_id }}">🔄 Consultar estado actualizado</a></p>
+<p><a href="{% url 'transferencias:lista' %}">← Volver al listado</a></p>
+{% endblock %}
+
+Explicación: Mostramos en párrafos los datos principales de la transferencia y su estado. El Payment ID es importante, pues es la referencia para consultas posteriores. A continuación, se muestran los contenidos de los archivos XML guardados:
+
+    Usamos un <pre> con un fondo gris claro para mostrar el contenido de pain001 y pain002. Aplicamos el filtro escape para que los caracteres especiales (<, >, etc.) se muestren correctamente en HTML en lugar de intentar interpretarse. Esto presenta al usuario el XML “en crudo” que fue enviado y la respuesta de estado. Estas secciones permiten verificar técnicamente el detalle de lo enviado/recibido (útil para auditoría o debugging).
+
+    Debajo, un enlace "Consultar estado actualizado" lleva a la página de consulta de estado, pasando el payment_id como parámetro en la URL. De este modo, el usuario puede fácilmente hacer clic para obtener el estado más reciente desde el banco (por ejemplo, si inicialmente estaba pendiente). Gracias a la lógica de la vista consultar_estado, esto actualizará el registro y podría cambiar el campo estado y el pain002 si hubo novedades.
+
+    Enlace para volver al listado general.
+
+Plantilla estado.html – Consulta manual de estado por Payment ID:
+
+{% extends 'base.html' %}
+{% block content %}
+<h1>Consultar Estado de Transferencia</h1>
+<form method="post" style="margin-bottom: 1em;">
+  {% csrf_token %}
+  <label for="pid">Payment ID:</label>
+  <input type="text" name="payment_id" id="pid" value="{{ payment_id|default:"" }}" required>
+  <button type="submit">Consultar</button>
+</form>
+
+{% if status %}
+  <div class="alert alert-info">
+    Estado actual para <strong>{{ payment_id }}</strong>: <strong>{{ status }}</strong>
+  </div>
+{% elif error %}
+  <div class="alert alert-danger">{{ error }}</div>
+{% endif %}
+
+<p><a href="{% url 'transferencias:lista' %}">← Volver al listado</a></p>
+{% endblock %}
+
+Explicación: Se presenta un formulario muy sencillo donde el usuario puede introducir un Payment ID (UUID) de una transferencia, y al enviar se mostrará el estado correspondiente. La vista consultar_estado rellena el contexto con status cuando encuentra el estado. Si status tiene valor, mostramos un recuadro informativo con el estado; si hay un error, lo mostramos en rojo. Si la petición vino vía enlace desde detalle (con payment_id en query string), el campo de texto ya estará relleno (gracias a value="{{ payment_id }}") y la consulta podría haberse procesado automáticamente, mostrando directamente el resultado. El enlace de "volver" retorna al listado general.
+
+Plantilla lista.html – Listado de todas las transferencias registradas:
+
+{% extends 'base.html' %}
+{% block content %}
+<h1>Transferencias Registradas</h1>
+{% if transferencias %}
+<table border="1" cellpadding="5" cellspacing="0">
+  <tr>
+    <th>ID</th><th>Fecha</th><th>Deudor</th><th>Acreedor</th><th>Importe (EUR)</th><th>Estado</th><th>Detalle</th>
+  </tr>
+  {% for t in transferencias %}
+  <tr>
+    <td>{{ t.id }}</td>
+    <td>{{ t.fecha_creacion|date:"Y-m-d H:i" }}</td>
+    <td>{{ t.nombre_deudor }}</td>
+    <td>{{ t.nombre_acreedor }}</td>
+    <td>{{ t.importe }}</td>
+    <td>{{ t.estado }}</td>
+    <td><a href="{% url 'transferencias:detalle' t.id %}">Ver detalle</a></td>
+  </tr>
+  {% endfor %}
+</table>
+{% else %}
+<p>No hay transferencias registradas.</p>
+{% endif %}
+<p><a href="{% url 'transferencias:crear' %}">+ Crear nueva transferencia</a></p>
+{% endblock %}
+
+Explicación: Este listado tabula cada transferencia con algunos campos principales: su ID interna, fecha/hora, nombre del deudor y acreedor, importe y estado, y un enlace para ver el detalle completo. Es útil para tener una vista general y navegar a la transferencia deseada. Desde aquí un usuario puede optar por crear una nueva transferencia o consultar alguna existente.
+
+Con todas estas plantillas, se cubre la interfaz web completa solicitada.
+Recomendaciones Técnicas y de Seguridad
+
+Al implementar y desplegar este sistema, se deben tener en cuenta varias consideraciones técnicas y de seguridad:
+
+    Seguridad de las credenciales y tokens: El ejemplo incluye un API_TOKEN fijo para llamar al API bancario. En la práctica, las credenciales (client ID/secret) y tokens de acceso no deben estar hardcodeados en el código. Deben almacenarse en variables de entorno o en un servicio seguro de gestión de secretos. Además, el token de acceso puede expirar; habría que implementar la obtención/refresco del token usando OAuth2 antes de las llamadas (por ejemplo, usando el flujo client credentials para obtener un Bearer token válido).
+
+    Comunicaciones seguras: Las llamadas al banco se hacen sobre HTTPS y deben verificar certificados. Nunca se deben enviar datos sensibles sobre conexiones no cifradas. Además, se recomienda configurar timeouts en requests.post/get para evitar que la aplicación quede bloqueada si el banco no responde.
+
+    Validación de datos de entrada: No confíe únicamente en la validación del banco. Implemente validaciones del lado servidor (y idealmente también en el formulario HTML):
+
+        Validar el formato del IBAN (longitud y dígitos de control). Por ejemplo, se puede usar la biblioteca iban-validator o expresiones regulares específicas​
+        file-uadlswpqtz3sp9iz9egad6
+        .
+
+        Validar el formato del BIC (8 o 11 caracteres alfanuméricos).
+
+        Asegurarse de que el importe sea positivo y razonable (y posiblemente menor que un límite diario).
+
+        El nombre del deudor/acreedor no debe exceder 140 caracteres (límite ISO20022) y no contener caracteres no permitidos.
+
+        Si se incluye requestedExecutionDate, validar que la fecha no sea un festivo o más de 90 días en el futuro, según reglas del banco​
+        file-uadlswpqtz3sp9iz9egad6
+        .
+
+    Uso correcto de OTP: La contraseña de un solo uso es sensible. No almacenarla en la base de datos ni en logs. Si se utiliza un flujo photoTAN donde el usuario debe escanear una imagen para obtener la OTP, habría que integrar la obtención de esa imagen (otro endpoint del banco) y presentar al usuario el desafío. Si se utiliza pushTAN, la respuesta inicial será PDNG y el usuario deberá aprobar en su dispositivo; nuestra aplicación debe manejar la espera de ese estado (por ejemplo, mostrando un mensaje tipo "Autorizando, por favor confirme en su app y luego consulte el estado"). Los mensajes de error devueltos (códigos 138, 139 en la especificación) orientan sobre si usar PATCH o GET según el tipo de OTP pendiente​
+    file-uadlswpqtz3sp9iz9egad6
+    . Por simplicidad, aquí no implementamos el flujo completo de challenge/response, pero en producción debería contemplarse.
+
+    Idempotencia: Ya implementamos el uso de Idempotency-ID​
+    file-uadlswpqtz3sp9iz9egad6
+    . Es importante, en caso de error de comunicación, no volver a enviar la misma orden con un nuevo idempotency-id sin antes comprobar si la anterior pudo haber llegado. Nuestra implementación siempre usa un nuevo UUID por envío; esto evita duplicados en casi todos los casos, pero como mejora, si recibe un error de red (desconocido si la transferencia se creó o no), podría reintentar con el mismo Idempotency-ID para que el banco no duplique la transacción.
+
+    Manejo de errores y estados pendientes: Además de OTP inválido, otros errores pueden ocurrir (por ejemplo, IBAN inválido, saldo insuficiente, límite diario excedido, etc.). El API devuelve códigos de error descriptivos (como 6501 si datos del banco contratante faltan, 6524 por límite diario excedido, etc.​
+    file-uadlswpqtz3sp9iz9egad6
+    ​
+    file-uadlswpqtz3sp9iz9egad6
+    ). Sería útil mapear algunos de estos códigos a mensajes más amigables para el usuario en su idioma. En el caso de una transferencia pendiente (PDNG), habría que informar al usuario que la transacción está pendiente de confirmación (y posiblemente refrescar hasta obtener confirmación).
+
+    Protección de la aplicación: Dado que no hay autenticación, si esta aplicación estuviera expuesta en una red abierta, cualquiera podría acceder al formulario y enviar transferencias (si tiene los datos requeridos). Esto es un gran riesgo. Si el escenario es un uso interno (ej. solo personal autorizado puede acceder en una intranet), al menos debería implementarse una restricción de acceso (por IP o mediante autenticación básica de servidor web). Otra opción es integrar autenticación Django si en el futuro se quisiera usar de forma pública.
+
+    Registrar actividad y auditoría: Se podría extender el modelo para guardar un historial de cambios de estado (por ejemplo, cada vez que se consulta y cambia estado, guardar un registro con timestamp). También sería recomendable loguear las solicitudes/respuestas (quizá truncando datos sensibles) para auditoría en caso de disputas.
+
+    No exponer directamente datos sensibles: En la plantilla de detalle exponemos IBAN y BIC abiertamente porque asumimos un entorno seguro. En una aplicación real, mostrar datos completos de las cuentas podría ser sensible; podría enmascararse parte del IBAN (aunque en transferencias suele ser necesario ver todo para verificar). Los archivos XML contienen datos completos; su descarga quizás debería restringirse o protegerse si hubiera múltiples usuarios con distintos permisos.
+
+    Uso de archivos vs base de datos: Estamos almacenando los XML en campos de texto en la base de datos por conveniencia. En producción, si los archivos son pesados o si se prefieren archivos físicos, se podría usar un FileField y guardar los XML en el sistema de archivos o en un almacenamiento de blobs. Luego se pondrían enlaces para descargarlos. Aquí optamos por texto para facilidad de visualización.
+
+    Formato de fechas y zonas horarias: Nos aseguramos de enviar fechas en formato correcto (ISO 8601). La hora de creación CreDtTm en pain.001 y pain.002 se genera con la hora del servidor; en un entorno multi-zona horaria, podría ajustarse a UTC.
+
+    Tests: Probar el sistema con el simulador del banco o ambiente de pruebas es esencial. Verificar que las transferencias se realicen correctamente y que los estados se actualicen según lo esperado.
+
+    Escalabilidad: Si se fueran a procesar muchas transferencias concurrentemente, habría que considerar el uso de colas (por ejemplo, Celery) para enviar las peticiones al banco de forma asíncrona sin bloquear la web. En este proyecto, cada envío es sincrónico (el usuario espera la respuesta del banco para ver la confirmación). Para lotes más grandes, podría haber un módulo de bulk payments (la especificación menciona endpoints de bulk_sepa_credit_transfer).
+
+    Actualización automática de estado: Como mejora de experiencia, la página de detalle podría hacer polling automático (via JavaScript) del estado cada X segundos si detecta un estado PDNG, para avisar al usuario cuando pase a ACSP o RJCT. Alternativamente, implementar un webhook/callback si el banco lo ofreciera.
+
+    Depuración: Durante el desarrollo, es útil imprimir o loguear el JSON enviado al banco y su respuesta. En producción, es mejor limitar estos logs para no exponer datos sensibles.
+
+En resumen, aunque el sistema presentado cumple con los requisitos funcionales, es importante incorporar medidas de seguridad y buenas prácticas adicionales antes de un uso real en producción.
+Diagrama de Flujo de la Transacción
+
+Figura: Diagrama del flujo de la transacción SEPA en el sistema Django. En este diagrama se ilustran todos los pasos involucrados:
+
+    El usuario completa el formulario HTML con los datos del deudor, acreedor, importe y OTP para la transferencia.
+
+    La aplicación Django genera el mensaje pain.001 (XML de solicitud) con esos datos y envía la petición SepaCreditTransferRequest (JSON) al API del banco correspondiente.
+
+    El banco procesa la solicitud. Si todo es válido, crea la transferencia y responde inmediatamente con un SepaCreditTransferResponse que incluye al menos un paymentId (identificador de la transacción) y un estado inicial (transactionStatus). Puede requerir pasos adicionales si la OTP no fue definitiva (por ejemplo, espera de pushTAN).
+
+    Nuestra aplicación recibe la respuesta y la registra en la base de datos creando una entrada de Transferencia con el paymentId, estado inicial, etc. Asimismo, genera y guarda los archivos XML: el pain.001 enviado y un pain.002 representando la respuesta del banco con el estado inicial.
+
+    La aplicación muestra al usuario una página de confirmación (detalle de la transferencia) con el estado reportado por el banco (por ej. "Pendiente de autorización" o "Aceptada para procesamiento") junto con los archivos pain.001 y pain.002 para transparencia.
+
+    Más tarde, el usuario puede querer verificar el estado final. Provee el paymentId de la transferencia (ya sea copiándolo o utilizando el enlace en la página de detalle) en la sección de consulta de estado.
+
+    La aplicación Django entonces realiza una llamada GET al API del banco al endpoint de estado (/{paymentId}/status), usando el paymentId proporcionado.
+
+    El banco devuelve un SepaCreditTransferResponse con el estado actualizado de la transacción (por ejemplo, cambiado de PDNG a ACSP si el usuario aprobó la operación en su app bancaria, o quizás a RJCT si fue rechazada por algún motivo).
+
+    Finalmente, la aplicación actualiza el registro de la transferencia en la base de datos con el nuevo estado, genera un pain.002 actualizado con este estado y lo muestra al usuario. De esta forma, el usuario obtiene la confirmación final de que la transferencia se completó exitosamente o el motivo de rechazo en caso contrario.
+
+Este flujo garantiza que cada transferencia SEPA pueda ser iniciada y monitoreada desde nuestro sistema Django, manteniendo un registro completo de la transacción y sus estados en todo momento. En resumen, hemos construido un sistema robusto que integra Django con un servicio bancario de pagos SEPA, cumpliendo con la especificación requerida y mostrando tanto la interacción en frontend (HTML) como la comunicación backend con el API bancario. Esto proporciona una base sólida para enviar transferencias SEPA de forma automatizada y controlada.

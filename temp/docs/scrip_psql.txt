@@ -1,0 +1,57 @@
+importar y exportar 
+dumpdata - loaddata
+
+Descargar datos
+python manage.py dumpdata --indent 2 > database.json
+
+Subir datos
+python manage.py loaddata database.json
+
+
+
+Datos:
+nombre_base_datos = "api_db"
+nombre_usuario = "markmur88"
+contraseña_segura = "Ptf8454Jd55"
+
+1. Instalación de PostgreSQL:
+sudo apt install postgresql postgresql-contrib postgresql-doc postgresql-doc-17 isag gnuplot-doc rcs -y
+
+2. Habilitar y arrancar el servicio:
+sudo service postgresql start
+sudo service postgresql status
+
+3. Reiniciar el servicio (opcional):
+service postgresql restart
+
+4. Acceso al cliente psql como usuario postgres:
+
+5. Creación de la base de datos y usuario: Los comandos SQL tienen un pequeño error, ya que CREATE DATABASE y CREATE USER no soportan la cláusula IF NOT EXISTS. Deberías eliminarlas o verificar manualmente si ya existen antes de ejecutarlos. El bloque corregido sería:
+6. Asignación de privilegios: Los comandos para otorgar privilegios están correctos, pero asegúrate de que el esquema public sea el que deseas usar. El bloque completo sería:
+
+
+sudo -u postgres psql
+
+
+sudo apt install postgresql postgresql-contrib postgresql-doc postgresql-doc-17 isag gnuplot-doc rcs -y
+
+sudo systemctl enable postgresql
+sudo systemctl start postgresql
+sudo systemctl status postgresql
+
+
+CREATE USER markmur88 WITH PASSWORD 'Ptf8454Jd55';
+ALTER USER markmur88 WITH SUPERUSER;
+GRANT USAGE, CREATE ON SCHEMA public TO markmur88;
+GRANT ALL PRIVILEGES ON SCHEMA public TO markmur88;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO markmur88;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO markmur88;
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO markmur88;
+
+
+sudo -u postgres psql
+DROP DATABASE mydatabase;
+CREATE DATABASE mydatabase;
+GRANT ALL PRIVILEGES ON DATABASE mydatabase TO markmur88;
+GRANT CONNECT ON DATABASE mydatabase TO markmur88;
+GRANT CREATE ON DATABASE mydatabase TO markmur88;
