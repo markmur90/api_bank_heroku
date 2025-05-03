@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 set -euo pipefail
-source $HOME/Documentos/Entorno/venvAPI/bin/activate
 
 # Configura tus credenciales locales y remotas
 LOCAL_DB_NAME="mydatabase"

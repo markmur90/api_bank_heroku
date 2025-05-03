@@ -1,7 +1,5 @@
 #!/bin/bash
 # Script de inicio
-source $HOME/Documentos/Entorno/venvAPI/bin/activate
-
 echo " "
 echo -e "\n\033[1;34m🔧 **\033[1;4;34mIniciando configuración del entorno...\033[0m**\033[0m"
 echo " "
@@ -52,7 +50,7 @@ echo " "
 echo " "
 echo -e "\n\033[1;34m🔄 **\033[1;4;34mSincronizando con remoto...\033[0m**\033[0m"
 echo " "
-read -p "¿Desea ejecutar 06sync_to_remote.sh? (s/n): " respuesta
+read -p "¿Desea ejecutar 04sync_to_remote.sh? (s/n): " respuesta
 echo " "
 if [[ "$respuesta" == "s" ]]; then
     bash ./06sync_to_remote.sh
@@ -60,10 +58,10 @@ fi
 echo " "
 echo " "
 echo " "
-echo -e "\n\033[1;34m🚀 **\033[1;4;34mIniciando servidor con Gunicorn y Honeypot...\033[0m**\033[0m"
+echo -e "\n\033[1;34m🚀 **\033[1;4;34mIniciando servidor con Gunicorn...\033[0m**\033[0m"
 echo " "
-read -p "¿Desea ejecutar 07script_completo.sh? (s/n): " respuesta
+read -p "¿Desea ejecutar 05Gunicorn.sh? (s/n): " respuesta
 echo " "
 if [[ "$respuesta" == "s" ]]; then
-    bash ./07script_completo.sh
+    bash ./05Gunicorn.sh
 fi

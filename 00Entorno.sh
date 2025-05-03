@@ -14,7 +14,7 @@ source $HOME/Documentos/Entorno/venvAPI/bin/activate
 echo "  "
 
 
-pip3 install -r /home/markmur88/Documentos/GitHub/api_bank_h2/requirements.txt
+pip3 install -r $HOME/Documentos/GitHub/api_bank_h2/requirements.txt
 
 echo "  "
 

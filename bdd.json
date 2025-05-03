@@ -3386,5 +3386,143 @@
         "app_label": "gpt4",
         "model": "logtransferencia"
     }
+},
+{
+    "model": "sessions.session",
+    "pk": "rpb8yxkbcwqgh50hbidt6r9qjtlm6uv7",
+    "fields": {
+        "session_data": ".eJxVjEEOwiAQRe_C2hCgHaAu3XsGMgyDVA0kpV0Z765NutDtf-_9lwi4rSVsnZcwJ3EWWpx-t4j04LqDdMd6a5JaXZc5yl2RB-3y2hI_L4f7d1Cwl29NQKjsSNY78llFzYl5wgg8KBsHA5PR3qSYR2WzUxZ9BkjOZQJnAb14fwD2CDgQ:1uAfBh:r9Vd2_8Gm8OsPzB-nb-dAskUH6SiIP7F8XCxk3B0A0U",
+        "expire_date": "2025-05-02T01:57:37.463Z"
+    }
+},
+{
+    "model": "authentication.customuser",
+    "pk": 1,
+    "fields": {
+        "password": "pbkdf2_sha256$1000000$ioc9S9qzOCwsue1asA6GOP$7KpTd08XBXUsW5A418aQRkh3XduZ+qvpIbL36CVsSXo=",
+        "last_login": "2025-05-02T01:27:37.442Z",
+        "is_superuser": true,
+        "email": "j.moltke@db.com",
+        "username": "493069k1",
+        "phone": null,
+        "is_active": true,
+        "is_staff": true,
+        "groups": [],
+        "user_permissions": []
+    }
+},
+{
+    "model": "gpt3.address",
+    "pk": 1,
+    "fields": {
+        "country": "DE",
+        "street_and_house_number": "TAUNUSANLAGE 12",
+        "zip_code_and_city": "60325 FRANKFURT"
+    }
+},
+{
+    "model": "gpt3.address",
+    "pk": 2,
+    "fields": {
+        "country": "DE",
+        "street_and_house_number": "WESELER STRABE 230",
+        "zip_code_and_city": "48151 MÜNSTER"
+    }
+},
+{
+    "model": "gpt3.debtor",
+    "pk": 1,
+    "fields": {
+        "debtor_name": "MIRYA TRADING CO LTD",
+        "postal_address": 1,
+        "customer_id": "090512DEUTDEFFXXX886479"
+    }
+},
+{
+    "model": "gpt3.creditor",
+    "pk": 1,
+    "fields": {
+        "creditor_name": "MOHAMMAD REZA NAJAFI KALASHI",
+        "postal_address": 2
+    }
+},
+{
+    "model": "gpt3.account",
+    "pk": 1,
+    "fields": {
+        "iban": "DE86500700100925993805",
+        "currency": "EUR"
+    }
+},
+{
+    "model": "gpt3.account",
+    "pk": 2,
+    "fields": {
+        "iban": "DE41400501500154813455",
+        "currency": "EUR"
+    }
+},
+{
+    "model": "gpt3.financialinstitution",
+    "pk": 1,
+    "fields": {
+        "financial_institution_id": "WELADED1XXX"
+    }
+},
+{
+    "model": "gpt3.instructedamount",
+    "pk": 1,
+    "fields": {
+        "amount": "618.25",
+        "currency": "EUR"
+    }
+},
+{
+    "model": "gpt4.debtor",
+    "pk": 1,
+    "fields": {
+        "name": "MIRYA TRADING CO LTD",
+        "customer_id": "090512DEUTDEFFXXX886479",
+        "postal_address_country": "DE",
+        "postal_address_street": "TAUNUSANLAGE 12",
+        "postal_address_city": "60325 FRANKFURT"
+    }
+},
+{
+    "model": "gpt4.debtoraccount",
+    "pk": 1,
+    "fields": {
+        "debtor": 1,
+        "iban": "DE86500700100925993805",
+        "currency": "EUR"
+    }
+},
+{
+    "model": "gpt4.creditor",
+    "pk": 1,
+    "fields": {
+        "name": "MOHAMMAD REZA NAJAFI KALASHI",
+        "postal_address_country": "DE",
+        "postal_address_street": "WESELER STRABE 230",
+        "postal_address_city": "48151 MÜNSTER"
+    }
+},
+{
+    "model": "gpt4.creditoraccount",
+    "pk": 1,
+    "fields": {
+        "creditor": 1,
+        "iban": "DE41400501500154813455",
+        "currency": "EUR"
+    }
+},
+{
+    "model": "gpt4.creditoragent",
+    "pk": 1,
+    "fields": {
+        "bic": "WELADED1MST",
+        "financial_institution_id": "WELADED1XXX",
+        "other_information": "SPARKASSE MÜNSTERLAND OST"
+    }
 }
 ]
