@@ -636,13 +636,13 @@ def handle_error_response(response):
     return error_messages.get(error_code, f"Error desconocido: {response.text}")
 
 
-def crear_challenge_autorizacion(transfer, token):
+def crear_challenge_autorizacion(transfer, token, payment_id):
     schema_data = transfer.to_schema_data()
     request_type, request_data = preparar_request_type_y_datos(schema_data)
     headers = {
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json',
-        'Correlation-Id': generate_correlation_id(),
+        'Correlation-Id': str(payment_id),
     }
     payload = {
         "method": "PUSHTAN",
@@ -672,7 +672,7 @@ def resolver_challenge(challenge_id, token, payment_id):
     headers = {
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json',
-        'Correlation-Id': generate_correlation_id(),
+        'Correlation-Id': str(payment_id),
     }
     payload = {
         "challengeResponse": "123456"
