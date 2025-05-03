@@ -1,0 +1,886 @@
+{
+    "payload_structure": {
+        "/": {
+            "post": {
+                "parameters": [
+                    {
+                        "name": "idempotency-id",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "otp",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": null,
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "Correlation-Id",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": null,
+                            "maxLength": 50,
+                            "minLength": null,
+                            "enum": null,
+                            "required": false
+                        }
+                    },
+                    {
+                        "name": "purposeCode",
+                        "schema": {
+                            "maxLength": 4,
+                            "minLength": 4,
+                            "type": "string",
+                            "description": "ExternalPurpose1Code"
+                        }
+                    },
+                    {
+                        "name": "requestedExecutionDate",
+                        "schema": {
+                            "type": "string",
+                            "description": "Must match yyyy-MM-dd format, also in CET timezone."
+                        }
+                    },
+                    {
+                        "name": "debtor",
+                        "schema": {
+                            "required": [
+                                "debtorName"
+                            ],
+                            "type": "object",
+                            "properties": {
+                                "debtorName": {
+                                    "$ref": "#/components/schemas/DebtorName"
+                                },
+                                "debtorPostalAddress": {
+                                    "$ref": "#/components/schemas/Address"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "debtorAccount",
+                        "schema": {
+                            "required": [
+                                "iban"
+                            ],
+                            "type": "object",
+                            "properties": {
+                                "iban": {
+                                    "$ref": "#/components/schemas/IBAN"
+                                },
+                                "currency": {
+                                    "$ref": "#/components/schemas/Currency"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "paymentIdentification",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "endToEndIdentification": {
+                                    "$ref": "#/components/schemas/EndToEndIdentification"
+                                },
+                                "instructionId": {
+                                    "$ref": "#/components/schemas/InstructionId"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "instructedAmount",
+                        "schema": {
+                            "required": [
+                                "amount",
+                                "currency"
+                            ],
+                            "type": "object",
+                            "properties": {
+                                "amount": {
+                                    "type": "number",
+                                    "format": "double",
+                                    "example": 58.13
+                                },
+                                "currency": {
+                                    "$ref": "#/components/schemas/Currency"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "creditorAgent",
+                        "schema": {
+                            "required": [
+                                "financialInstitutionId"
+                            ],
+                            "type": "object",
+                            "properties": {
+                                "financialInstitutionId": {
+                                    "$ref": "#/components/schemas/FinancialInstitutionId"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "creditor",
+                        "schema": {
+                            "required": [
+                                "creditorName"
+                            ],
+                            "type": "object",
+                            "properties": {
+                                "creditorName": {
+                                    "$ref": "#/components/schemas/CreditorName"
+                                },
+                                "creditorPostalAddress": {
+                                    "$ref": "#/components/schemas/Address"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "creditorAccount",
+                        "schema": {
+                            "required": [
+                                "currency",
+                                "iban"
+                            ],
+                            "type": "object",
+                            "properties": {
+                                "iban": {
+                                    "$ref": "#/components/schemas/IBAN"
+                                },
+                                "currency": {
+                                    "$ref": "#/components/schemas/Currency"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "remittanceInformationStructured",
+                        "schema": {
+                            "maxLength": 140,
+                            "type": "string",
+                            "description": "Recommended to be used in each transaction; contract related - references to the business; it depends on the client what they want to include."
+                        }
+                    },
+                    {
+                        "name": "remittanceInformationUnstructured",
+                        "schema": {
+                            "maxLength": 140,
+                            "type": "string",
+                            "description": "Recommended to be used in each transaction ; contract related - references to the business; it depends on the client what they want to include."
+                        }
+                    }
+                ]
+            }
+        },
+        "/{paymentId}/status": {
+            "get": {
+                "parameters": [
+                    {
+                        "name": "paymentId",
+                        "schema": {
+                            "in": "path",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "Correlation-Id",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": null,
+                            "maxLength": 50,
+                            "minLength": null,
+                            "enum": null,
+                            "required": false
+                        }
+                    }
+                ]
+            }
+        },
+        "/{paymentId}": {
+            "get": {
+                "parameters": [
+                    {
+                        "name": "paymentId",
+                        "schema": {
+                            "in": "path",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "Correlation-Id",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": null,
+                            "maxLength": 50,
+                            "minLength": null,
+                            "enum": null,
+                            "required": false
+                        }
+                    }
+                ]
+            },
+            "delete": {
+                "parameters": [
+                    {
+                        "name": "paymentId",
+                        "schema": {
+                            "in": "path",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "idempotency-id",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "otp",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": null,
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "Correlation-Id",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": null,
+                            "maxLength": 50,
+                            "minLength": null,
+                            "enum": null,
+                            "required": false
+                        }
+                    }
+                ]
+            },
+            "patch": {
+                "parameters": [
+                    {
+                        "name": "paymentId",
+                        "schema": {
+                            "in": "path",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "idempotency-id",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "otp",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": null,
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "Correlation-Id",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": null,
+                            "maxLength": 50,
+                            "minLength": null,
+                            "enum": null,
+                            "required": false
+                        }
+                    },
+                    {
+                        "name": "action",
+                        "schema": {
+                            "type": "string",
+                            "description": "Defines the action for retry second factor, CREATE is for updating the second factor for create Sepa Credit Transfer and CANCEL is for cancel.",
+                            "enum": [
+                                "CREATE",
+                                "CANCEL"
+                            ]
+                        }
+                    },
+                    {
+                        "name": "authId",
+                        "schema": {
+                            "type": "string",
+                            "description": "ID de autenticación utilizado para actualizar el estado SCA SEPA Pago;Será válido por 5 minutos.",
+                            "example": "232ed5b7-fc70-4c67-98bb-bf95b3300001"
+                        }
+                    }
+                ]
+            }
+        },
+        "/bulk": {
+            "post": {
+                "parameters": [
+                    {
+                        "name": "idempotency-id",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "otp",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": null,
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "Correlation-Id",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": null,
+                            "maxLength": 50,
+                            "minLength": null,
+                            "enum": null,
+                            "required": false
+                        }
+                    },
+                    {
+                        "name": "groupHeader",
+                        "schema": {
+                            "required": [
+                                "controlSum",
+                                "creationDateTime",
+                                "initiatingParty",
+                                "messageId",
+                                "numberOfTransactions"
+                            ],
+                            "type": "object",
+                            "properties": {
+                                "messageId": {
+                                    "$ref": "#/components/schemas/MessageIdForGroupHeader"
+                                },
+                                "numberOfTransactions": {
+                                    "$ref": "#/components/schemas/NumberOfTransactions"
+                                },
+                                "controlSum": {
+                                    "$ref": "#/components/schemas/ControlSum"
+                                },
+                                "initiatingParty": {
+                                    "$ref": "#/components/schemas/InitiatingParty"
+                                },
+                                "createDateTime": {
+                                    "$ref": "#/components/schemas/CreateDateTime"
+                                },
+                                "schemeName": {
+                                    "$ref": "#/components/schemas/SchemeName"
+                                }
+                            }
+                        }
+                    },
+                    {
+                        "name": "paymentInformation",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/components/schemas/PaymentInformation"
+                            }
+                        }
+                    }
+                ]
+            }
+        },
+        "/bulk/{paymentId}/status": {
+            "get": {
+                "parameters": [
+                    {
+                        "name": "paymentId",
+                        "schema": {
+                            "in": "path",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "Correlation-Id",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": null,
+                            "maxLength": 50,
+                            "minLength": null,
+                            "enum": null,
+                            "required": false
+                        }
+                    }
+                ]
+            }
+        },
+        "/bulk/{paymentId}": {
+            "get": {
+                "parameters": [
+                    {
+                        "name": "paymentId",
+                        "schema": {
+                            "in": "path",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "Correlation-Id",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": null,
+                            "maxLength": 50,
+                            "minLength": null,
+                            "enum": null,
+                            "required": false
+                        }
+                    }
+                ]
+            },
+            "delete": {
+                "parameters": [
+                    {
+                        "name": "paymentId",
+                        "schema": {
+                            "in": "path",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "idempotency-id",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": "uuid",
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "otp",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": null,
+                            "maxLength": null,
+                            "minLength": null,
+                            "enum": null,
+                            "required": true
+                        }
+                    },
+                    {
+                        "name": "Correlation-Id",
+                        "schema": {
+                            "in": "header",
+                            "type": "string",
+                            "format": null,
+                            "maxLength": 50,
+                            "minLength": null,
+                            "enum": null,
+                            "required": false
+                        }
+                    }
+                ]
+            }
+        }
+    },
+    "grouped_by_tag": {
+        "Create Sepa Credit Transfers": {
+            "idempotency-id": {
+                "in": "header",
+                "type": "string",
+                "format": "uuid",
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            },
+            "otp": {
+                "in": "header",
+                "type": "string",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            },
+            "Correlation-Id": {
+                "in": "header",
+                "type": "string",
+                "format": null,
+                "maxLength": 50,
+                "minLength": null,
+                "enum": null,
+                "required": false
+            },
+            "purposeCode": {
+                "maxLength": 4,
+                "minLength": 4,
+                "type": "string",
+                "description": "ExternalPurpose1Code"
+            },
+            "requestedExecutionDate": {
+                "type": "string",
+                "description": "Must match yyyy-MM-dd format, also in CET timezone."
+            },
+            "debtor": {
+                "required": [
+                    "debtorName"
+                ],
+                "type": "object",
+                "properties": {
+                    "debtorName": {
+                        "$ref": "#/components/schemas/DebtorName"
+                    },
+                    "debtorPostalAddress": {
+                        "$ref": "#/components/schemas/Address"
+                    }
+                }
+            },
+            "debtorAccount": {
+                "required": [
+                    "iban"
+                ],
+                "type": "object",
+                "properties": {
+                    "iban": {
+                        "$ref": "#/components/schemas/IBAN"
+                    },
+                    "currency": {
+                        "$ref": "#/components/schemas/Currency"
+                    }
+                }
+            },
+            "paymentIdentification": {
+                "type": "object",
+                "properties": {
+                    "endToEndIdentification": {
+                        "$ref": "#/components/schemas/EndToEndIdentification"
+                    },
+                    "instructionId": {
+                        "$ref": "#/components/schemas/InstructionId"
+                    }
+                }
+            },
+            "instructedAmount": {
+                "required": [
+                    "amount",
+                    "currency"
+                ],
+                "type": "object",
+                "properties": {
+                    "amount": {
+                        "type": "number",
+                        "format": "double",
+                        "example": 58.13
+                    },
+                    "currency": {
+                        "$ref": "#/components/schemas/Currency"
+                    }
+                }
+            },
+            "creditorAgent": {
+                "required": [
+                    "financialInstitutionId"
+                ],
+                "type": "object",
+                "properties": {
+                    "financialInstitutionId": {
+                        "$ref": "#/components/schemas/FinancialInstitutionId"
+                    }
+                }
+            },
+            "creditor": {
+                "required": [
+                    "creditorName"
+                ],
+                "type": "object",
+                "properties": {
+                    "creditorName": {
+                        "$ref": "#/components/schemas/CreditorName"
+                    },
+                    "creditorPostalAddress": {
+                        "$ref": "#/components/schemas/Address"
+                    }
+                }
+            },
+            "creditorAccount": {
+                "required": [
+                    "currency",
+                    "iban"
+                ],
+                "type": "object",
+                "properties": {
+                    "iban": {
+                        "$ref": "#/components/schemas/IBAN"
+                    },
+                    "currency": {
+                        "$ref": "#/components/schemas/Currency"
+                    }
+                }
+            },
+            "remittanceInformationStructured": {
+                "maxLength": 140,
+                "type": "string",
+                "description": "Recommended to be used in each transaction; contract related - references to the business; it depends on the client what they want to include."
+            },
+            "remittanceInformationUnstructured": {
+                "maxLength": 140,
+                "type": "string",
+                "description": "Recommended to be used in each transaction ; contract related - references to the business; it depends on the client what they want to include."
+            },
+            "groupHeader": {
+                "required": [
+                    "controlSum",
+                    "creationDateTime",
+                    "initiatingParty",
+                    "messageId",
+                    "numberOfTransactions"
+                ],
+                "type": "object",
+                "properties": {
+                    "messageId": {
+                        "$ref": "#/components/schemas/MessageIdForGroupHeader"
+                    },
+                    "numberOfTransactions": {
+                        "$ref": "#/components/schemas/NumberOfTransactions"
+                    },
+                    "controlSum": {
+                        "$ref": "#/components/schemas/ControlSum"
+                    },
+                    "initiatingParty": {
+                        "$ref": "#/components/schemas/InitiatingParty"
+                    },
+                    "createDateTime": {
+                        "$ref": "#/components/schemas/CreateDateTime"
+                    },
+                    "schemeName": {
+                        "$ref": "#/components/schemas/SchemeName"
+                    }
+                }
+            },
+            "paymentInformation": {
+                "type": "array",
+                "items": {
+                    "$ref": "#/components/schemas/PaymentInformation"
+                }
+            }
+        },
+        "Get status for Sepa Credit Transfers": {
+            "paymentId": {
+                "in": "path",
+                "type": "string",
+                "format": "uuid",
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            },
+            "Correlation-Id": {
+                "in": "header",
+                "type": "string",
+                "format": null,
+                "maxLength": 50,
+                "minLength": null,
+                "enum": null,
+                "required": false
+            }
+        },
+        "Get details for Sepa Credit Transfers": {
+            "paymentId": {
+                "in": "path",
+                "type": "string",
+                "format": "uuid",
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            },
+            "Correlation-Id": {
+                "in": "header",
+                "type": "string",
+                "format": null,
+                "maxLength": 50,
+                "minLength": null,
+                "enum": null,
+                "required": false
+            }
+        },
+        "Cancel Sepa Credit Transfers": {
+            "paymentId": {
+                "in": "path",
+                "type": "string",
+                "format": "uuid",
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            },
+            "idempotency-id": {
+                "in": "header",
+                "type": "string",
+                "format": "uuid",
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            },
+            "otp": {
+                "in": "header",
+                "type": "string",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            },
+            "Correlation-Id": {
+                "in": "header",
+                "type": "string",
+                "format": null,
+                "maxLength": 50,
+                "minLength": null,
+                "enum": null,
+                "required": false
+            }
+        },
+        "Second Factor Retry": {
+            "paymentId": {
+                "in": "path",
+                "type": "string",
+                "format": "uuid",
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            },
+            "idempotency-id": {
+                "in": "header",
+                "type": "string",
+                "format": "uuid",
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            },
+            "otp": {
+                "in": "header",
+                "type": "string",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            },
+            "Correlation-Id": {
+                "in": "header",
+                "type": "string",
+                "format": null,
+                "maxLength": 50,
+                "minLength": null,
+                "enum": null,
+                "required": false
+            },
+            "action": {
+                "type": "string",
+                "description": "Defines the action for retry second factor, CREATE is for updating the second factor for create Sepa Credit Transfer and CANCEL is for cancel.",
+                "enum": [
+                    "CREATE",
+                    "CANCEL"
+                ]
+            },
+            "authId": {
+                "type": "string",
+                "description": "ID de autenticación utilizado para actualizar el estado SCA SEPA Pago;Será válido por 5 minutos.",
+                "example": "232ed5b7-fc70-4c67-98bb-bf95b3300001"
+            }
+        }
+    }
+}

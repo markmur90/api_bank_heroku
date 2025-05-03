@@ -1,0 +1,94 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<h1 class="text-center mb-4">Dashboard</h1>
+
+<div class="container-fluid" style="height: 100%; position: relative;">
+    <!-- Botones de acción -->
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{% url 'create_creditorGPT4' %}" class="btn btn-outline-primary me-2">
+            <i class="bi bi-person-plus-fill"></i> Nuevo Beneficiario
+        </a>
+        <a href="{% url 'create_transferGPT4' %}" class="btn btn-outline-success">
+            <i class="bi bi-cash-coin"></i> Nueva Transferencia
+        </a>
+    </div>
+
+    <!-- Tabla de Beneficiarios (parte superior, con scroll limitado) -->
+    <div style="max-height: 350px; overflow-y: auto;" class="mb-4 border rounded shadow-sm p-2 bg-white">
+        <h4>Beneficiarios</h4>
+        <table class="table table-striped table-sm mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Nombre</th>
+                    <th>País</th>
+                    <th>Ciudad</th>
+                    <th>Calle</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for creditor in creditors %}
+                <tr>
+                    <td>{{ creditor.name }}</td>
+                    <td>{{ creditor.postal_address_country }}</td>
+                    <td>{{ creditor.postal_address_city }}</td>
+                    <td>{{ creditor.postal_address_street }}</td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="text-center">No hay beneficiarios registrados.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Tabla de Transferencias (empieza desde la mitad) -->
+    <div style="position: absolute; top: 320px; left: 0; right: 0;">
+        <div style="max-height: 390px; overflow-y: auto;" class="border rounded shadow-sm p-2 bg-white">
+            <h4>Transferencias</h4>
+            <table class="table table-striped table-sm mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>ID de Pago</th>
+                        <th>Deudor</th>
+                        <th>Acreedor</th>
+                        <th>Monto</th>
+                        <th>Moneda</th>
+                        <th>Estado</th>
+                        <th>Fecha de Ejecución</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transfer in transfers %}
+                    <tr>
+                        <td>{{ transfer.payment_id }}</td>
+                        <td>{{ transfer.debtor.name }}</td>
+                        <td>{{ transfer.creditor.name }}</td>
+                        <td>{{ transfer.instructed_amount }}</td>
+                        <td>{{ transfer.currency }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if transfer.status == 'ACSC' %}bg-success
+                                {% elif transfer.status == 'PDNG' %}bg-warning
+                                {% elif transfer.status == 'RJCT' %}bg-danger
+                                {% else %}bg-secondary{% endif %}">
+                                {{ transfer.status }}
+                            </span>
+                        </td>
+                        <td>{{ transfer.requested_execution_date }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center">No hay transferencias realizadas.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

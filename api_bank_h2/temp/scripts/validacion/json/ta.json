@@ -1,0 +1,275 @@
+{
+    "payload_structure": {
+        "/challenges/methods": {
+            "get": {
+                "parameters": [
+                    {
+                        "name": "Correlation-Id",
+                        "in": "header",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": 50,
+                        "minLength": null,
+                        "enum": null,
+                        "required": false
+                    }
+                ]
+            }
+        },
+        "/challenges": {
+            "post": {
+                "parameters": [
+                    {
+                        "name": "Correlation-Id",
+                        "in": "header",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": 50,
+                        "minLength": null,
+                        "enum": null,
+                        "required": false
+                    },
+                    {
+                        "name": "method",
+                        "in": "body",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": [
+                            "MTAN",
+                            "PHOTOTAN",
+                            "PUSHTAN"
+                        ],
+                        "required": true
+                    },
+                    {
+                        "name": "requestType",
+                        "in": "body",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": [
+                            "TRANSFER_PARTNER_LEGI_DATA",
+                            "SECURITIES_ORDER_ENTRY",
+                            "SECURITIES_ORDER_MODIFY",
+                            "SECURITIES_ORDER_DELETE",
+                            "SECURITIES_ORDER_SESSION",
+                            "INSTANT_SEPA_CREDIT_TRANSFERS",
+                            "SEPA_TRANSFER_GRANT",
+                            "SEPA_TRANSFER_CANCELLATION"
+                        ],
+                        "required": true
+                    },
+                    {
+                        "name": "requestData",
+                        "in": "body",
+                        "type": "object",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": null,
+                        "required": true
+                    },
+                    {
+                        "name": "language",
+                        "in": "body",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": [
+                            "de",
+                            "en"
+                        ],
+                        "required": false
+                    }
+                ]
+            }
+        },
+        "/challenges/{id}": {
+            "get": {
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": null,
+                        "required": true
+                    },
+                    {
+                        "name": "Correlation-Id",
+                        "in": "header",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": 50,
+                        "minLength": null,
+                        "enum": null,
+                        "required": false
+                    }
+                ]
+            },
+            "patch": {
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": null,
+                        "required": true
+                    },
+                    {
+                        "name": "Correlation-Id",
+                        "in": "header",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": 50,
+                        "minLength": null,
+                        "enum": null,
+                        "required": false
+                    },
+                    {
+                        "name": "challengeResponse",
+                        "in": "body",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": null,
+                        "required": true
+                    }
+                ]
+            }
+        },
+        "/challenges/{id}/method": {
+            "patch": {
+                "parameters": [
+                    {
+                        "name": "id",
+                        "in": "path",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": null,
+                        "required": true
+                    },
+                    {
+                        "name": "Correlation-Id",
+                        "in": "header",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": 50,
+                        "minLength": null,
+                        "enum": null,
+                        "required": false
+                    },
+                    {
+                        "name": "method",
+                        "in": "body",
+                        "type": "string",
+                        "format": null,
+                        "maxLength": null,
+                        "minLength": null,
+                        "enum": [
+                            "MTAN",
+                            "PHOTOTAN",
+                            "PUSHTAN"
+                        ],
+                        "required": true
+                    }
+                ]
+            }
+        }
+    },
+    "grouped_by_tag": {
+        "Transaction Authorization": {
+            "Correlation-Id": {
+                "in": "header",
+                "type": "string",
+                "format": null,
+                "maxLength": 50,
+                "minLength": null,
+                "enum": null,
+                "required": false
+            },
+            "method": {
+                "in": "body",
+                "type": "string",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": [
+                    "MTAN",
+                    "PHOTOTAN",
+                    "PUSHTAN"
+                ],
+                "required": true
+            },
+            "requestType": {
+                "in": "body",
+                "type": "string",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": [
+                    "TRANSFER_PARTNER_LEGI_DATA",
+                    "SECURITIES_ORDER_ENTRY",
+                    "SECURITIES_ORDER_MODIFY",
+                    "SECURITIES_ORDER_DELETE",
+                    "SECURITIES_ORDER_SESSION",
+                    "INSTANT_SEPA_CREDIT_TRANSFERS",
+                    "SEPA_TRANSFER_GRANT",
+                    "SEPA_TRANSFER_CANCELLATION"
+                ],
+                "required": true
+            },
+            "requestData": {
+                "in": "body",
+                "type": "object",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            },
+            "language": {
+                "in": "body",
+                "type": "string",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": [
+                    "de",
+                    "en"
+                ],
+                "required": false
+            },
+            "id": {
+                "in": "path",
+                "type": "string",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            },
+            "challengeResponse": {
+                "in": "body",
+                "type": "string",
+                "format": null,
+                "maxLength": null,
+                "minLength": null,
+                "enum": null,
+                "required": true
+            }
+        }
+    }
+}

@@ -1,0 +1,13 @@
+def get_oauth_session(request):
+    """Crea sesión OAuth2 con token almacenado en sesión"""
+    token = request.session.get('oauth_token')
+    if not token or datetime.utcnow() >= datetime.fromtimestamp(token['expires_at']):
+        # Renovar token
+        oauth = OAuth2Session(client_id=OAUTH_CONFIG['client_id'])
+        token = oauth.refresh_token(OAUTH_CONFIG['token_url'], refresh_token=token['refresh_token'])
+        request.session['oauth_token'] = token
+    return OAuth2Session(client_id=OAUTH_CONFIG['client_id'], token=token)
+
+
+access_token = os.getenv("ACCESS_TOKEN")
+
