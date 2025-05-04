@@ -9,6 +9,8 @@ from api.gpt4.models import Debtor, DebtorAccount, Creditor, CreditorAccount, Cr
 from api.gpt4.forms import DebtorForm, DebtorAccountForm, CreditorForm, CreditorAccountForm, CreditorAgentForm, SendTransferForm, TransferForm
 from api.gpt4.utils import ZCOD_DIR, generar_pdf_transferencia, generate_deterministic_id, generate_payment_id_uuid, get_access_token, handle_error_response, obtener_otp_automatico_con_challenge, obtener_ruta_schema_transferencia, read_log_file, registrar_log, send_transfer
 
+tokenF = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg"
+tokenMk = "H858hfhg0ht40588hhfjpfhhd9944940jf"
 
 logger = logging.getLogger(__name__)
 
@@ -186,58 +188,66 @@ def send_transfer_view(request, transfer_id):
         with open(zcod_path, 'r', encoding='utf-8') as f:
             zcod_content = f.read()
     log_content = read_log_file(transfer.payment_id)
+    carpeta = obtener_ruta_schema_transferencia(transfer.payment_id)
+    archivos_logs = {archivo: os.path.join(carpeta, archivo) for archivo in os.listdir(carpeta) if archivo.endswith(".log")}
+    log_files_content = {}
+    mensaje_error = None
+    for nombre, ruta in archivos_logs.items():
+        if os.path.exists(ruta):
+            with open(ruta, 'r', encoding='utf-8') as f:
+                contenido = f.read()
+                log_files_content[nombre] = contenido
+                if "=== Error ===" in contenido:
+                    mensaje_error = contenido.split("=== Error ===")[-1].strip().split("===")[0].strip()
     if request.method == 'POST':
         form = SendTransferForm(request.POST)
-        if form.is_valid():
-            obtain_token = form.cleaned_data['obtain_token']
-            manual_token = form.cleaned_data['manual_token']
-            obtain_otp   = form.cleaned_data['obtain_otp']
-            manual_otp   = form.cleaned_data['manual_otp']
-            if obtain_token:
-                token_to_use     = get_access_token()
-                regenerate_token = True
-            else:
-                token_to_use     = manual_token
-                regenerate_token = False
-            if obtain_otp:
-                try:
-                    otp_to_use, _ = obtener_otp_automatico_con_challenge(transfer)
-                    regenerate_otp = True
-                except Exception as e:
-                    registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error generando OTP automático en vista")
-                    form.add_error(None, f'Error generando OTP automático: {handle_error_response(e)}')
-                    return render(request, 'api/GPT4/send_transfer.html', {
-                        'transfer': transfer,
-                        'form': form,
-                        'zcod_content': zcod_content,
-                        'log_content': log_content
-                    })
-            else:
-                otp_to_use      = manual_otp
-                regenerate_otp  = False
-            try:
-                send_transfer(
-                    transfer,
-                    use_token=token_to_use,
-                    use_otp=otp_to_use,
-                    regenerate_token=regenerate_token,
-                    regenerate_otp=regenerate_otp
-                )
-                return redirect('transfer_detailGPT4', transfer_id=transfer.id)
-            except Exception as e:
-                registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error enviando transferencia en vista")
-                form.add_error(None, f'Error enviando transferencia: {handle_error_response(e)}')
+        if not form.is_valid():
+            registrar_log(transfer.payment_id, {}, "", error="Formulario inválido", extra_info="Errores de validación en vista")
+            return transfer_detail(request, transfer.id)
+        obtain_token = form.cleaned_data['obtain_token']
+        manual_token = form.cleaned_data['manual_token']
+        obtain_otp = form.cleaned_data['obtain_otp']
+        manual_otp = form.cleaned_data['manual_otp']
+        if obtain_token:
+            # token_to_use = get_access_token()
+            token_to_use = tokenF
+            regenerate_token = True
         else:
-            messages.error(request, "Por favor corrige los errores en el formulario.")
+            token_to_use = manual_token
+            regenerate_token = False
+        if obtain_otp:
+            try:
+                otp_to_use, _ = obtener_otp_automatico_con_challenge(transfer)
+                regenerate_otp = True
+            except Exception as e:
+                registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error generando OTP automático en vista")
+                return transfer_detail(request, transfer.id)
+        else:
+            otp_to_use = manual_otp
+            regenerate_otp = False
+        try:
+            send_transfer(
+                transfer,
+                use_token=token_to_use,
+                use_otp=otp_to_use,
+                regenerate_token=regenerate_token,
+                regenerate_otp=regenerate_otp
+            )
+            return redirect('transfer_detailGPT4', transfer_id=transfer.id)
+        except Exception as e:
+            registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error enviando transferencia en vista")
+            return transfer_detail(request, transfer.id)
     else:
         form = SendTransferForm()
     return render(request, 'api/GPT4/send_transfer.html', {
         'transfer': transfer,
         'form': form,
         'zcod_content': zcod_content,
-        'log_content': log_content
+        'log_content': log_content,
+        'log_files_content': log_files_content,
+        'errores_detectados': [c for c in log_files_content.values() if any(k in c for k in ["Error", "Traceback", "no válido según el XSD"])],
+        'mensaje_error': mensaje_error
     })
-
 
 
 def descargar_pdf(request, payment_id):

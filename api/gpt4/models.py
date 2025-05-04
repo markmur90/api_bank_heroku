@@ -63,7 +63,7 @@ class Transfer(models.Model):
     requested_execution_date = models.DateField()
     remittance_information_structured = models.CharField(max_length=10, blank=True, null=True)
     remittance_information_unstructured = models.CharField(max_length=140, blank=True, null=True)
-    status = models.CharField(max_length=10, default='CREA', choices=[
+    status = models.CharField(max_length=10, default='PDNG', choices=[
         ('RJCT', 'Rechazada'),
         ('RCVD', 'Recibida'),
         ('ACCP', 'Aceptada'),

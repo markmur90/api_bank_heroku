@@ -7,7 +7,7 @@ clear
 
 echo "  "
 # Cerrar procesos en los puertos especificados antes de continuar
-for PUERTO in 2222 8000 5000; do
+for PUERTO in 8000; do
     if lsof -i tcp:"$PUERTO" &>/dev/null; then
         echo -e "\033[1;33mDetectado proceso en el puerto $PUERTO.\033[0m"
         sudo fuser -k "${PUERTO}"/tcp || true

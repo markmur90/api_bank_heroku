@@ -265,6 +265,8 @@ def read_log_file(payment_id):
         return None
 
 def handle_error_response(response):
+    if isinstance(response, Exception):
+        return str(response)
     errores = {
         2: "Valor inválido para uno de los parámetros.",
         16: "Respuesta de desafío OTP inválida.",
@@ -304,21 +306,20 @@ def handle_error_response(response):
     }
     try:
         data = response.json()
-        code = data.get('code') or data.get('errorCode')
-        if code is not None:
-            try:
-                code_int = int(code)
-                if code_int in errores:
-                    return errores[code_int]
-            except (ValueError, TypeError):
-                pass
-        if isinstance(data, dict) and 'message' in data:
-            return data.get('message')
-        if isinstance(data, list):
-            return "; ".join(item.get('message', str(item)) for item in data)
-        return response.text
     except ValueError:
-        return response.text
+        return response.text if hasattr(response, 'text') else str(response)
+    code = data.get('code') or data.get('errorCode') if isinstance(data, dict) else None
+    try:
+        code_int = int(code) if code is not None else None
+        if code_int in errores:
+            return errores[code_int]
+    except (ValueError, TypeError):
+        pass
+    if isinstance(data, dict) and 'message' in data:
+        return data['message']
+    if isinstance(data, list):
+        return "; ".join(item.get('message', str(item)) for item in data)
+    return response.text if hasattr(response, 'text') else str(response)
 
 def default_request_headers():
     return {
@@ -347,27 +348,34 @@ def default_request_headers():
 # ===========================
 # Variables internas
 _access_token = None
-_token_expiry = 3600  # 1 hora por defecto
+_token_expiry = 3600
 def get_access_token():
     global _access_token, _token_expiry
     current_time = time.time()
     if _access_token and current_time < _token_expiry - 60:
         return _access_token
-
     data = {
         'grant_type': 'client_credentials',
         'scope': 'sepa_credit_transfers'
     }
     auth = (CLIENT_ID, CLIENT_SECRET)
     try:
-        response = requests.post(TOKEN_URL, data=data, auth=auth, timeout=10)
-
-        token_data = response.json()
-        _access_token = token_data['access_token']
-        _token_expiry = current_time + token_data.get('expires_in', 3600)
-        return _access_token
+        response = requests.post(TOKEN_URL, data=data, auth=auth, timeout=TIMEOUT_REQUEST)
     except requests.RequestException as e:
         raise Exception(f"Error obteniendo access_token: {e}")
+    if response.status_code != 200:
+        error_msg = handle_error_response(response)
+        raise Exception(f"Error obteniendo access_token: {error_msg}")
+    try:
+        token_data = response.json()
+    except ValueError:
+        raise Exception(f"Error parseando respuesta de token: {response.text}")
+    if 'access_token' not in token_data:
+        error_desc = token_data.get('error_description', str(token_data))
+        raise Exception(f"Token inválido recibido: {error_desc}")
+    _access_token = token_data[tokenF]
+    _token_expiry = current_time + token_data.get('expires_in', 3600)
+    return _access_token
 
 # ===========================
 # OTP

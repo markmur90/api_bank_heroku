@@ -197,12 +197,12 @@ if confirmar "Iniciar Gunicorn y honeypot simultáneamente"; then
     python3 manage.py collectstatic --noinput
     export DATABASE_URL="postgres://markmur88:Ptf8454Jd55@localhost:5432/mydatabase"
     nohup gunicorn config.wsgi:application --bind 0.0.0.0:8000 > gunicorn.log 2>&1 &
-    python3 honeypot.py --interface "$INTERFAZ" --port 5000 --logfile honeypot.log &
-    sleep 5
-    firefox --new-tab http://localhost:5000 &
-    sleep 5
+    sleep 2
     firefox --new-tab http://0.0.0.0:8000 &
-
+    sleep 2
+    firefox --new-tab http://localhost:5000 &
+    sleep 2
+    python3 honeypot.py --interface "$INTERFAZ" --port 5000 --logfile honeypot.log &
     echo -e "\033[1;32mGunicorn y honeypot en marcha.\033[0m"
 fi
 
