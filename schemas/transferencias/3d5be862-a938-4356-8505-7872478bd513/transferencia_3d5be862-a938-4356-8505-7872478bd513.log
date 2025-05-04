@@ -1,7 +1,0 @@
-
-========================================
-Fecha y hora: 2025-05-04 00:14:48.485317
-=== Headers ===
-{}
-=== Error ===
-Error generación inicial: 'SepaCreditTransfer' object has no attribute 'payment_type_information'

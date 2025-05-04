@@ -31,39 +31,25 @@ logger = logging.getLogger(__name__)
 # Configuramos el logger principal de transferencias
 TRANSFER_LOG_DIR = os.path.join("schemas", "transferencias")
 os.makedirs(TRANSFER_LOG_DIR, exist_ok=True)
-
 SCHEMA_DIR = os.path.join("schemas", "transferencias")
 os.makedirs(SCHEMA_DIR, exist_ok=True)
-
 ZCOD_DIR = os.path.join("schemas")
 os.makedirs(ZCOD_DIR, exist_ok=True)
 
 TIMEOUT_REQUEST = 10
 
-DEUTSCHE_BANK_CLIENT_ID = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
-DEUTSCHE_BANK_CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzsniABTiDYl7QCh6XXEXzgDrjBD4zSvtHbP0Qa707g3eYbmKxO'
-
 ORIGIN = "https://api-bank-heroku-72c443ab11d3.herokuapp.com"
 
-
-# URL = "https://api.db.com:443/gw/dbapi/banking/transactions/v2/sepaCreditTransfer"
-API = "https://api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer"
-BANK_API_URL = API
-
-DEUTSCHE_BANK_TOKEN_URL = 'https://api.db.com:443/gw/oidc/token'
-DEUTSCHE_BANK_OTP_URL = 'https://api.db.com:443/gw/dbapi/others/onetimepasswords/v2/single'
-OTP_URL = DEUTSCHE_BANK_OTP_URL
-
+TOKEN_URL = 'https://api.db.com:443/gw/oidc/token'
+OTP_URL = 'https://api.db.com:443/gw/dbapi/others/onetimepasswords/v2/single'
+AUTH_URL = 'https://api.db.com:443/gw/dbapi/others/transactionAuthorization/v1/challenges'
+API_URL = "https://api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer"
 
 tokenF = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg"
 tokenMk = "H858hfhg0ht40588hhfjpfhhd9944940jf"
-TOKEN = tokenMk
 
-# Configura tus variables desde entorno
-CLIENT_ID = DEUTSCHE_BANK_CLIENT_ID
-CLIENT_SECRET = DEUTSCHE_BANK_CLIENT_SECRET
-TOKEN_URL = DEUTSCHE_BANK_TOKEN_URL
-
+CLIENT_ID = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
+CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzsniABTiDYl7QCh6XXEXzgDrjBD4zSvtHbP0Qa707g3eYbmKxO'
 
 
 def obtener_ruta_schema_transferencia(payment_id):
@@ -396,7 +382,7 @@ def preparar_request_type_y_datos(schema_data):
     }
     return request_type, datos
 
-AUTH_URL = 'https://api.db.com:443/gw/dbapi/others/transactionAuthorization/v1/challenges'
+
 def crear_challenge_autorizacion1(transfer, token, payment_id):
     schema_data = transfer.to_schema_data()
     request_type, request_data = preparar_request_type_y_datos(schema_data)
@@ -590,7 +576,7 @@ def send_transfer1(transfer, use_token=None, use_otp=None, regenerate_token=Fals
         'otp': otp,
     })
     body = schema_data
-    response = requests.post(BANK_API_URL, json=body, headers=headers)
+    response = requests.post(API_URL, json=body, headers=headers)
     registrar_log(
         payment_id,
         request_headers=headers,
@@ -617,7 +603,7 @@ def send_transfer1(transfer, use_token=None, use_otp=None, regenerate_token=Fals
         registrar_log(payment_id, response_body=f"Error generando XML posterior: {str(e)}")
     return response
 
-API = "https://api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer"
+
 def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False, regenerate_otp=False):
     schema_data = transfer.to_schema_data()
     token = get_access_token() if regenerate_token or not use_token else use_token
@@ -629,7 +615,7 @@ def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False
         'Correlation-Id': str(transfer.payment_id),
         'X-DBAPI-Challenge-Proof-Token': proof_token
     })
-    response = requests.post(API, json=schema_data, headers=headers)
+    response = requests.post(API_URL, json=schema_data, headers=headers)
     registrar_log(
         transfer.payment_id,
         request_headers=headers,
