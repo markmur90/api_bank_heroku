@@ -16,6 +16,7 @@ from api.core.services import generar_pdf_transferencia
 from api.gpt3.helpers import generate_deterministic_id, generate_payment_id_uuid, obtener_ruta_schema_transferencia
 from api.gpt3.utils2 import generar_otp_sepa_transfer, get_oauth_session, guardar_pain002_si_aplica, handle_error_response, preparar_payload_transferencia, registrar_log
 from api.gpt3.schemas import sepa_credit_transfer_schema
+from api.gpt4.utils import read_log_file
 from .models import SepaCreditTransfer, PaymentIdentification, BulkTransfer, Address, Debtor, Creditor, FinancialInstitution, InstructedAmount
 from .forms import SepaCreditTransferForm, AccountForm, AddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm, FinancialInstitutionForm, InstructedAmountForm, BulkTransferForm, GroupHeaderForm, PaymentInformationForm
 
@@ -53,13 +54,13 @@ def crear_transferencia(request):
             payment_identification = PaymentIdentification.objects.create(
                 instruction_id=generate_deterministic_id(
                     transferencia.payment_id,
-                    transferencia.creditor.iban,
-                    transferencia.debtor.iban,
+                    transferencia.creditor_account.iban,
+                    transferencia.debtor_account.iban,
                 ),
                 end_to_end_id=generate_deterministic_id(
                     transferencia.payment_id,
-                    transferencia.creditor.iban,
-                    transferencia.debtor.iban,
+                    transferencia.creditor_account.iban,
+                    transferencia.debtor_account.iban,
                     transferencia.instructed_amount.amount,
                     transferencia.requested_execution_date,
                     prefix="E2E",
@@ -100,26 +101,48 @@ def listar_transferencias(request):
 @login_required
 def detalle_transferencia(request, payment_id):
     transferencia = get_object_or_404(SepaCreditTransfer, payment_id=payment_id)
+    # Lectura de logs
     carpeta = obtener_ruta_schema_transferencia(payment_id)
     archivos_logs = {
         archivo: os.path.join(carpeta, archivo)
-        for archivo in os.listdir(carpeta) if archivo.endswith(".log")
+        for archivo in os.listdir(carpeta)
+        if archivo.endswith(".log")
     }
     log_files_content = {}
+    mensaje_error = None
     for nombre, ruta in archivos_logs.items():
         if os.path.exists(ruta):
             with open(ruta, 'r', encoding='utf-8') as f:
-                log_files_content[nombre] = f.read()
-    archivos = {
-        'pain001': os.path.join(carpeta, f"pain001_{payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"pain001_{payment_id}.xml")) else None,
-        'aml': os.path.join(carpeta, f"aml_{payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"aml_{payment_id}.xml")) else None,
-        'pain002': os.path.join(carpeta, f"pain002_{payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"pain002_{payment_id}.xml")) else None,
-    }
+                contenido = f.read()
+                log_files_content[nombre] = contenido
+                if "=== Error ===" in contenido:
+                    mensaje_error = contenido.split("=== Error ===")[-1].strip().split("===")[0].strip()
+    # Lectura de XML/AML en memoria
+    archivos = {}
+    for key, filename in [
+        ('pain001', f"pain001_{payment_id}.xml"),
+        ('aml', f"aml_{payment_id}.xml"),
+        ('pain002', f"pain002_{payment_id}.xml"),
+    ]:
+        path = os.path.join(carpeta, filename)
+        if os.path.exists(path):
+            with open(path, 'r', encoding='utf-8') as f:
+                archivos[key] = f.read()
+        else:
+            archivos[key] = None
+    # Detección adicional de errores en logs
+    errores_detectados = []
+    for contenido in log_files_content.values():
+        if "Error" in contenido or "Traceback" in contenido or "no válido según el XSD" in contenido:
+            errores_detectados.append(contenido)
     return render(request, 'api/GPT3/detalle_transferencia.html', {
         'transferencia': transferencia,
         'log_files_content': log_files_content,
-        'archivos': archivos
+        'archivos': archivos,
+        'mensaje_error': mensaje_error,
+        'errores_detectados': errores_detectados,
     })
+
 
 @login_required
 def enviar_transferencia(request, payment_id):

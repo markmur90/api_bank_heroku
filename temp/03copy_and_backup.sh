@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Ruta de origen y destino para la copia del proyecto
-SOURCE="/home/markmur88/Documentos/GitHub/api_bank_h2/"
+SOURCE="$HOME/Documentos/GitHub/api_bank_h2/"
 DEST="/home/markmur88/Documentos/GitHub/api_bank_heroku/"
 
 # Ruta de destino para la copia de seguridad en formato ZIP
