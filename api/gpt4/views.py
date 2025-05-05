@@ -10,7 +10,11 @@ from api.gpt4.forms import DebtorForm, DebtorAccountForm, CreditorForm, Creditor
 from api.gpt4.utils import ZCOD_DIR, generar_pdf_transferencia, generate_deterministic_id, generate_payment_id_uuid, get_access_token, handle_error_response, obtener_otp_automatico_con_challenge, obtener_ruta_schema_transferencia, read_log_file, registrar_log, send_transfer
 
 tokenF = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg"
+
+tokenD = "eyJraWQiOiJrbXNfc2lnbmVyXzMiLCJhbGciOiJQUzI1NiJ9.eyJzdWIiOiJkZXZlbG9wZXJwb3J0YWwtY2xpZW50LWNyZWRlbnRpYWxzIiwiYXVkIjoiYXBpbSIsImF6cCI6ImRldmVsb3BlcnBvcnRhbC1jbGllbnQtY3JlZGVudGlhbHMiLCJpc3MiOiJodHRwczpcL1wvc2ltdWxhdG9yLWFwaS5kYi5jb21cL2d3XC9vaWRjXC8iLCJleHAiOjE3NDYzNDUwNzgsImlhdCI6MTc0NjM0MTQ3OCwianRpIjoiYWFjNWQ3ZmUtM2IwMS00NjZlLTg3NjQtN2VlZjJlNjhkNzBlIn0.mG_feWMh0dLfSLK3yPZ9aAfWHtTyxn2ZPqZPZ2dtT5PvBSDSqQ0x2VTX2ooVmKlRS_kTJHlFdlTtVycGyms3TmMcVn73IA51yY4wRX624-6qbKUUyeNSUb7dXpe3ehF2wSAP8u65ebLsyAZhphvmOMvggIT6xpGoNOD0DRs5fg1M9cs6n-RRveNkbZP6_7F1jiHQ30q21uM_PcVgQiWeHhjiX3VpsGLzBN7SQNVaYO_LgJWgI1tqAHRjiAGPRTaMEjOoLw49ed8a9mEZTjjNz7UmIoIKIG5ldqL_9SG8SH99Pa__AGsLIgXfUpzVmFCwt2xminPYLz34K-n1_NVMnA"
+
 tokenMk = "H858hfhg0ht40588hhfjpfhhd9944940jf"
+token = tokenD
 
 logger = logging.getLogger(__name__)
 
@@ -209,8 +213,8 @@ def send_transfer_view(request, transfer_id):
         obtain_otp = form.cleaned_data['obtain_otp']
         manual_otp = form.cleaned_data['manual_otp']
         if obtain_token:
-            # token_to_use = get_access_token()
-            token_to_use = tokenF
+            token_to_use = get_access_token()
+            token_to_use = token
             regenerate_token = True
         else:
             token_to_use = manual_token

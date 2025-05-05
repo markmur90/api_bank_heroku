@@ -2,7 +2,7 @@ from django.db import models
 
 class Debtor(models.Model):
     name = models.CharField(max_length=70, unique=True, blank=False, default='MIRYA TRADING CO LTD')
-    customer_id = models.CharField(max_length=35, unique=True, blank=False, default='090512DEUTDEFFXXX886479')
+    customer_id = models.CharField(max_length=35, unique=True, blank=False, default='27CDBFRDE17BEH')
     postal_address_country = models.CharField(max_length=2, blank=False, default='DE')
     postal_address_street = models.CharField(max_length=70, blank=False, unique=True, default='TAUNUSANLAGE 12')
     postal_address_city = models.CharField(max_length=70, blank=False, unique=True, default='60325 FRANKFURT')

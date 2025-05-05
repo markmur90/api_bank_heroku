@@ -3391,8 +3391,8 @@
   "model": "authentication.customuser",
   "pk": 1,
   "fields": {
-    "password": "pbkdf2_sha256$1000000$Za4GTjpiy14M9RDprmTZLn$1pFH5cFOtsqWEInhF/jRNd3pJk/QUO0Ig9cSg4g8tas=",
-    "last_login": "2025-05-04T02:16:30.294Z",
+    "password": "pbkdf2_sha256$1000000$MTkuptPUEJgs0kwS9tV1No$KCMAS6pMjtGKBTu9Yf0qpuOEzFuqPwCLq5moesQj+Tg=",
+    "last_login": "2025-05-04T13:34:08.842Z",
     "is_superuser": true,
     "email": "j.moltke@db.com",
     "username": "493069k1",
@@ -3408,7 +3408,7 @@
   "pk": 1,
   "fields": {
     "name": "MIRYA TRADING CO LTD",
-    "customer_id": "090512DEUTDEFFXXX886479",
+    "customer_id": "27CDBFRDE17BEH",
     "postal_address_country": "DE",
     "postal_address_street": "TAUNUSANLAGE 12",
     "postal_address_city": "60325 FRANKFURT"

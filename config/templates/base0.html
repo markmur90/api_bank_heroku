@@ -1,50 +1,72 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Sistema de Transferencias SEPA{% endblock %}</title>
-
-    <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
-
+    <title>{% block title %}Banco - Dashboard{% endblock %}</title>
+    <link href="{% static 'css/bootstrap.min.css' %}" rel="stylesheet">
+    <link rel="icon" href="{% static 'favicon.ico' %}" type="image/x-icon">
+    <style>
+        :root {
+            --header-height: 60px;
+            --nav-height: 50px;
+        }
+        body {
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            font-family: 'Arial', sans-serif;
+            color: #333;
+            background: url('{% static "images/background.png" %}') center/cover no-repeat fixed;
+        }
+        header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: var(--header-height);
+            z-index: 1000;
+        }
+        header + nav {
+            position: fixed;
+            top: var(--header-height);
+            left: 0;
+            width: 100%;
+            height: var(--nav-height);
+            z-index: 999;
+        }
+        main {
+            flex: 1;
+            margin-top: calc(var(--header-height) + var(--nav-height));
+        }
+        .contenido {
+            margin: 2rem auto;
+            max-width: 1200px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 1rem;
+            padding: 2rem 1rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            overflow-y: auto;
+        }
+        footer {
+            background-color: #f8f9fa;
+            color: #6c757d;
+        }
+    </style>
 </head>
 <body>
-
-<nav class="navbar navbar-expand-lg navbar-dark bg-primary mb-4">
-    <div class="container">
-        <a class="navbar-brand" href="{% url 'list_transfersGPT4' %}">Transferencias SEPA</a>
-        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-        </button>
-        <div class="collapse navbar-collapse" id="navbarNav">
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'list_transfersGPT4' %}">Transferencias</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'list_debtorsGPT4' %}">Deudores</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'list_creditorsGPT4' %}">Acreedores</a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'list_creditor_agentsGPT4' %}">Agentes</a>
-                </li>
-            </ul>
+    {% include 'partials/header.html' %}
+    {% if user.is_authenticated and request.path != 'app/' %}
+        {% include 'partials/navGeneral.html' %}
+    {% endif %}
+    <main>
+        <div class="contenido">
+            {% block content %}{% endblock %}
         </div>
-    </div>
-</nav>
-
-<div class="container">
-    {% block content %}
-    {% endblock %}
-</div>
-
-<!-- Bootstrap 5 JS Bundle -->
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-
+    </main>
+    {% include 'partials/footer.html' %}
+    <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 </body>
 </html>

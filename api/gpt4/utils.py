@@ -46,7 +46,12 @@ AUTH_URL = 'https://api.db.com:443/gw/dbapi/others/transactionAuthorization/v1/c
 API_URL = "https://api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer"
 
 tokenF = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg"
+
+tokenD = "eyJraWQiOiJrbXNfc2lnbmVyXzMiLCJhbGciOiJQUzI1NiJ9.eyJzdWIiOiJkZXZlbG9wZXJwb3J0YWwtY2xpZW50LWNyZWRlbnRpYWxzIiwiYXVkIjoiYXBpbSIsImF6cCI6ImRldmVsb3BlcnBvcnRhbC1jbGllbnQtY3JlZGVudGlhbHMiLCJpc3MiOiJodHRwczpcL1wvc2ltdWxhdG9yLWFwaS5kYi5jb21cL2d3XC9vaWRjXC8iLCJleHAiOjE3NDYzNDUwNzgsImlhdCI6MTc0NjM0MTQ3OCwianRpIjoiYWFjNWQ3ZmUtM2IwMS00NjZlLTg3NjQtN2VlZjJlNjhkNzBlIn0.mG_feWMh0dLfSLK3yPZ9aAfWHtTyxn2ZPqZPZ2dtT5PvBSDSqQ0x2VTX2ooVmKlRS_kTJHlFdlTtVycGyms3TmMcVn73IA51yY4wRX624-6qbKUUyeNSUb7dXpe3ehF2wSAP8u65ebLsyAZhphvmOMvggIT6xpGoNOD0DRs5fg1M9cs6n-RRveNkbZP6_7F1jiHQ30q21uM_PcVgQiWeHhjiX3VpsGLzBN7SQNVaYO_LgJWgI1tqAHRjiAGPRTaMEjOoLw49ed8a9mEZTjjNz7UmIoIKIG5ldqL_9SG8SH99Pa__AGsLIgXfUpzVmFCwt2xminPYLz34K-n1_NVMnA"
+
 tokenMk = "H858hfhg0ht40588hhfjpfhhd9944940jf"
+token = tokenD
+
 
 CLIENT_ID = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
 CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzsniABTiDYl7QCh6XXEXzgDrjBD4zSvtHbP0Qa707g3eYbmKxO'
@@ -349,7 +354,7 @@ def default_request_headers():
 # Variables internas
 _access_token = None
 _token_expiry = 3600
-def get_access_token():
+def get_access_token1():
     global _access_token, _token_expiry
     current_time = time.time()
     if _access_token and current_time < _token_expiry - 60:
@@ -373,9 +378,43 @@ def get_access_token():
     if 'access_token' not in token_data:
         error_desc = token_data.get('error_description', str(token_data))
         raise Exception(f"Token inválido recibido: {error_desc}")
-    _access_token = token_data[tokenF]
+    _access_token = token_data[token]
     _token_expiry = current_time + token_data.get('expires_in', 3600)
     return _access_token
+
+# ===========================
+import time
+import jwt
+import requests
+from django.conf import settings
+from pathlib import Path
+
+def get_access_token():
+    now = int(time.time())
+    payload = {
+        'iss': settings.CLIENT_ID,
+        'sub': settings.CLIENT_ID,
+        'aud': settings.TOKEN_URL,
+        'iat': now,
+        'exp': now + 300
+    }
+    private_key = Path(settings.PRIVATE_KEY_PATH).read_bytes()
+    client_assertion = jwt.encode(
+        payload,
+        private_key,
+        algorithm='RS256',
+        headers={'kid': settings.KID}
+    )
+    data = {
+        'grant_type': 'client_credentials',
+        'scope': settings.SCOPE,
+        'client_assertion_type': 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+        'client_assertion': client_assertion
+    }
+    response = requests.post(settings.TOKEN_URL, data=data, timeout=settings.TIMEOUT_REQUEST)
+    response.raise_for_status()
+    return response.json().get('access_token')
+
 
 # ===========================
 # OTP

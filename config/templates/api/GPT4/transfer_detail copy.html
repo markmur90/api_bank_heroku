@@ -33,43 +33,40 @@
       {% endif %}
 
       <dl class="row">
-        <dt class="col-sm-2">Payment ID</dt>
-        <dd class="col-sm-4">{{ transfer.payment_id }}</dd>
+        <dt class="col-sm-3">Payment ID</dt>
+        <dd class="col-sm-9">{{ transfer.payment_id }}</dd>
 
-        <dt class="col-sm-2">Estado</dt>
-        <dd class="col-sm-4">
+        <dt class="col-sm-3">Estado</dt>
+        <dd class="col-sm-9">
           <span class="badge bg-{{ transfer.get_status_color }}">{{ transfer.status }}</span>
         </dd>
 
-        <dt class="col-sm-2">Deudor</dt>
-        <dd class="col-sm-4">{{ transfer.debtor.name }}</dd>
+        <dt class="col-sm-3">Deudor</dt>
+        <dd class="col-sm-9">{{ transfer.debtor.name }}</dd>
 
-        <dt class="col-sm-2">Deudor (IBAN)</dt>
-        <dd class="col-sm-4">{{ transfer.debtor_account.iban }}</dd>
+        <dt class="col-sm-3">Cuenta Deudor (IBAN)</dt>
+        <dd class="col-sm-9">{{ transfer.debtor_account.iban }}</dd>
 
-        <dt class="col-sm-2">Acreedor</dt>
-        <dd class="col-sm-4">{{ transfer.creditor.name }}</dd>
+        <dt class="col-sm-3">Acreedor</dt>
+        <dd class="col-sm-9">{{ transfer.creditor.name }}</dd>
 
-        <dt class="col-sm-2">Acreedor (IBAN)</dt>
-        <dd class="col-sm-4">{{ transfer.creditor_account.iban }}</dd>
+        <dt class="col-sm-3">Cuenta Acreedor (IBAN)</dt>
+        <dd class="col-sm-9">{{ transfer.creditor_account.iban }}</dd>
 
-        <dt class="col-sm-2">Creado en</dt>
-        <dd class="col-sm-4">{{ transfer.created_at }}</dd>
+        <dt class="col-sm-3">Importe</dt>
+        <dd class="col-sm-9">{{ transfer.instructed_amount }} {{ transfer.instructed_currency }}</dd>
 
-        <dt class="col-sm-2">Fecha de Ejecución</dt>
-        <dd class="col-sm-4">{{ transfer.requested_execution_date }}</dd>
+        <dt class="col-sm-3">Fecha de Ejecución</dt>
+        <dd class="col-sm-9">{{ transfer.requested_execution_date }}</dd>
 
-        <dt class="col-sm-2">Importe</dt>
-        <dd class="col-sm-4">{{ transfer.instructed_amount }} {{ transfer.instructed_currency }}</dd>
+        <dt class="col-sm-3">Creado en</dt>
+        <dd class="col-sm-9">{{ transfer.created_at }}</dd>
 
-        <dt class="col-sm-2">Referencia</dt>
-        <dd class="col-sm-4">{{ transfer.remittance_information_unstructured }}</dd>
+        <dt class="col-sm-3">Instruction ID</dt>
+        <dd class="col-sm-9">{{ transfer.payment_identification.instruction_id }}</dd>
 
-        <dt class="col-sm-2">Instruction ID</dt>
-        <dd class="col-sm-4">{{ transfer.payment_identification.instruction_id }}</dd>
-
-        <dt class="col-sm-2">End to End ID</dt>
-        <dd class="col-sm-4">{{ transfer.payment_identification.end_to_end_id }}</dd>
+        <dt class="col-sm-3">End to End ID</dt>
+        <dd class="col-sm-9">{{ transfer.payment_identification.end_to_end_id }}</dd>
       </dl>
 
       <div class="mt-4">

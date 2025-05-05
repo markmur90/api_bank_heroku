@@ -478,8 +478,8 @@ def generate_and_save_aml(request, idempotency_key):
             "debtor_customer_id": "27CDBFRDE17BEH",  # Ejemplo, puedes reemplazarlo con un campo real
             "debtor_kyc_verified": True,  # Ejemplo, puedes reemplazarlo con un campo real
             "creditor_name": transfer.creditor_name,
-            "creditor_iban": transfer.creditor_account_iban,
-            "creditor_bic": transfer.creditor_account_bic,
+            "creditor_iban": transfer.creditor_account.iban,
+            "creditor_bic": transfer.creditor_account.bic,
             "creditor_country": transfer.creditor_adress_country,
             "purpose": transfer.remittance_information_unstructured,
             "channel": "OnlineBanking",  # Ejemplo, puedes reemplazarlo con un campo real

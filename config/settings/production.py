@@ -96,7 +96,7 @@ TEMPLATES = [
 
 import dj_database_url
 
-DATABASES_HEROKU = {
+DATABASE_HEROKU = {
 	'default': dj_database_url.config()
 }
 
@@ -121,7 +121,7 @@ DATABASE_PSQL = {
         'PORT': '5432',
     }
 }
-DATABASES = DATABASES_HEROKU
+DATABASES = DATABASE_HEROKU
 
 
 # Authentication
@@ -264,3 +264,29 @@ ACCESS_TOKEN = {
 SESSION_COOKIE_AGE = 1800  # 30 minutes in seconds
 SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
+
+
+# settings.py
+COD_01 = '27CDBFRDE17BEH'
+COD_02 = 'DEUT27CDBFRDE17BEH'
+COD_03 = 'IMAD-20250427-001'
+COD_04 = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
+
+from pathlib import Path
+BASE_DIR = Path(__file__).resolve().parent.parent
+TOKEN_URL = 'https://api.db.com:443/gw/oidc/token'
+SCOPE = 'sepa_credit_transfers'
+CLIENT_ID = COD_01
+PRIVATE_KEY_PATH = BASE_DIR / 'certs' / 'client_key.pem'
+KID = COD_03
+TIMEOUT_REQUEST = 30
+
+
+
+
+# python -c "from jwcrypto import jwk; key = jwk.JWK.from_pem(open('certs/client_key.pub.pem','rb').read()); print(key.export_public())"
+
+# {"e":"AQAB",
+#  "kid":"3k7ZQS6Egq8btELy6WSh349BQQc5V6KAdUARkGowQAw",
+#  "kty":"RSA",
+#  "n":"qpahh6w_NMJWuYbOlvFX4zIILek09AzuLCEhwzRzQmH--OL57Pup_4Rtorqs_6NCzNOAj9L6qAia54Hmol6orJqrypHSWcGY-4fLi9o1pIU3eJOkuV8mdNhnBWHmJtfpoa9WIWgbEAVZ2lJlLlvvZeqlhCsrB_AxLkWgCSkVgDSwAdcJMDs_fPFcXy4ZzLkpSwqgQIP4JY8yS4paIO4e080xr7HiYldXKpHIgQfebtQY32CZ04JL30675mAi3CLN2JgwRPlHJWeSaHfODB8Pj2wAMN0RIMWjia2Y9TN7HnausAaN4XCeyGEAJYQB2RfM0mSXDqlH55cTjrW9fGkHMw"}
