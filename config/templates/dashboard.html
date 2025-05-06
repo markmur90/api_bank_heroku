@@ -100,10 +100,10 @@
               </td>
               <td>{{ transfer.created_at|date:"d/m/Y H:i" }}</td>
               <td class="text-end">
-                <a href="{% url 'transfer_detailGPT4' transfer.id %}" class="btn btn-sm btn-outline-primary me-2">
+                <a href="{% url 'transfer_detailGPT4' transfer.payment_id %}" class="btn btn-sm btn-outline-primary me-2">
                   <i class="bi bi-eye"></i> Ver
                 </a>
-                <a href="{% url 'send_transfer_viewGPT4' transfer.id %}" class="btn btn-sm btn-outline-success">
+                <a href="{% url 'send_transfer_viewGPT4' transfer.payment_id %}" class="btn btn-sm btn-outline-success">
                   <i class="bi bi-send"></i> Enviar
                 </a>
               </td>
