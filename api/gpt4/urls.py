@@ -32,7 +32,7 @@ urlpatterns = [
     path('transfers/<str:payment_id>/pdf/', views.descargar_pdf, name='descargar_pdfGPT4'),
 
     path("transfers/create/", views.create_transfer, name="create_transferGPT4"),
-    path("transfers/<str:payment_id>/send/", views.send_transfer_view, name="send_transferGPT4"),
+    path("transfers/<str:payment_id>/send/", views.send_transfer_view, name="send_transfer_viewGPT4"),
     path("transfers/<str:payment_id>/sca/", views.transfer_update_sca, name="transfer_update_scaGPT4"),
     path("transfers/<str:payment_id>/", views.transfer_detail, name="transfer_detailGPT4"),
 ]
