@@ -49,9 +49,25 @@ class PaymentIdentification(models.Model):
 
     def __str__(self):
         return self.end_to_end_id
+
+class ClientID(models.Model):
+    codigo = models.CharField(max_length=6, primary_key=True)
+    clientId = models.CharField(max_length=60, blank=False, unique=True)
     
+    def __str__(self):
+        return f"{self.codigo} - {self.clientId}"
+
+class Kid(models.Model):
+    codigo = models.CharField(max_length=6, primary_key=True)
+    kid = models.CharField(max_length=60, blank=False, unique=True)
+    
+    def __str__(self):
+        return f"{self.codigo} - {self.kid}"
+
 class Transfer(models.Model):
     payment_id = models.CharField(max_length=36, unique=True)
+    client = models.ForeignKey(ClientID, on_delete=models.CASCADE, related_name='transfers')
+    kid = models.ForeignKey(Kid, on_delete=models.CASCADE, related_name='transfersKID')
     debtor = models.ForeignKey(Debtor, on_delete=models.CASCADE)
     debtor_account = models.ForeignKey(DebtorAccount, on_delete=models.CASCADE)
     creditor = models.ForeignKey(Creditor, on_delete=models.CASCADE)
@@ -78,12 +94,10 @@ class Transfer(models.Model):
         ('CREA', 'Creada'),
     ])
     payment_identification = models.ForeignKey(PaymentIdentification, on_delete=models.CASCADE)
-
+    auth_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-
-        
     def to_schema_data(self):
         return {
             "purposeCode": self.purpose_code or "GDSV",
@@ -123,8 +137,11 @@ class Transfer(models.Model):
                 "iban": self.creditor_account.iban,
                 "currency": self.creditor_account.currency,
             },
-            "remittanceInformationUnstructured": self.remittance_information_unstructured or "Pago de servicios",
-        }
+                "paymentIdentification": {
+                    "instructionId": self.payment_identification.instruction_id,
+                    "endToEndId":     self.payment_identification.end_to_end_id
+                }
+            }
 
     def get_status_color(self):
         return {
@@ -147,3 +164,19 @@ class LogTransferencia(models.Model):
 
     def __str__(self):
         return f"Log de {self.transfer.payment_id}"
+
+
+    
+    
+COD_01 = '27CDBFRDE17BEH'
+COD_02 = 'DEUT27CDBFRDE17BEH'
+COD_03 = 'IMAD-20250427-001'
+COD_04 = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
+COD_05 = 'SE0IWHFHJFHB848R9E0R9FRUFBCJHW0W9FHF008E88W0457338ASKH64880'
+COD_06 = 'H858hfhg0ht40588hhfjpfhhd9944940jf'
+COD_07 = '090512DEUTDEFFXXX886479'
+COD_08 = 'DE0005140008'
+COD_09 = 'DE86500700100925993805'
+COD_10 = '25993805'
+COD_11 = '0925993805'
+COD_12 = '0105528001187'

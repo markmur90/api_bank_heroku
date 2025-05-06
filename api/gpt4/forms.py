@@ -1,7 +1,7 @@
 from datetime import datetime
 from django import forms
 import pytz
-from api.gpt4.models import Debtor, DebtorAccount, Creditor, CreditorAccount, CreditorAgent, Transfer
+from api.gpt4.models import ClientID, Debtor, DebtorAccount, Creditor, CreditorAccount, CreditorAgent, Kid, Transfer
 
 class DebtorForm(forms.ModelForm):
     class Meta:
@@ -60,12 +60,14 @@ class TransferForm(forms.ModelForm):
     class Meta:
         model = Transfer
         fields = [
-            'debtor', 'debtor_account', 'creditor', 'creditor_account',
+            'client', 'kid', 'debtor', 'debtor_account', 'creditor', 'creditor_account',
             'creditor_agent', 'instructed_amount', 'currency',
             'purpose_code', 'requested_execution_date',
             'remittance_information_structured', 'remittance_information_unstructured'
         ]
         widgets = {
+            'client': forms.Select(attrs={'class': 'form-control'}),
+            'kid': forms.Select(attrs={'class': 'form-control'}),
             'debtor': forms.Select(attrs={'class': 'form-control'}),
             'debtor_account': forms.Select(attrs={'class': 'form-control'}),
             'creditor': forms.Select(attrs={'class': 'form-control'}),
@@ -117,7 +119,6 @@ class SendTransferForm(forms.Form):
         max_length=8,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Introduce OTP manual de 6 a 8 caracteres'})
     )
-
     def clean(self):
         cleaned_data = super().clean()
         obtain_token = cleaned_data.get('obtain_token')
@@ -132,3 +133,31 @@ class SendTransferForm(forms.Form):
             raise forms.ValidationError('Debes seleccionar obtener OTP o proporcionar uno manualmente.')
 
         return cleaned_data
+
+class ScaForm(forms.Form):
+    action = forms.ChoiceField(
+        choices=[('APPROVE','Aprobar'),('CANCEL','Cancelar')],
+        widget=forms.Select(attrs={'class':'form-select'})
+    )
+    otp = forms.CharField(
+        label='Código OTP',
+        widget=forms.TextInput(attrs={'class':'form-control','maxlength':8})
+    )
+    
+class ClientIDForm(forms.ModelForm):
+    class Meta:
+        model = ClientID
+        fields = ['codigo', 'clientId']
+        widgets = {
+            'codigo': forms.TextInput(attrs={'class': 'form-control'}),
+            'clientId': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+class KidForm(forms.ModelForm):
+    class Meta:
+        model = Kid
+        fields = ['codigo', 'kid']
+        widgets = {
+            'codigo': forms.TextInput(attrs={'class': 'form-control'}),
+            'kid': forms.TextInput(attrs={'class': 'form-control'}),
+        }
