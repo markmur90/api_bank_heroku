@@ -3477,18 +3477,18 @@
 },
 {
   "model": "sessions.session",
-  "pk": "9d1fs0k6mqt4apljwohzrt31gtrndnai",
+  "pk": "vlqp6qttlil9r0o9eb1rln6ep2dlag7d",
   "fields": {
-    "session_data": ".eJxVjDEOAiEQRe9CbYgDjIClvWcgAwyyaiBZdivj3XWTLbT9773_EoHWpYZ18BymLM4CxOF3i5Qe3DaQ79RuXabelnmKclPkToe89szPy-7-HVQa9VvrmItSoJNSWhvvuERD1gBni-hIITA6Jgb0kOzJF0sIeLQeIgFhFO8P0uQ3aw:1uCLoG:lfKD55lxdFbaaDM-3NI2iX3hRDMY-k4D_qTeK47nEao",
-    "expire_date": "2025-05-06T17:40:24.746Z"
+    "session_data": ".eJxVjDsOwjAQRO_iGll2_FtT0ucM1q4_OIAcKU4qxN1JpBTQTDHvzbxZwG2tYet5CVNiVybZ5bcjjM_cDpAe2O4zj3Nbl4n4ofCTdj7OKb9up_t3ULHXfU2AEK2KpGTyUoO3JVpRCAwlvYdDcqAdoYHoTRrcoIoT5I0SYKyX7PMF6H03Xw:1uCQPq:e6Cco00Ulo64drMOQ5cdKBN_gEmLOt-rZXCs-x7nYV4",
+    "expire_date": "2025-05-06T22:35:30.488Z"
   }
 },
 {
   "model": "authentication.customuser",
   "pk": 1,
   "fields": {
-    "password": "pbkdf2_sha256$1000000$Zv07xHQDI7TrNwB7P2WpCh$zXEmB4b4Zl0GWmbn22hsuj2sC/zZPyoO3XFcX5oyjP8=",
-    "last_login": "2025-05-06T17:10:24.721Z",
+    "password": "pbkdf2_sha256$1000000$oB1UdalktA5fvAOk9g313u$+ZiqQi8RqrVAWeFTpwkEe/6V5A47xvSm7DNHwVUUFFc=",
+    "last_login": "2025-05-06T22:05:30.410Z",
     "is_superuser": true,
     "email": "j.moltke@db.com",
     "username": "493069k1",
@@ -3534,7 +3534,7 @@
   "pk": 1,
   "fields": {
     "creditor": 1,
-    "iban": "DE86500700100925993805",
+    "iban": "DE41400501500154813455",
     "currency": "EUR"
   }
 },
@@ -3625,6 +3625,13 @@
   }
 },
 {
+  "model": "gpt4.clientid",
+  "pk": "COD_12",
+  "fields": {
+    "clientId": "d8ef25fe-5e4e-4471-b5c6-84b462929e53"
+  }
+},
+{
   "model": "gpt4.kid",
   "pk": "COD_01",
   "fields": {
@@ -3636,6 +3643,13 @@
   "pk": "COD_02",
   "fields": {
     "kid": "DE0005140008"
+  }
+},
+{
+  "model": "gpt4.kid",
+  "pk": "COD_03",
+  "fields": {
+    "kid": "d8ef25fe-5e4e-4471-b5c6-84b462929e53"
   }
 }
 ]

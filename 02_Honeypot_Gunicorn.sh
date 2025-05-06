@@ -24,6 +24,14 @@ for PUERTO in 2222 8000 5000 8001 35729; do
     fi
 done
 
+if confirmar "Cambiar MAC de la interfaz $INTERFAZ"; then
+    sudo ip link set "$INTERFAZ" down
+    MAC_ANTERIOR=$(sudo macchanger -s "$INTERFAZ" | awk '/Current MAC:/ {print $3}')
+    MAC_NUEVA=$(sudo macchanger -r "$INTERFAZ" | awk '/New MAC:/ {print $3}')
+    sudo ip link set "$INTERFAZ" up
+    echo -e "\033[1;32mMAC anterior: $MAC_ANTERIOR\033[0m"
+    echo -e "\033[1;32mMAC nueva:    $MAC_NUEVA\033[0m"
+fi
 
 if confirmar "Iniciar Gunicorn, honeypot y livereload simultáneamente"; then
     clear

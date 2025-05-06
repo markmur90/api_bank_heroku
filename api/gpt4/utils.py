@@ -439,14 +439,14 @@ def crear_tabla_pdf(c, data, y_position):
 def get_access_token(payment_id, force_refresh=True):
     transfer = get_object_or_404(Transfer, payment_id=payment_id)
     client = transfer.client
-    client_id = client.clientId
+    CLIENTID = client.clientId
     kid = transfer.kid
-    kid_id = kid.kid
+    KID = kid.kid
     
     now = int(time.time())
     payload = {
-        'iss': client_id,
-        'sub': client_id,
+        'iss': CLIENTID,
+        'sub': CLIENTID,
         'aud': settings.TOKEN_URL,
         'iat': now,
         'exp': now + 300
@@ -456,7 +456,7 @@ def get_access_token(payment_id, force_refresh=True):
         payload,
         private_key,
         algorithm='RS256',
-        headers={'kid': kid_id}
+        headers={'kid': KID}
     )
     data = {
         'grant_type': 'client_credentials',
@@ -554,7 +554,7 @@ def resolver_challenge(challenge_id, token, payment_id):
             raise Exception(msg)
 
 def obtener_otp_automatico_con_challenge(transfer):
-    token = get_access_token()
+    token = get_access_token(transfer.payment_id)
     challenge_id = crear_challenge_autorizacion(transfer, token, transfer.payment_id)
     otp_token = resolver_challenge(challenge_id, token, transfer.payment_id)
     return otp_token, token
@@ -630,14 +630,16 @@ def send_transfer1(transfer, use_token=None, use_otp=None, regenerate_token=Fals
         )
     return response
 
-def send_transfer(transfer, token, otp):
+def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False, regenerate_otp=False):
+    proof_token, token = obtener_otp_automatico_con_challenge(transfer.payment_id) if regenerate_otp or not use_otp else (use_otp, token)
+    token = get_access_token(transfer.payment_id) if regenerate_token or not use_token else use_token
     schema_data = transfer.to_schema_data()
     headers = default_request_headers()
     headers.update({
         "Authorization": f"Bearer {token}",
-        "idempotency-id": transfer.payment_id,
-        "Correlation-Id": transfer.payment_id,
-        "challengeProofToken": otp
+        "idempotency-id": str(transfer.payment_id),
+        "Correlation-Id": str(transfer.payment_id),
+        "otp": proof_token
     })
     response = requests.post(API_URL, json=schema_data, headers=headers, timeout=TIMEOUT_REQUEST)
     data = response.json()
@@ -682,8 +684,8 @@ def fetch_transfer_details(transfer, token):
     headers = default_request_headers()
     headers.update({
         "Authorization": f"Bearer {token}",
-        "idempotency-id": transfer.payment_id,
-        "Correlation-Id": transfer.payment_id
+        "idempotency-id": str(transfer.payment_id),
+        "Correlation-Id": str(transfer.payment_id)
     })
     response = requests.get(url, headers=headers, timeout=TIMEOUT_REQUEST)
     data = response.json()

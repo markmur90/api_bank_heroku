@@ -28,7 +28,16 @@
       {% endif %}
       <form method="post">
         {% csrf_token %}
-        {{ form.as_p }}
+        <div class="row g-3 mb-3">
+          <div class="col-md-6">
+            <label for="{{ form.action.id_for_label }}" class="form-label">Acción</label>
+            {{ form.action }}
+          </div>
+          <div class="col-md-6">
+            <label for="{{ form.otp.id_for_label }}" class="form-label">Código OTP</label>
+            {{ form.otp }}
+          </div>
+        </div>
         <div class="d-flex justify-content-end">
           <button type="submit" class="btn btn-success">Procesar SCA</button>
         </div>

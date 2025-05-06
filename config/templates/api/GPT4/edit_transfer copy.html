@@ -22,7 +22,9 @@
     border-top-left-radius: 1rem;
     border-top-right-radius: 1rem;
   }
-  .custom-card-body { padding: 1.5rem; }
+  .custom-card-body {
+    padding: 1.5rem;
+  }
 </style>
 
 <div class="container-fluid">
@@ -35,32 +37,26 @@
     <div class="card-body custom-card-body">
       <form method="post" novalidate>
         {% csrf_token %}
+        {{ form.as_p }}
 
-        <!-- Sección 1: Edición de la transferencia -->
-        <h5>Datos de la transferencia</h5>
-        {{ form_edit.as_p }}
-
-        <hr>
-
-        <!-- Sección 2: Token de Autorización -->
         <h5>Token de Autorización</h5>
         <div class="form-check">
-          {{ form_send.obtain_token }} {{ form_send.obtain_token.label_tag }}
+          {{ form.obtain_token }}
+          <label class="form-check-label">Obtener nuevo TOKEN automáticamente</label>
         </div>
         <div class="mb-3">
-          {{ form_send.manual_token }}
+          {{ form.manual_token }}
         </div>
 
-        <!-- Sección 3: OTP / TAN -->
         <h5>OTP / TAN</h5>
         <div class="form-check">
-          {{ form_send.obtain_otp }} {{ form_send.obtain_otp.label_tag }}
+          {{ form.obtain_otp }}
+          <label class="form-check-label">Obtener nuevo OTP automáticamente</label>
         </div>
         <div class="mb-3">
-          {{ form_send.manual_otp }}
+          {{ form.manual_otp }}
         </div>
 
-        <!-- Enlaces y botones de acción -->
         <div class="d-flex justify-content-end mt-4">
           <a href="{% url 'transfer_detailGPT4' transfer.payment_id %}" class="btn btn-secondary me-2">
             <i class="bi bi-arrow-left"></i> Cancelar
@@ -68,11 +64,8 @@
           <a href="{% url 'dashboard' %}" class="btn btn-secondary me-2">
             <i class="bi bi-house-door"></i> Dashboard
           </a>
-          <button type="submit" name="save_transfer" class="btn btn-primary">
+          <button type="submit" class="btn btn-primary">
             <i class="bi bi-save"></i> Guardar Cambios
-          </button>
-          <button type="submit" name="send_transfer" class="btn btn-success ms-2">
-            <i class="bi bi-send-check"></i> Enviar Transferencia
           </button>
         </div>
       </form>
@@ -80,3 +73,4 @@
   </div>
 </div>
 {% endblock %}
+
