@@ -170,20 +170,8 @@ def create_transfer(request):
             carpeta = obtener_ruta_schema_transferencia(transfer.payment_id)
             os.makedirs(carpeta, exist_ok=True)
 
-            xml1 = generar_xml_pain001(transfer)
-            path1 = os.path.join(carpeta, f"pain001_{transfer.payment_id}.xml")
-            with open(path1, 'w', encoding='utf-8') as f:
-                f.write(xml1)
-
-            xml_aml = generar_archivo_aml(transfer)
-            path_aml = os.path.join(carpeta, f"aml_{transfer.payment_id}.xml")
-            with open(path_aml, 'w', encoding='utf-8') as f:
-                f.write(xml_aml)
-
-            xml2 = generar_xml_pain002(transfer)
-            path2 = os.path.join(carpeta, f"pain002_{transfer.payment_id}.xml")
-            with open(path2, 'w', encoding='utf-8') as f:
-                f.write(xml2)
+            generar_xml_pain001(transfer, transfer.payment_id)
+            generar_archivo_aml(transfer, transfer.payment_id)
 
             messages.success(request, "Transferencia creada y XML/AML generados correctamente.")
             return redirect('dashboard')

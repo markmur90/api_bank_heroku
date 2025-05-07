@@ -1,5 +1,31 @@
 [
 {
+  "model": "admin.logentry",
+  "pk": 1,
+  "fields": {
+    "action_time": "2025-05-07T09:14:37.229Z",
+    "user": 1,
+    "content_type": 70,
+    "object_id": "COD_13",
+    "object_repr": "COD_13 - 000000000SRTRN38837862BEH1RLN000000",
+    "action_flag": 1,
+    "change_message": "[{\"added\": {}}]"
+  }
+},
+{
+  "model": "admin.logentry",
+  "pk": 2,
+  "fields": {
+    "action_time": "2025-05-07T09:15:03.979Z",
+    "user": 1,
+    "content_type": 74,
+    "object_id": "COD_05",
+    "object_repr": "COD_05 - 000000000SRTRN38837862BEH1RLN000000",
+    "action_flag": 1,
+    "change_message": "[{\"added\": {}}]"
+  }
+},
+{
   "model": "auth.permission",
   "pk": 1,
   "fields": {
@@ -3485,6 +3511,14 @@
 },
 {
   "model": "sessions.session",
+  "pk": "rqopfyrx5425anng2nl92gdu7fptm385",
+  "fields": {
+    "session_data": ".eJxVjDsOwjAQRO_iGll2_FtT0ucM1q4_OIAcKU4qxN1JpBTQTDHvzbxZwG2tYet5CVNiVybZ5bcjjM_cDpAe2O4zj3Nbl4n4ofCTdj7OKb9up_t3ULHXfU2AEK2KpGTyUoO3JVpRCAwlvYdDcqAdoYHoTRrcoIoT5I0SYKyX7PMF6H03Xw:1uCaqX:C-lt7v07JkiJPvMlecC6TULec5CVdvIlx9vEe_lT8Kk",
+    "expire_date": "2025-05-07T09:43:45.351Z"
+  }
+},
+{
+  "model": "sessions.session",
   "pk": "vlqp6qttlil9r0o9eb1rln6ep2dlag7d",
   "fields": {
     "session_data": ".eJxVjDsOwjAQRO_iGll2_FtT0ucM1q4_OIAcKU4qxN1JpBTQTDHvzbxZwG2tYet5CVNiVybZ5bcjjM_cDpAe2O4zj3Nbl4n4ofCTdj7OKb9up_t3ULHXfU2AEK2KpGTyUoO3JVpRCAwlvYdDcqAdoYHoTRrcoIoT5I0SYKyX7PMF6H03Xw:1uCQPq:e6Cco00Ulo64drMOQ5cdKBN_gEmLOt-rZXCs-x7nYV4",
@@ -3496,7 +3530,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$1000000$oB1UdalktA5fvAOk9g313u$+ZiqQi8RqrVAWeFTpwkEe/6V5A47xvSm7DNHwVUUFFc=",
-    "last_login": "2025-05-07T00:42:42.043Z",
+    "last_login": "2025-05-07T09:13:45.328Z",
     "is_superuser": true,
     "email": "j.moltke@db.com",
     "username": "493069k1",
@@ -3640,6 +3674,13 @@
   }
 },
 {
+  "model": "gpt4.clientid",
+  "pk": "COD_13",
+  "fields": {
+    "clientId": "000000000SRTRN38837862BEH1RLN000000"
+  }
+},
+{
   "model": "gpt4.kid",
   "pk": "COD_01",
   "fields": {
@@ -3665,6 +3706,13 @@
   "pk": "COD_04",
   "fields": {
     "kid": "090512DEUTDEFFXXX886479"
+  }
+},
+{
+  "model": "gpt4.kid",
+  "pk": "COD_05",
+  "fields": {
+    "kid": "000000000SRTRN38837862BEH1RLN000000"
   }
 }
 ]

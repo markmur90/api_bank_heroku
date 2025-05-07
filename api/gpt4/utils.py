@@ -151,6 +151,7 @@ def generar_xml_pain001(transferencia, payment_id):
     rmt_inf = ET.SubElement(cdt_trf_tx_inf, "RmtInf")
     if transferencia.remittance_information_unstructured:
         ET.SubElement(rmt_inf, "Ustrd").text = transferencia.remittance_information_unstructured
+        
     xml_filename = f"pain001_{payment_id}.xml"
     xml_path = os.path.join(carpeta_transferencia, xml_filename)
     ET.ElementTree(root).write(xml_path, encoding='utf-8', xml_declaration=True)
@@ -174,6 +175,7 @@ def generar_xml_pain002(data, payment_id):
     ET.SubElement(tx_inf, "OrgnlInstrId").text = data["paymentIdentification"]["instructionId"]
     ET.SubElement(tx_inf, "OrgnlEndToEndId").text = data["paymentIdentification"]["endToEndId"]
     ET.SubElement(tx_inf, "TxSts").text = data["transactionStatus"]
+    
     xml_filename = f"pain002_{payment_id}.xml"
     xml_path = os.path.join(carpeta_transferencia, xml_filename)
     ET.ElementTree(root).write(xml_path, encoding="utf-8", xml_declaration=True)
