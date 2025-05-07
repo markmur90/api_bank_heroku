@@ -52,22 +52,22 @@ class PaymentIdentification(models.Model):
 
 class ClientID(models.Model):
     codigo = models.CharField(max_length=6, primary_key=True)
-    clientId = models.CharField(max_length=60, blank=False, unique=True)
+    clientId = models.CharField(max_length=60, unique=True, blank=True, null=True)
     
     def __str__(self):
         return f"{self.codigo} - {self.clientId}"
 
 class Kid(models.Model):
     codigo = models.CharField(max_length=6, primary_key=True)
-    kid = models.CharField(max_length=60, blank=False, unique=True)
+    kid = models.CharField(max_length=60, unique=True)
     
     def __str__(self):
         return f"{self.codigo} - {self.kid}"
 
 class Transfer(models.Model):
     payment_id = models.CharField(max_length=36, unique=True)
-    client = models.ForeignKey(ClientID, on_delete=models.CASCADE, related_name='transfers')
-    kid = models.ForeignKey(Kid, on_delete=models.CASCADE, related_name='transfersKID')
+    client = models.ForeignKey(ClientID, on_delete=models.CASCADE, related_name='transfers', blank=True, null=True)
+    kid = models.ForeignKey(Kid, on_delete=models.CASCADE, related_name='transfersKID', blank=True, null=True)
     debtor = models.ForeignKey(Debtor, on_delete=models.CASCADE)
     debtor_account = models.ForeignKey(DebtorAccount, on_delete=models.CASCADE)
     creditor = models.ForeignKey(Creditor, on_delete=models.CASCADE)

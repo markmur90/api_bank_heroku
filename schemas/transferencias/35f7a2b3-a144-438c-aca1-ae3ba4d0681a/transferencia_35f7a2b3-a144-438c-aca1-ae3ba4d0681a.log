@@ -1,0 +1,112 @@
+
+================================================================================
+Fecha y hora: 2025-05-07 05:04:32.723574
+================================================================================
+=== Headers enviados ===
+{}
+
+=== Info adicional ===
+Error generando OTP automático en vista
+
+=== Error ===
+Error obteniendo access_token: {"error":"unauthorized","error_description":"Bad credentials"}
+================================================================================
+
+
+================================================================================
+Fecha y hora: 2025-05-07 05:05:18.711539
+================================================================================
+=== Headers enviados ===
+{}
+
+=== Info adicional ===
+Error generando OTP automático en vista
+
+=== Error ===
+Error obteniendo access_token: {"error":"unauthorized","error_description":"Bad credentials"}
+================================================================================
+
+
+================================================================================
+Fecha y hora: 2025-05-07 05:05:29.461134
+================================================================================
+=== Headers enviados ===
+{}
+
+=== Info adicional ===
+Error obteniendo access_token en vista
+
+=== Error ===
+Error obteniendo access_token: {"error":"unauthorized","error_description":"Bad credentials"}
+================================================================================
+
+
+================================================================================
+Fecha y hora: 2025-05-07 05:15:28.180726
+================================================================================
+=== Headers enviados ===
+{}
+
+=== Info adicional ===
+Error generando OTP automático en vista
+
+=== Error ===
+Error obteniendo access_token: {"error":"unauthorized","error_description":"Bad credentials"}
+================================================================================
+
+
+================================================================================
+Fecha y hora: 2025-05-07 05:15:51.387457
+================================================================================
+=== Headers enviados ===
+{}
+
+=== Info adicional ===
+Error generando OTP automático en vista
+
+=== Error ===
+Error obteniendo access_token: {"error":"unauthorized","error_description":"Bad credentials"}
+================================================================================
+
+
+================================================================================
+Fecha y hora: 2025-05-07 05:27:17.931726
+================================================================================
+=== Headers enviados ===
+{}
+
+=== Info adicional ===
+Error generando OTP automático en vista
+
+=== Error ===
+Error obteniendo access_token: {"error":"unauthorized","error_description":"Bad credentials"}
+================================================================================
+
+
+================================================================================
+Fecha y hora: 2025-05-07 05:29:18.047276
+================================================================================
+=== Headers enviados ===
+{}
+
+=== Info adicional ===
+Error generando OTP automático en vista
+
+=== Error ===
+Error obteniendo access_token: {"error":"unauthorized","error_description":"Bad credentials"}
+================================================================================
+
+
+================================================================================
+Fecha y hora: 2025-05-07 05:29:31.771548
+================================================================================
+=== Headers enviados ===
+{}
+
+=== Info adicional ===
+Error obteniendo access_token en vista
+
+=== Error ===
+Error obteniendo access_token: {"error":"unauthorized","error_description":"Bad credentials"}
+================================================================================
+

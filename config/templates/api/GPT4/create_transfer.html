@@ -15,24 +15,7 @@
   <form method="post" class="needs-validation" novalidate>
     {% csrf_token %}
 
-    <!-- Selección de credenciales -->
-    <div class="card custom-card mb-4">
-      <div class="custom-card-header">Credenciales</div>
-      <div class="card-body custom-card-body">
-        <div class="row g-3">
-          <div class="col-md-6">
-            <label for="id_client" class="form-label">ClientID</label>
-            {{ form.client }}
-            <a href="{% url 'create_clientidGPT4' %}" class="btn btn-link">Crear nuevo ClientID</a>
-          </div>
-          <div class="col-md-6">
-            <label for="id_kid" class="form-label">KID</label>
-            {{ form.kid }}
-            <a href="{% url 'create_kidGPT4' %}" class="btn btn-link">Crear nuevo KID</a>
-          </div>
-        </div>
-      </div>
-    </div>
+
 
 
 

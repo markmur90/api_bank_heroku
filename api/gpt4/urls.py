@@ -29,6 +29,7 @@ urlpatterns = [
     # path('transfers/<int:transfer_id>/send/', views.send_transfer_view, name='send_transfer_viewGPT4'),
     # path('transfer/<str:payment_id>/sca/', views.transfer_update_sca, name='transfer_update_scaGPT4'),
     
+    
     path('transfers/<str:payment_id>/pdf/', views.descargar_pdf, name='descargar_pdfGPT4'),
 
     path("transfers/<str:payment_id>/edit/", views.edit_transfer, name="edit_transferGPT4"),

@@ -24,6 +24,21 @@ for PUERTO in 2222 8000 5000 8001 35729; do
     fi
 done
 
+if confirmar "Configurar UFW"; then
+    sudo ufw --force reset
+    sudo ufw default deny incoming
+    sudo ufw default allow outgoing
+    sudo ufw allow 22/tcp
+    sudo ufw allow 443/tcp
+    sudo ufw allow 2222/tcp
+    sudo ufw allow 8000/tcp
+    sudo ufw allow 5000/tcp
+    sudo ufw allow 35729/tcp
+    sudo ufw allow from 127.0.0.1 to any port 8001 proto tcp comment "Gunicorn local backend"
+    sudo ufw enable
+    echo -e "\033[1;32mReglas de UFW aplicadas.\033[0m"
+fi
+
 if confirmar "Cambiar MAC de la interfaz $INTERFAZ"; then
     sudo ip link set "$INTERFAZ" down
     MAC_ANTERIOR=$(sudo macchanger -s "$INTERFAZ" | awk '/Current MAC:/ {print $3}')

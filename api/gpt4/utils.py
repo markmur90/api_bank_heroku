@@ -3,6 +3,7 @@ import json
 import os
 import logging
 from datetime import datetime, timezone
+from typing import Optional
 from django.conf import settings
 import xml.etree.ElementTree as ET
 import qrcode
@@ -52,6 +53,18 @@ TOKEN_URL   =       'https://api.db.com:443/gw/oidc/token'
 OTP_URL     =       'https://api.db.com:443/gw/dbapi/others/onetimepasswords/v2/single'
 AUTH_URL    =       'https://api.db.com:443/gw/dbapi/others/transactionAuthorization/v1/challenges'
 API_URL     =       "https://api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer"
+
+
+CLIENT_ID = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
+CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzsniABTiDYl7QCh6XXEXzgDrjBD4zSvtHbP0Qa707g3eYbmKxO'
+
+
+tokenF = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg"
+
+tokenD = "eyJraWQiOiJrbXNfc2lnbmVyXzMiLCJhbGciOiJQUzI1NiJ9.eyJzdWIiOiJkZXZlbG9wZXJwb3J0YWwtY2xpZW50LWNyZWRlbnRpYWxzIiwiYXVkIjoiYXBpbSIsImF6cCI6ImRldmVsb3BlcnBvcnRhbC1jbGllbnQtY3JlZGVudGlhbHMiLCJpc3MiOiJodHRwczpcL1wvc2ltdWxhdG9yLWFwaS5kYi5jb21cL2d3XC9vaWRjXC8iLCJleHAiOjE3NDYzNDUwNzgsImlhdCI6MTc0NjM0MTQ3OCwianRpIjoiYWFjNWQ3ZmUtM2IwMS00NjZlLTg3NjQtN2VlZjJlNjhkNzBlIn0.mG_feWMh0dLfSLK3yPZ9aAfWHtTyxn2ZPqZPZ2dtT5PvBSDSqQ0x2VTX2ooVmKlRS_kTJHlFdlTtVycGyms3TmMcVn73IA51yY4wRX624-6qbKUUyeNSUb7dXpe3ehF2wSAP8u65ebLsyAZhphvmOMvggIT6xpGoNOD0DRs5fg1M9cs6n-RRveNkbZP6_7F1jiHQ30q21uM_PcVgQiWeHhjiX3VpsGLzBN7SQNVaYO_LgJWgI1tqAHRjiAGPRTaMEjOoLw49ed8a9mEZTjjNz7UmIoIKIG5ldqL_9SG8SH99Pa__AGsLIgXfUpzVmFCwt2xminPYLz34K-n1_NVMnA"
+
+tokenMk = "H858hfhg0ht40588hhfjpfhhd9944940jf"
+token = tokenD
 
 # ===========================
 # GENERADORES DE ID
@@ -433,13 +446,41 @@ def crear_tabla_pdf(c, data, y_position):
 # ===========================
 # ACCESS TOKEN
 # ===========================
+# Variables internas
+_access_token = None
+_token_expiry = 3600
+
+def get_access_token1(payment_id=None, force_refresh=False):
+    global _access_token, _token_expiry
+    current_time = time.time()
+    if _access_token and current_time < _token_expiry - 60:
+        return _access_token
+    data = {
+        'grant_type': 'client_credentials',
+        'scope': 'sepa_credit_transfers'
+    }
+    auth = (CLIENT_ID, CLIENT_SECRET)
+    try:
+        response = requests.post(TOKEN_URL, data=data, auth=auth, timeout=TIMEOUT_REQUEST)
+    except requests.RequestException as e:
+        raise Exception(f"Error obteniendo access_token: {e}")
+    if response.status_code != 200:
+        error_msg = handle_error_response(response)
+        raise Exception(f"Error obteniendo access_token: {error_msg}")
+    token_data = response.json()
+    if 'access_token' not in token_data:
+        error_desc = token_data.get('error_description', str(token_data))
+        raise Exception(f"Token inválido recibido: {error_desc}")
+    _access_token = token_data['access_token']
+    _token_expiry = current_time + token_data.get('expires_in', 3600)
+    return _access_token
+
 def get_access_token(payment_id, force_refresh=True):
     transfer = get_object_or_404(Transfer, payment_id=payment_id)
     client = transfer.client
     CLIENTID = client.clientId
     kid = transfer.kid
     KID = kid.kid
-    
     now = int(time.time())
     payload = {
         'iss': CLIENTID,
@@ -559,10 +600,10 @@ def obtener_otp_automatico_con_challenge(transfer):
 # ===========================
 # SEND TRANSFER
 # ===========================
-def send_transfer1(transfer, use_token=None, use_otp=None, regenerate_token=False, regenerate_otp=False):
+def send_transfer0(transfer, use_token=None, use_otp=None, regenerate_token=False, regenerate_otp=False):
     schema_data = transfer.to_schema_data()
-    token = get_access_token() if regenerate_token or not use_token else use_token
-    proof_token, token = obtener_otp_automatico_con_challenge(transfer) if regenerate_otp or not use_otp else (use_otp, token)
+    token = use_token if use_token and not regenerate_token else get_access_token(transfer.payment_id)
+    proof_token, token = (use_otp, token) if use_otp and not regenerate_otp else obtener_otp_automatico_con_challenge(transfer)
     headers = default_request_headers()
     headers.update({
         'Authorization': f'Bearer {token}',
@@ -572,14 +613,21 @@ def send_transfer1(transfer, use_token=None, use_otp=None, regenerate_token=Fals
         'Correlation-Id': transfer.payment_id,
         'otp': proof_token
     })
-    url = f"{API_URL}"
     try:
-        response = requests.post(url, headers=headers, json=schema_data, timeout=TIMEOUT_REQUEST)
+        response = requests.post(API_URL, headers=headers, json=schema_data, timeout=TIMEOUT_REQUEST)
+        response.raise_for_status()
         data = response.json()
         transfer.auth_id = data.get('authId')
         transfer.status = data.get('transactionStatus', transfer.status)
         transfer.save()
-    except Exception as e:
+        registrar_log(
+            transfer.payment_id,
+            request_headers=headers,
+            request_body=schema_data,
+            response_headers=dict(response.headers),
+            response_body=response.text
+        )
+    except requests.RequestException as e:
         error_msg = handle_error_response(e)
         registrar_log(
             transfer.payment_id,
@@ -589,37 +637,13 @@ def send_transfer1(transfer, use_token=None, use_otp=None, regenerate_token=Fals
             extra_info="Error de conexión enviando transferencia"
         )
         raise
-    registrar_log(
-        transfer.payment_id,
-        request_headers=headers,
-        request_body=schema_data,
-        response_headers=dict(response.headers),
-        response_body=response.text
-    )
-    if response.status_code not in (200, 201):
-        error_msg = handle_error_response(response)
-        registrar_log(
-            transfer.payment_id,
-            request_headers=headers,
-            request_body=schema_data,
-            response_headers=dict(response.headers),
-            response_body=response.text,
-            error=error_msg,
-            extra_info="Respuesta no exitosa de API"
-        )
-        raise Exception(error_msg)
-    data = response.json()
-    transfer.auth_id = data.get('authId')
-    transfer.status = data.get('transactionStatus', transfer.status)
-    transfer.save()
     try:
         xml_path = generar_xml_pain001(transfer, transfer.payment_id)
         aml_path = generar_archivo_aml(transfer, transfer.payment_id)
         validar_xml_pain001(xml_path)
         validar_xml_con_xsd(xml_path)
         validar_aml_con_xsd(aml_path)
-        logger = setup_logger(transfer.payment_id)
-        logger.info("Validación de XML y AML superada correctamente.")
+        setup_logger(transfer.payment_id).info("Validación de XML y AML superada correctamente.")
     except Exception as e:
         registrar_log(
             transfer.payment_id,
@@ -627,7 +651,9 @@ def send_transfer1(transfer, use_token=None, use_otp=None, regenerate_token=Fals
         )
     return response
 
-def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False, regenerate_otp=False):
+
+
+def send_transfer1(transfer, use_token=None, use_otp=None, regenerate_token=False, regenerate_otp=False):
     proof_token, token = obtener_otp_automatico_con_challenge(transfer.payment_id) if regenerate_otp or not use_otp else (use_otp, token)
     token = get_access_token(transfer.payment_id) if regenerate_token or not use_token else use_token
     schema_data = transfer.to_schema_data()
@@ -650,6 +676,69 @@ def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False
         response_headers=dict(response.headers),
         response_body=response.text
     )
+    return response
+
+def send_transfer(
+    transfer: Transfer,
+    use_token: Optional[str] = None,
+    use_otp: Optional[str] = None,
+    regenerate_token: bool = False,
+    regenerate_otp: bool = False
+) -> requests.Response:
+    schema_data = transfer.to_schema_data()
+    if use_token and not regenerate_token:
+        token = use_token
+    else:
+        token = get_access_token(transfer.payment_id)
+    if use_otp and not regenerate_otp:
+        proof_token = use_otp
+    else:
+        proof_token, token = obtener_otp_automatico_con_challenge(transfer)
+    headers = default_request_headers()
+    headers.update({
+        'Authorization': f'Bearer {token}',
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+        'Idempotency-Id': transfer.payment_id,
+        'Correlation-Id': transfer.payment_id,
+        'Otp': proof_token
+    })
+    try:
+        response = requests.post(API_URL, headers=headers, json=schema_data, timeout=TIMEOUT_REQUEST)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        error_msg = handle_error_response(exc)
+        registrar_log(
+            transfer.payment_id,
+            request_headers=headers,
+            request_body=schema_data,
+            error=error_msg,
+            extra_info='Error de conexión enviando transferencia'
+        )
+        raise
+    data = response.json()
+    transfer.auth_id = data.get('authId')
+    transfer.status = data.get('transactionStatus', transfer.status)
+    transfer.save()
+    registrar_log(
+        transfer.payment_id,
+        request_headers=headers,
+        request_body=schema_data,
+        response_headers=dict(response.headers),
+        response_body=response.text
+    )
+    try:
+        xml_path = generar_xml_pain001(transfer, transfer.payment_id)
+        aml_path = generar_archivo_aml(transfer, transfer.payment_id)
+        validar_xml_pain001(xml_path)
+        validar_xml_con_xsd(xml_path)
+        validar_aml_con_xsd(aml_path)
+        setup_logger(transfer.payment_id).info('Validación de XML y AML completada correctamente.')
+    except Exception as exc:
+        registrar_log(
+            transfer.payment_id,
+            response_body=f'Error generando XML o AML posterior: {exc}'
+        )
     return response
 
 def update_sca_request(transfer, action, otp, token):

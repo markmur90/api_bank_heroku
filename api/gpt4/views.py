@@ -11,7 +11,7 @@ from weasyprint import HTML
 
 from api.gpt4.models import Debtor, DebtorAccount, Creditor, CreditorAccount, CreditorAgent, PaymentIdentification, Transfer
 from api.gpt4.forms import ClientIDForm, DebtorForm, DebtorAccountForm, CreditorForm, CreditorAccountForm, CreditorAgentForm, KidForm, ScaForm, SendTransferForm, TransferForm
-from api.gpt4.utils import ZCOD_DIR, build_auth_url, fetch_token_by_code, fetch_transfer_details, generar_pdf_transferencia, generate_deterministic_id, generate_payment_id_uuid, generate_pkce_pair, get_access_token, get_client_credentials_token, handle_error_response, obtener_otp_automatico_con_challenge, obtener_ruta_schema_transferencia, read_log_file, refresh_access_token, registrar_log, send_transfer, update_sca_request
+from api.gpt4.utils import ZCOD_DIR, build_auth_url, fetch_token_by_code, fetch_transfer_details, generar_archivo_aml, generar_pdf_transferencia, generar_xml_pain001, generar_xml_pain002, generate_deterministic_id, generate_payment_id_uuid, generate_pkce_pair, get_access_token, get_client_credentials_token, handle_error_response, obtener_otp_automatico_con_challenge, obtener_ruta_schema_transferencia, read_log_file, refresh_access_token, registrar_log, send_transfer, update_sca_request
 
 logger = logging.getLogger(__name__)
 
@@ -113,7 +113,7 @@ def create_kid(request):
     return render(request, 'api/GPT4/create_kid.html', {'form': form})
 
 # ==== TRANSFER ====
-def create_transfer(request):
+def create_transfer1(request):
     if request.method == 'POST':
         form = TransferForm(request.POST)
         if form.is_valid():
@@ -143,6 +143,58 @@ def create_transfer(request):
         form = TransferForm()
     return render(request, 'api/GPT4/create_transfer.html', {'form': form, 'transfer': None})
 
+
+def create_transfer(request):
+    if request.method == 'POST':
+        form = TransferForm(request.POST)
+        if form.is_valid():
+            transfer = form.save(commit=False)
+            transfer.payment_id = str(generate_payment_id_uuid())
+            payment_identification = PaymentIdentification.objects.create(
+                instruction_id=generate_deterministic_id(
+                    transfer.payment_id,
+                    transfer.creditor_account.iban,
+                    transfer.instructed_amount
+                ),
+                end_to_end_id=generate_deterministic_id(
+                    transfer.debtor_account.iban,
+                    transfer.creditor_account.iban,
+                    transfer.instructed_amount,
+                    transfer.requested_execution_date,
+                    prefix="E2E"
+                )
+            )
+            transfer.payment_identification = payment_identification
+            transfer.save()
+
+            carpeta = obtener_ruta_schema_transferencia(transfer.payment_id)
+            os.makedirs(carpeta, exist_ok=True)
+
+            xml1 = generar_xml_pain001(transfer)
+            path1 = os.path.join(carpeta, f"pain001_{transfer.payment_id}.xml")
+            with open(path1, 'w', encoding='utf-8') as f:
+                f.write(xml1)
+
+            xml_aml = generar_archivo_aml(transfer)
+            path_aml = os.path.join(carpeta, f"aml_{transfer.payment_id}.xml")
+            with open(path_aml, 'w', encoding='utf-8') as f:
+                f.write(xml_aml)
+
+            xml2 = generar_xml_pain002(transfer)
+            path2 = os.path.join(carpeta, f"pain002_{transfer.payment_id}.xml")
+            with open(path2, 'w', encoding='utf-8') as f:
+                f.write(xml2)
+
+            messages.success(request, "Transferencia creada y XML/AML generados correctamente.")
+            return redirect('dashboard')
+        else:
+            messages.error(request, "Por favor corrige los errores en el formulario.")
+    else:
+        form = TransferForm()
+    return render(request, 'api/GPT4/create_transfer.html', {'form': form, 'transfer': None})
+
+
+
 def list_transfers(request):
     estado = request.GET.get("estado")
     transfers = Transfer.objects.all().order_by('-created_at')
@@ -161,7 +213,9 @@ def list_transfers(request):
         'transfers': transfers_paginated
     })
 
-def transfer_detail1(request, transfer_id):
+
+
+def transfer_detail0(request, transfer_id):
     transfer = get_object_or_404(Transfer, id=transfer_id)
     log_content = read_log_file(transfer.payment_id)
     carpeta = obtener_ruta_schema_transferencia(transfer.payment_id)
@@ -196,6 +250,63 @@ def transfer_detail1(request, transfer_id):
         'errores_detectados': errores_detectados,
         'mensaje_error': mensaje_error
     })
+
+def transfer_detail(request, payment_id):
+    transfer = get_object_or_404(Transfer, payment_id=payment_id)
+    # token = get_access_token(transfer.payment_id)
+    # details = fetch_transfer_details(transfer, token)
+    
+    log_content = read_log_file(transfer.payment_id)
+    carpeta = obtener_ruta_schema_transferencia(transfer.payment_id)
+    archivos_logs = {
+        archivo: os.path.join(carpeta, archivo)
+        for archivo in os.listdir(carpeta)
+        if archivo.endswith(".log")
+    }
+    log_files_content = {}
+    mensaje_error = None
+    for nombre, ruta in archivos_logs.items():
+        if os.path.exists(ruta):
+            with open(ruta, 'r', encoding='utf-8') as f:
+                contenido = f.read()
+                log_files_content[nombre] = contenido
+                if "=== Error ===" in contenido:
+                    mensaje_error = contenido.split("=== Error ===")[-1].strip().split("===")[0].strip()
+    archivos = {
+        'pain001': os.path.join(carpeta, f"pain001_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"pain001_{transfer.payment_id}.xml")) else None,
+        'aml': os.path.join(carpeta, f"aml_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"aml_{transfer.payment_id}.xml")) else None,
+        'pain002': os.path.join(carpeta, f"pain002_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"pain002_{transfer.payment_id}.xml")) else None,
+    }
+    errores_detectados = []
+    for contenido in log_files_content.values():
+        if "Error" in contenido or "Traceback" in contenido or "no válido según el XSD" in contenido:
+            errores_detectados.append(contenido)
+    
+    return render(request, "api/GPT4/transfer_detail.html", {
+        "transfer": transfer,
+        # "details": details,
+        'log_files_content': log_files_content,
+        'log_content': log_content,
+        'archivos': archivos,
+        'errores_detectados': errores_detectados,
+        'mensaje_error': mensaje_error
+    })
+
+def transfer_detail2(request, payment_id):
+    transfer = get_object_or_404(Transfer, payment_id=payment_id)
+    mensaje_error = None
+    details = None
+    try:
+        token = get_access_token(transfer.payment_id)
+        details = fetch_transfer_details(transfer, token)
+    except Exception as e:
+        registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error obteniendo detalles en vista")
+        mensaje_error = str(e)
+    return _render_transfer_detail(request, transfer, mensaje_error, details)
+
+
+    
+
 
 def send_transfer_view1(request, transfer_id):
     transfer = get_object_or_404(Transfer, id=transfer_id)
@@ -319,9 +430,10 @@ def send_transfer_view3(request, payment_id):
 
 def send_transfer_view(request, payment_id):
     transfer = get_object_or_404(Transfer, payment_id=payment_id)
-    form = SendTransferForm(request.POST or None)
+    form = SendTransferForm(request.POST or None, instance=transfer)
     if request.method == "POST":
         if form.is_valid():
+            form.save()
             obtain_token = form.cleaned_data['obtain_token']
             manual_token = form.cleaned_data['manual_token']
             obtain_otp = form.cleaned_data['obtain_otp']
@@ -390,60 +502,6 @@ def transfer_update_sca(request, payment_id):
             return _render_transfer_detail(request, transfer, mensaje_error)
     return render(request, 'api/GPT4/transfer_sca.html', {'form': form, 'transfer': transfer})
 
-
-def transfer_detail1(request, payment_id):
-    transfer = get_object_or_404(Transfer, payment_id=payment_id)
-    token = get_access_token(transfer.payment_id)
-    details = fetch_transfer_details(transfer, token)
-    
-    log_content = read_log_file(transfer.payment_id)
-    carpeta = obtener_ruta_schema_transferencia(transfer.payment_id)
-    archivos_logs = {
-        archivo: os.path.join(carpeta, archivo)
-        for archivo in os.listdir(carpeta)
-        if archivo.endswith(".log")
-    }
-    log_files_content = {}
-    mensaje_error = None
-    for nombre, ruta in archivos_logs.items():
-        if os.path.exists(ruta):
-            with open(ruta, 'r', encoding='utf-8') as f:
-                contenido = f.read()
-                log_files_content[nombre] = contenido
-                if "=== Error ===" in contenido:
-                    mensaje_error = contenido.split("=== Error ===")[-1].strip().split("===")[0].strip()
-    archivos = {
-        'pain001': os.path.join(carpeta, f"pain001_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"pain001_{transfer.payment_id}.xml")) else None,
-        'aml': os.path.join(carpeta, f"aml_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"aml_{transfer.payment_id}.xml")) else None,
-        'pain002': os.path.join(carpeta, f"pain002_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"pain002_{transfer.payment_id}.xml")) else None,
-    }
-    errores_detectados = []
-    for contenido in log_files_content.values():
-        if "Error" in contenido or "Traceback" in contenido or "no válido según el XSD" in contenido:
-            errores_detectados.append(contenido)
-    
-    return render(request, "api/GPT4/transfer_detail.html", {
-        "transfer": transfer,
-        "details": details,
-        'log_files_content': log_files_content,
-        'log_content': log_content,
-        'archivos': archivos,
-        'errores_detectados': errores_detectados,
-        'mensaje_error': mensaje_error
-    })
-
-# ==== DETALLE DE TRANSFERENCIA ====
-def transfer_detail(request, payment_id):
-    transfer = get_object_or_404(Transfer, payment_id=payment_id)
-    mensaje_error = None
-    details = None
-    try:
-        token = get_access_token(transfer.payment_id)
-        details = fetch_transfer_details(transfer, token)
-    except Exception as e:
-        registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error obteniendo detalles en vista")
-        mensaje_error = str(e)
-    return _render_transfer_detail(request, transfer, mensaje_error, details)
 
 # ==== FUNCIÓN AUXILIAR PARA RENDERIZAR transfer_detail.html ====
 def _render_transfer_detail(request, transfer, mensaje_error=None, details=None):

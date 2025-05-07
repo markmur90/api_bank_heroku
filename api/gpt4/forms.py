@@ -60,14 +60,12 @@ class TransferForm(forms.ModelForm):
     class Meta:
         model = Transfer
         fields = [
-            'client', 'kid', 'debtor', 'debtor_account', 'creditor', 'creditor_account',
+            'debtor', 'debtor_account', 'creditor', 'creditor_account',
             'creditor_agent', 'instructed_amount', 'currency',
             'purpose_code', 'requested_execution_date',
             'remittance_information_unstructured'
         ]
         widgets = {
-            'client': forms.Select(attrs={'class': 'form-control'}),
-            'kid': forms.Select(attrs={'class': 'form-control'}),
             'debtor': forms.Select(attrs={'class': 'form-control'}),
             'debtor_account': forms.Select(attrs={'class': 'form-control'}),
             'creditor': forms.Select(attrs={'class': 'form-control'}),
@@ -90,7 +88,7 @@ class TransferForm(forms.ModelForm):
         }
 
 
-class SendTransferForm(forms.Form):
+class SendTransferForm(forms.ModelForm):
     obtain_token = forms.BooleanField(
         required=False,
         label='Obtener nuevo TOKEN',
@@ -113,6 +111,17 @@ class SendTransferForm(forms.Form):
         max_length=8,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Introduce OTP manual de 6 a 8 caracteres'})
     )
+    
+    class Meta:
+        model = Transfer
+        fields = [
+            'client', 'kid'
+        ]
+        widgets = {
+            'client': forms.Select(attrs={'class': 'form-control'}),
+            'kid': forms.Select(attrs={'class': 'form-control'}),   
+        }
+             
     def clean(self):
         cleaned_data = super().clean()
         obtain_token = cleaned_data.get('obtain_token')
