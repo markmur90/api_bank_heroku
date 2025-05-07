@@ -3477,6 +3477,14 @@
 },
 {
   "model": "sessions.session",
+  "pk": "nzppafv45njmrcjutx722win2k0wfwwe",
+  "fields": {
+    "session_data": ".eJxVjDsOwjAQRO_iGll2_FtT0ucM1q4_OIAcKU4qxN1JpBTQTDHvzbxZwG2tYet5CVNiVybZ5bcjjM_cDpAe2O4zj3Nbl4n4ofCTdj7OKb9up_t3ULHXfU2AEK2KpGTyUoO3JVpRCAwlvYdDcqAdoYHoTRrcoIoT5I0SYKyX7PMF6H03Xw:1uCSry:zPc60rtFjWiypWlikhXAmX9r9td-6bgvvlVyzZ3SccY",
+    "expire_date": "2025-05-07T01:12:42.153Z"
+  }
+},
+{
+  "model": "sessions.session",
   "pk": "vlqp6qttlil9r0o9eb1rln6ep2dlag7d",
   "fields": {
     "session_data": ".eJxVjDsOwjAQRO_iGll2_FtT0ucM1q4_OIAcKU4qxN1JpBTQTDHvzbxZwG2tYet5CVNiVybZ5bcjjM_cDpAe2O4zj3Nbl4n4ofCTdj7OKb9up_t3ULHXfU2AEK2KpGTyUoO3JVpRCAwlvYdDcqAdoYHoTRrcoIoT5I0SYKyX7PMF6H03Xw:1uCQPq:e6Cco00Ulo64drMOQ5cdKBN_gEmLOt-rZXCs-x7nYV4",
@@ -3488,7 +3496,7 @@
   "pk": 1,
   "fields": {
     "password": "pbkdf2_sha256$1000000$oB1UdalktA5fvAOk9g313u$+ZiqQi8RqrVAWeFTpwkEe/6V5A47xvSm7DNHwVUUFFc=",
-    "last_login": "2025-05-06T22:05:30.410Z",
+    "last_login": "2025-05-07T00:42:42.043Z",
     "is_superuser": true,
     "email": "j.moltke@db.com",
     "username": "493069k1",
@@ -3650,6 +3658,13 @@
   "pk": "COD_03",
   "fields": {
     "kid": "d8ef25fe-5e4e-4471-b5c6-84b462929e53"
+  }
+},
+{
+  "model": "gpt4.kid",
+  "pk": "COD_04",
+  "fields": {
+    "kid": "090512DEUTDEFFXXX886479"
   }
 }
 ]

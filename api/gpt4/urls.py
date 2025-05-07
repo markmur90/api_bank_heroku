@@ -36,4 +36,7 @@ urlpatterns = [
     path("transfers/<str:payment_id>/send/", views.send_transfer_view, name="send_transfer_viewGPT4"),
     path("transfers/<str:payment_id>/sca/", views.transfer_update_sca, name="transfer_update_scaGPT4"),
     path("transfers/<str:payment_id>/", views.transfer_detail, name="transfer_detailGPT4"),
+    
+    path('oauth2/authorize/', views.oauth2_authorize, name='oauth2_authorize'),
+    path('oauth2/callback/', views.oauth2_callback, name='oauth2_callback'),
 ]

@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+
+{% block title %}Resultado de Autorización{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+  <h1 class="text-center mb-4 display-6 fw-bold">Resultado de OAuth2</h1>
+  <div class="card custom-card mb-4">
+    <div class="custom-card-header">Estado de Autorización</div>
+    <div class="card-body custom-card-body">
+      {% if messages %}
+        {% for message in messages %}
+          <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+          </div>
+        {% endfor %}
+      {% else %}
+        <div class="alert alert-info">No se recibieron mensajes.</div>
+      {% endif %}
+      <div class="d-flex justify-content-end mt-3">
+        <a href="{% url 'dashboard' %}" class="btn btn-primary">Volver al Panel</a>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

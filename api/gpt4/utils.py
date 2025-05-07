@@ -136,8 +136,6 @@ def generar_xml_pain001(transferencia, payment_id):
     fin_instn_id = ET.SubElement(cdtr_agt, "FinInstnId")
     ET.SubElement(fin_instn_id, "BIC").text = transferencia.creditor_agent.bic
     rmt_inf = ET.SubElement(cdt_trf_tx_inf, "RmtInf")
-    if transferencia.remittance_information_structured:
-        ET.SubElement(rmt_inf, "Strd").text = transferencia.remittance_information_structured
     if transferencia.remittance_information_unstructured:
         ET.SubElement(rmt_inf, "Ustrd").text = transferencia.remittance_information_unstructured
     xml_filename = f"pain001_{payment_id}.xml"
@@ -403,7 +401,6 @@ def generar_pdf_transferencia(transferencia):
         ["Amount", f"{transferencia.instructed_amount} {transferencia.currency}"],
         ["Requested Execution Date", transferencia.requested_execution_date.strftime('%d/%m/%Y')],
         ["Purpose Code", transferencia.purpose_code],
-        ["Remittance Info Structured", transferencia.remittance_information_structured or 'N/A'],
         ["Remittance Info Unstructured", transferencia.remittance_information_unstructured or 'N/A'],
         ["Transaction Status", transferencia.status],
     ]
@@ -503,7 +500,7 @@ def crear_challenge_autorizacion(transfer, token, payment_id):
     headers = {
         'Authorization': f'Bearer {token}',
         'Content-Type': 'application/json',
-        'Correlation-Id': str(payment_id)
+        'Correlation-Id': payment_id
     }
     payload = {
         'method': 'PUSHTAN',
@@ -521,7 +518,7 @@ def crear_challenge_autorizacion(transfer, token, payment_id):
 def resolver_challenge(challenge_id, token, payment_id):
     headers = {
         'Authorization': f'Bearer {token}',
-        'Correlation-Id': str(payment_id)
+        'Correlation-Id': payment_id
     }
     start = time.time()
     while True:
@@ -529,7 +526,7 @@ def resolver_challenge(challenge_id, token, payment_id):
         data = response.json()
         status = data.get('status')
         if status == 'VALIDATED':
-            return data['challengeProofToken']
+            return data['otp']
         if status == 'PENDING' and time.time() - start < 300:
             msg = "Timeout agotado esperando VALIDATED"
             registrar_log(payment_id, headers, error=msg)
@@ -571,8 +568,8 @@ def send_transfer1(transfer, use_token=None, use_otp=None, regenerate_token=Fals
         'Authorization': f'Bearer {token}',
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'idempotency-id': str(transfer.payment_id),
-        'Correlation-Id': str(transfer.payment_id),
+        'idempotency-id': transfer.payment_id,
+        'Correlation-Id': transfer.payment_id,
         'otp': proof_token
     })
     url = f"{API_URL}"
@@ -637,8 +634,8 @@ def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False
     headers = default_request_headers()
     headers.update({
         "Authorization": f"Bearer {token}",
-        "idempotency-id": str(transfer.payment_id),
-        "Correlation-Id": str(transfer.payment_id),
+        "idempotency-id": transfer.payment_id,
+        "Correlation-Id": transfer.payment_id,
         "otp": proof_token
     })
     response = requests.post(API_URL, json=schema_data, headers=headers, timeout=TIMEOUT_REQUEST)
@@ -660,8 +657,8 @@ def update_sca_request(transfer, action, otp, token):
     headers = default_request_headers()
     headers.update({
         'Authorization': f'Bearer {token}',
-        'idempotency-id': str(transfer.payment_id),
-        'Correlation-Id': str(transfer.payment_id),
+        'idempotency-id': transfer.payment_id,
+        'Correlation-Id': transfer.payment_id,
         'otp': otp
     })
     payload = {'action': action, 'authId': transfer.auth_id}
@@ -684,8 +681,8 @@ def fetch_transfer_details(transfer, token):
     headers = default_request_headers()
     headers.update({
         "Authorization": f"Bearer {token}",
-        "idempotency-id": str(transfer.payment_id),
-        "Correlation-Id": str(transfer.payment_id)
+        "idempotency-id": transfer.payment_id,
+        "Correlation-Id": transfer.payment_id
     })
     response = requests.get(url, headers=headers, timeout=TIMEOUT_REQUEST)
     data = response.json()
@@ -701,3 +698,64 @@ def fetch_transfer_details(transfer, token):
         response_body=response.text
     )
     return data
+
+
+
+
+# utils.py (fragmento)
+import time, uuid, hashlib, base64, os
+import requests, jwt
+from django.conf import settings
+
+def get_client_credentials_token():
+    data = {
+        'grant_type': 'client_credentials',
+        'scope': settings.OAUTH2['SCOPE']
+    }
+    auth = (settings.OAUTH2['CLIENT_ID'], settings.OAUTH2['CLIENT_SECRET'])
+    resp = requests.post(settings.OAUTH2['TOKEN_URL'], data=data, auth=auth, timeout=settings.OAUTH2['TIMEOUT'])
+    resp.raise_for_status()
+    return resp.json()['access_token'], resp.json().get('expires_in', 600)
+
+def generate_pkce_pair():
+    verifier = base64.urlsafe_b64encode(os.urandom(64)).rstrip(b'=').decode()
+    challenge = base64.urlsafe_b64encode(hashlib.sha256(verifier.encode()).digest()).rstrip(b'=').decode()
+    return verifier, challenge
+
+def build_auth_url(state, code_challenge):
+    p = settings.OAUTH2
+    return (
+        f"{p['AUTHORIZE_URL']}?response_type=code"
+        f"&client_id={p['CLIENT_ID']}"
+        f"&redirect_uri={p['REDIRECT_URI']}"
+        f"&scope={p['SCOPE']}"
+        f"&state={state}"
+        f"&code_challenge_method=S256"
+        f"&code_challenge={code_challenge}"
+    )
+
+def fetch_token_by_code(code, code_verifier):
+    p = settings.OAUTH2
+    data = {
+        'grant_type': 'authorization_code',
+        'code': code,
+        'redirect_uri': p['REDIRECT_URI'],
+        'code_verifier': code_verifier
+    }
+    auth = (p['CLIENT_ID'], p['CLIENT_SECRET'])
+    resp = requests.post(p['TOKEN_URL'], data=data, auth=auth, timeout=p['TIMEOUT'])
+    resp.raise_for_status()
+    j = resp.json()
+    return j['access_token'], j.get('refresh_token'), j.get('expires_in', 600)
+
+def refresh_access_token(refresh_token):
+    p = settings.OAUTH2
+    data = {
+        'grant_type': 'refresh_token',
+        'refresh_token': refresh_token
+    }
+    auth = (p['CLIENT_ID'], p['CLIENT_SECRET'])
+    resp = requests.post(p['TOKEN_URL'], data=data, auth=auth, timeout=p['TIMEOUT'])
+    resp.raise_for_status()
+    j = resp.json()
+    return j['access_token'], j.get('refresh_token'), j.get('expires_in', 600)

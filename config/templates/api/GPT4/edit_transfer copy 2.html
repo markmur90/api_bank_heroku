@@ -38,7 +38,27 @@
 
         <!-- Sección 1: Edición de la transferencia -->
         <h5>Datos de la transferencia</h5>
-        {{ form.as_p }}
+        {{ form_edit.as_p }}
+
+        <hr>
+
+        <!-- Sección 2: Token de Autorización -->
+        <h5>Token de Autorización</h5>
+        <div class="form-check">
+          {{ form_send.obtain_token }} {{ form_send.obtain_token.label_tag }}
+        </div>
+        <div class="mb-3">
+          {{ form_send.manual_token }}
+        </div>
+
+        <!-- Sección 3: OTP / TAN -->
+        <h5>OTP / TAN</h5>
+        <div class="form-check">
+          {{ form_send.obtain_otp }} {{ form_send.obtain_otp.label_tag }}
+        </div>
+        <div class="mb-3">
+          {{ form_send.manual_otp }}
+        </div>
 
         <!-- Enlaces y botones de acción -->
         <div class="d-flex justify-content-end mt-4">
@@ -51,7 +71,9 @@
           <button type="submit" name="save_transfer" class="btn btn-primary">
             <i class="bi bi-save"></i> Guardar Cambios
           </button>
-
+          <button type="submit" name="send_transfer" class="btn btn-success ms-2">
+            <i class="bi bi-send-check"></i> Enviar Transferencia
+          </button>
         </div>
       </form>
     </div>

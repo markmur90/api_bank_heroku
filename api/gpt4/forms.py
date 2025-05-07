@@ -63,7 +63,7 @@ class TransferForm(forms.ModelForm):
             'client', 'kid', 'debtor', 'debtor_account', 'creditor', 'creditor_account',
             'creditor_agent', 'instructed_amount', 'currency',
             'purpose_code', 'requested_execution_date',
-            'remittance_information_structured', 'remittance_information_unstructured'
+            'remittance_information_unstructured'
         ]
         widgets = {
             'client': forms.Select(attrs={'class': 'form-control'}),
@@ -80,12 +80,6 @@ class TransferForm(forms.ModelForm):
                 'type': 'date',
                 'class': 'form-control',
                 'value': datetime.now(pytz.timezone('Europe/Berlin')).strftime('%Y-%m-%d')
-            }),
-            'remittance_information_structured': forms.TextInput(attrs={
-                'maxlength': 60,
-                'class': 'form-control',
-                'rows': 1,
-                'placeholder': 'Ingrese información estructurada (máx. 60 caracteres)'
             }),
             'remittance_information_unstructured': forms.TextInput(attrs={
                 'maxlength': 60,

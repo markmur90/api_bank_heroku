@@ -41,4 +41,8 @@ V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzs
 
 
 
+Client_id: 
+ynCsnS3WA2dQtvlDBttYpv51goAzlSMUxSLGxHEO
 
+Client_secret: 
+pbkdf2_sha256$870000$KBmduLQnMQdWI9gAjKMBMs$Ih40gPHNYMupc6H5N+k+JsDT2erKQdvpXz9RmDC20KA=
