@@ -1,0 +1,13 @@
+[2025-05-07 03:56:53 -0500] [54244] [INFO] Starting gunicorn 23.0.0
+[2025-05-07 03:56:53 -0500] [54244] [INFO] Listening at: http://0.0.0.0:8001 (54244)
+[2025-05-07 03:56:53 -0500] [54244] [INFO] Using worker: sync
+[2025-05-07 03:56:53 -0500] [54248] [INFO] Booting worker with pid: 54248
+[2025-05-07 03:56:53 -0500] [54249] [INFO] Booting worker with pid: 54249
+[2025-05-07 03:56:53 -0500] [54253] [INFO] Booting worker with pid: 54253
+WARNING Not Found: /favicon.ico
+WARNING Not Found: /favicon.ico
+[2025-05-07 04:11:17 -0500] [54244] [INFO] Handling signal: int
+[2025-05-07 09:11:17 +0000] [54248] [INFO] Worker exiting (pid: 54248)
+[2025-05-07 09:11:17 +0000] [54253] [INFO] Worker exiting (pid: 54253)
+[2025-05-07 09:11:17 +0000] [54249] [INFO] Worker exiting (pid: 54249)
+[2025-05-07 04:11:17 -0500] [54244] [INFO] Shutting down: Master
