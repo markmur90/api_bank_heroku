@@ -12,7 +12,7 @@ from django.views.decorators.http import require_POST
 
 from api.gpt4.models import Debtor, DebtorAccount, Creditor, CreditorAccount, CreditorAgent, PaymentIdentification, Transfer
 from api.gpt4.forms import ClientIDForm, DebtorForm, DebtorAccountForm, CreditorForm, CreditorAccountForm, CreditorAgentForm, KidForm, ScaForm, SendTransferForm, TransferForm
-from api.gpt4.utils import build_auth_url, crear_challenge_mtan, crear_challenge_phototan, crear_challenge_pushtan, fetch_token_by_code, generar_archivo_aml, generar_pdf_transferencia, generar_xml_pain001, generate_deterministic_id, generate_payment_id_uuid, generate_pkce_pair, get_access_token, get_client_credentials_token, obtener_ruta_schema_transferencia, read_log_file, refresh_access_token, registrar_log, resolver_challenge_pushtan, send_transfer
+from api.gpt4.utils import build_auth_url, crear_challenge_mtan, crear_challenge_phototan, crear_challenge_pushtan, fetch_token_by_code, fetch_transfer_details, generar_archivo_aml, generar_pdf_transferencia, generar_xml_pain001, generar_xml_pain002, generate_deterministic_id, generate_payment_id_uuid, generate_pkce_pair, get_access_token, get_client_credentials_token, handle_error_response, obtener_otp_automatico_con_challenge, obtener_ruta_schema_transferencia, read_log_file, refresh_access_token, registrar_log, resolver_challenge_pushtan, send_transfer, update_sca_request
 
 
 logger = logging.getLogger(__name__)
@@ -176,10 +176,10 @@ def list_transfers(request):
         'transfers': transfers_paginated
     })
 
-def transfer_detail(request, payment_id):
+def transfer_detail0(request, payment_id):
     transfer = get_object_or_404(Transfer, payment_id=payment_id)
-    # token = get_access_token(transfer.payment_id)
-    # details = fetch_transfer_details(transfer, token)
+    token = get_access_token(transfer.payment_id)
+    details = fetch_transfer_details(transfer, token)
     
     log_content = read_log_file(transfer.payment_id)
     carpeta = obtener_ruta_schema_transferencia(transfer.payment_id)
@@ -209,7 +209,7 @@ def transfer_detail(request, payment_id):
     
     return render(request, "api/GPT4/transfer_detail.html", {
         "transfer": transfer,
-        # "details": details,
+        "details": details,
         'log_files_content': log_files_content,
         'log_content': log_content,
         'archivos': archivos,
@@ -217,6 +217,41 @@ def transfer_detail(request, payment_id):
         'mensaje_error': mensaje_error
     })
 
+def transfer_detail(request, payment_id):
+    transfer = get_object_or_404(Transfer, payment_id=payment_id)
+    log_content = read_log_file(transfer.payment_id)
+    carpeta = obtener_ruta_schema_transferencia(transfer.payment_id)
+    archivos_logs = {
+        archivo: os.path.join(carpeta, archivo)
+        for archivo in os.listdir(carpeta)
+        if archivo.endswith(".log")
+    }
+    log_files_content = {}
+    mensaje_error = None
+    for nombre, ruta in archivos_logs.items():
+        if os.path.exists(ruta):
+            with open(ruta, 'r', encoding='utf-8') as f:
+                contenido = f.read()
+                log_files_content[nombre] = contenido
+                if "=== Error ===" in contenido:
+                    mensaje_error = contenido.split("=== Error ===")[-1].strip().split("===")[0].strip()
+    archivos = {
+        'pain001': os.path.join(carpeta, f"pain001_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"pain001_{transfer.payment_id}.xml")) else None,
+        'aml': os.path.join(carpeta, f"aml_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"aml_{transfer.payment_id}.xml")) else None,
+        'pain002': os.path.join(carpeta, f"pain002_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"pain002_{transfer.payment_id}.xml")) else None,
+    }
+    errores_detectados = []
+    for contenido in log_files_content.values():
+        if "Error" in contenido or "Traceback" in contenido or "no válido según el XSD" in contenido:
+            errores_detectados.append(contenido)
+    return render(request, 'api/GPT4/transfer_detail.html', {
+        'transfer': transfer,
+        'log_files_content': log_files_content,
+        'log_content': log_content,
+        'archivos': archivos,
+        'errores_detectados': errores_detectados,
+        'mensaje_error': mensaje_error
+    })
 
 
 def send_transfer_view(request, payment_id):
@@ -350,31 +385,52 @@ def transfer_update_sca(request, payment_id):
     return render(request, 'api/GPT4/transfer_sca.html', {'form': form, 'transfer': transfer})
 
 def _render_transfer_detail(request, transfer, mensaje_error=None, details=None):
+    # 1. Lectura del log acumulado
     log_content = read_log_file(transfer.payment_id)
+
+    # 2. Carpeta de schemas y logs
     carpeta = obtener_ruta_schema_transferencia(transfer.payment_id)
-    archivos = {
-        nombre: os.path.join(carpeta, nombre)
-        for nombre in [f"pain001_{transfer.payment_id}.xml", f"aml_{transfer.payment_id}.xml", f"pain002_{transfer.payment_id}.xml"]
-        if os.path.exists(os.path.join(carpeta, nombre))
-    }
+
+    # 3. Diccionario de XML existentes
+    archivos = {}
+    for nombre_base in ("pain001", "aml", "pain002"):
+        nombre_fichero = f"{nombre_base}_{transfer.payment_id}.xml"
+        ruta = os.path.join(carpeta, nombre_fichero)
+        archivos[nombre_base] = ruta if os.path.exists(ruta) else None
+
+    # 4. Lectura de todos los logs
     log_files_content = {}
     errores_detectados = []
-    for fichero in os.listdir(carpeta):
-        if fichero.endswith(".log"):
-            ruta = os.path.join(carpeta, fichero)
-            with open(ruta, 'r', encoding='utf-8') as f:
-                contenido = f.read()
-                log_files_content[fichero] = contenido
-                if "Error" in contenido or "Traceback" in contenido or "no válido según el XSD" in contenido:
+    try:
+        for fichero in os.listdir(carpeta):
+            if fichero.lower().endswith(".log"):
+                ruta = os.path.join(carpeta, fichero)
+                try:
+                    with open(ruta, 'r', encoding='utf-8') as f:
+                        contenido = f.read()
+                except (IOError, OSError) as e:
+                    contenido = f"Error al leer el log {fichero}: {e}"
                     errores_detectados.append(contenido)
+                log_files_content[fichero] = contenido
+                # 5. Detección de errores en texto
+                if any(p in contenido for p in ("Error", "Traceback", "no válido según el XSD")):
+                    errores_detectados.append(contenido)
+    except (IOError, OSError):
+        # Si la carpeta no existe o no es accesible, devolvemos un error genérico
+        mensaje_error = mensaje_error or "No se pudo acceder a los logs de la transferencia."
+
+    # 6. Preparación del contexto completo
     contexto = {
         'transfer': transfer,
-        'details': details,
-        'mensaje_error': mensaje_error,
-        'log_files_content': log_files_content,
+        'log_content': log_content,           # ⬅ Corrección: ahora sí lo incluyo
         'archivos': archivos,
-        'errores_detectados': errores_detectados
+        'log_files_content': log_files_content,
+        'errores_detectados': errores_detectados,
+        'mensaje_error': mensaje_error,
+        'details': details                   # Puede ser None si no se pasó nada
     }
+
+    # 7. Render de la plantilla de detalle
     return render(request, "api/GPT4/transfer_detail.html", contexto)
 
 def edit_transfer(request, payment_id):

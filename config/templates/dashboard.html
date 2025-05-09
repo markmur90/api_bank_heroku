@@ -50,11 +50,11 @@
     background-color: rgba(52, 58, 64, 0.05);
   }
   .table-custom th:nth-child(1) { width: 8%; }
-  .table-custom th:nth-child(2) { width: 15%; }
-  .table-custom th:nth-child(3) { width: 15%; }
-  .table-custom th:nth-child(4) { width: 12%; }
-  .table-custom th:nth-child(5) { width: 10%; }
-  .table-custom th:nth-child(6) { width: 20%; }
+  .table-custom th:nth-child(2) { width: 18%; }
+  .table-custom th:nth-child(3) { width: 18%; }
+  .table-custom th:nth-child(4) { width: 13%; }
+  .table-custom th:nth-child(5) { width: 8%; }
+  .table-custom th:nth-child(6) { width: 15%; }
   .table-custom th:nth-child(7) { width: 20%; }
 </style>
 
@@ -78,7 +78,7 @@
               <th>Acreedor</th>
               <th>Monto</th>
               <th>Estado</th>
-              <th>Fecha de Creación</th>
+              <th>F. Creación</th>
               <th class="text-end">Acciones</th>
             </tr>
           </thead>
@@ -100,10 +100,10 @@
               </td>
               <td>{{ transfer.created_at|date:"d/m/Y H:i" }}</td>
               <td class="text-end">
-                <a href="{% url 'transfer_detailGPT4' transfer.id %}" class="btn btn-sm btn-outline-primary me-2">
+                <a href="{% url 'transfer_detailGPT4' transfer.payment_id %}" class="btn btn-sm btn-outline-primary me-2">
                   <i class="bi bi-eye"></i> Ver Detalle
                 </a>
-                <a href="{% url 'send_transfer_viewGPT4' transfer.id %}" class="btn btn-sm btn-outline-success">
+                <a href="{% url 'send_transfer_viewGPT4' transfer.payment_id %}" class="btn btn-sm btn-outline-success">
                   <i class="bi bi-send"></i> Enviar
                 </a>
               </td>

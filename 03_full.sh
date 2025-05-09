@@ -2,13 +2,16 @@
 set -euo pipefail
 
 PROMPT_MODE=true
+SYNC_REMOTE_DB=true
+
 function usage() {
-    echo "Uso: $0 [-a|--all] [-s|--step]"
+    echo "Uso: $0 [-a|--all] [-s|--step] [-o|--omit-remote-sync] [-h|--help]"
 }
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -a|--all) PROMPT_MODE=false; shift ;;
         -s|--step) PROMPT_MODE=true; shift ;;
+        -o|--omit-remote-sync) SYNC_REMOTE_DB=false; shift ;;
         -h|--help) usage; exit 0 ;;
         *) echo "Opción desconocida: $1"; usage; exit 1 ;;
     esac
@@ -190,7 +193,9 @@ if confirmar "Crear respaldo ZIP"; then
     echo -e "\033[7;30m📦 ZIP creado: $ZIP_PATH.\033[0m"
 fi
 
-if confirmar "Sincronizar base de datos remota"; then
+if [ "$SYNC_REMOTE_DB" = true ]; then
+    echo "🚀 Sincronizando base de datos remota..."
+    
     LOCAL_DB_NAME="mydatabase"
     LOCAL_DB_USER="markmur88"
     LOCAL_DB_HOST="localhost"

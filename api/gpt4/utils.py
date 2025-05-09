@@ -1,38 +1,39 @@
-import time, uuid, hashlib, base64, os, json, logging, xml.etree.ElementTree as ET, qrcode, requests, random, string, re, jwt
-
+import os
+import time
+import uuid
+import json
+import logging
+import random
+import string
+import hashlib
+import base64
+import requests
+import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
-from typing import Optional
-from config import settings
 from pathlib import Path
-
-from django.template.loader import get_template
-from weasyprint import HTML
-from django.contrib import messages
-from requests.structures import CaseInsensitiveDict
-from django.shortcuts import get_object_or_404, redirect
-from django.http import FileResponse
+from typing import Optional
+from django.shortcuts import get_object_or_404
+from jsonschema import validate
+from lxml import etree
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import Table, TableStyle
 from reportlab.lib import colors
 from reportlab.pdfgen import canvas
 from reportlab.lib.utils import ImageReader
-from jsonschema import validate, ValidationError
-from lxml import etree
+import qrcode
+import jwt
 
+from config import settings
 from api.gpt4.models import Transfer
 
-logger = logging.getLogger(__name__)
+# ==== Directorios de schemas y logs ====
+BASE_SCHEMA_DIR = os.path.join("schemas", "transferencias")
+os.makedirs(BASE_SCHEMA_DIR, exist_ok=True)
+TRANSFER_LOG_DIR = BASE_SCHEMA_DIR  # logs por transferencia
+GLOBAL_LOG_FILE = os.path.join(TRANSFER_LOG_DIR, 'global_errors.log')
 
-# Configuramos el logger principal de transferencias
-TRANSFER_LOG_DIR = os.path.join("schemas", "transferencias")
-os.makedirs(TRANSFER_LOG_DIR, exist_ok=True)
-SCHEMA_DIR = os.path.join("schemas", "transferencias")
-os.makedirs(SCHEMA_DIR, exist_ok=True)
-ZCOD_DIR = os.path.join("schemas")
-os.makedirs(ZCOD_DIR, exist_ok=True)
-
+# ==== Configuración general ====
 TIMEOUT_REQUEST = 10
-
 ORIGIN = settings.ORIGIN
 CLIENT_ID = settings.CLIENT_ID
 CLIENT_SECRET = settings.SECRET_CLIENT
@@ -40,13 +41,58 @@ TOKEN_URL = settings.TOKEN_URL
 AUTH_URL = settings.AUTH_URL
 API_URL = settings.API_URL
 
+logger = logging.getLogger(__name__)
+
+
+# ===========================
+# UTILIDADES DE LOG
+# ===========================
+def obtener_ruta_schema_transferencia(payment_id: str) -> str:
+    carpeta = os.path.join(BASE_SCHEMA_DIR, str(payment_id))
+    os.makedirs(carpeta, exist_ok=True)
+    return carpeta
+
+def registrar_log(
+    payment_id: str,
+    headers_enviados: dict = None,
+    request_body: dict = None,
+    response_headers: dict = None,
+    response_text: str = None,
+    error: Exception = None,
+    extra_info: str = None
+):
+    """Escribe un bloque de log en la carpeta de la transferencia y, si hay error, en el log global."""
+    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    entry = "\n" + "="*80 + "\n"
+    entry += f"Fecha y hora: {timestamp}\n" + "="*80 + "\n"
+    if extra_info:
+        entry += f"=== Info ===\n{extra_info}\n\n"
+    if headers_enviados:
+        entry += "=== Headers enviados ===\n" + json.dumps(headers_enviados, indent=4) + "\n\n"
+    if request_body:
+        entry += "=== Body de la petición ===\n" + json.dumps(request_body, indent=4, default=str) + "\n\n"
+    if response_headers:
+        entry += "=== Response Headers ===\n" + json.dumps(response_headers, indent=4) + "\n\n"
+    if response_text:
+        entry += "=== Respuesta ===\n" + response_text + "\n\n"
+    if error:
+        entry += "=== Error ===\n" + str(error) + "\n"
+    # Log por transferencia
+    carpeta = obtener_ruta_schema_transferencia(payment_id)
+    log_path = os.path.join(carpeta, f"transferencia_{payment_id}.log")
+    with open(log_path, 'a', encoding='utf-8') as f:
+        f.write(entry)
+    # Log global
+    if error:
+        with open(GLOBAL_LOG_FILE, 'a', encoding='utf-8') as gf:
+            gf.write(f"[{timestamp}] TRANSFER {payment_id} ERROR: {error}\n")
 
 # ===========================
 # GENERADORES DE ID
 # ===========================
-def generate_unique_code(length=35):
-    characters = string.ascii_letters + string.digits
-    return ''.join(random.choice(characters) for _ in range(length))
+def generate_unique_code(length=35) -> str:
+    chars = string.ascii_letters + string.digits
+    return ''.join(random.choice(chars) for _ in range(length))
 
 def generate_message_id(prefix='MSG'):
     return f"{prefix}-{generate_unique_code(20)}"
@@ -60,25 +106,86 @@ def generate_end_to_end_id():
 def generate_correlation_id():
     return generate_unique_code(30)
 
-def generate_deterministic_id(*args, prefix=""):
+def generate_deterministic_id(*args, prefix="") -> str:
     raw = ''.join(str(a) for a in args)
-    hash_val = hashlib.sha256(raw.encode()).hexdigest()
-    return (prefix + hash_val)[:35]
+    h = hashlib.sha256(raw.encode()).hexdigest()
+    return (prefix + h)[:35]
 
 def generate_payment_id_uuid() -> str:
     return uuid.uuid4()
 
+
+# ===========================
+# TOKEN OAUTH2
+# ===========================
+def get_access_token(payment_id: str = None, force_refresh: bool = False) -> str:
+    """Client Credentials Grant"""
+    registrar_log(payment_id, extra_info="Obteniendo Access Token (Client Credentials)")
+    data = {'grant_type': 'client_credentials', 'scope': settings.SCOPE}
+    headers = {'Content-Type': 'application/x-www-form-urlencoded'}
+    registrar_log(payment_id, headers_enviados=headers, request_body=data)
+    try:
+        resp = requests.post(TOKEN_URL, data=data, auth=(CLIENT_ID, CLIENT_SECRET), timeout=TIMEOUT_REQUEST)
+        registrar_log(payment_id, response_text=resp.text)
+        resp.raise_for_status()
+    except Exception as e:
+        err = str(e)
+        registrar_log(payment_id, error=err, extra_info="Error al obtener Access Token")
+        raise
+    token = resp.json().get('access_token')
+    if not token:
+        err = resp.json().get('error_description', 'Sin access_token en respuesta')
+        registrar_log(payment_id, error=err, extra_info="Token inválido recibido")
+        raise Exception(f"Token inválido: {err}")
+    registrar_log(payment_id, extra_info="Token obtenido correctamente")
+    return token
+
+
+def get_access_token_jwt(payment_id: str, force_refresh: bool = False) -> str:
+    """JWT Assertion Grant"""
+    transfer = get_object_or_404(Transfer, payment_id=payment_id)
+    registrar_log(payment_id, extra_info="Obteniendo Access Token (JWT Assertion)")
+    now = int(time.time())
+    payload = {
+        'iss': transfer.client.clientId,
+        'sub': transfer.client.clientId,
+        'aud': TOKEN_URL,
+        'iat': now,
+        'exp': now + 300
+    }
+    key = Path(settings.PRIVATE_KEY_PATH).read_bytes()
+    assertion = jwt.encode(payload, key, algorithm='RS256', headers={'kid': transfer.kid.kid})
+    data = {
+        'grant_type': 'client_credentials',
+        'scope': settings.SCOPE,
+        'client_assertion_type': 'urn:ietf:params:oauth:client-assertion-type:jwt-bearer',
+        'client_assertion': assertion
+    }
+    registrar_log(payment_id, request_body=data)
+    try:
+        resp = requests.post(TOKEN_URL, data=data, timeout=TIMEOUT_REQUEST)
+        registrar_log(payment_id, response_text=resp.text)
+        resp.raise_for_status()
+    except Exception as e:
+        err = str(e)
+        registrar_log(payment_id, error=err, extra_info="Error obteniendo Access Token JWT")
+        raise
+    token = resp.json().get('access_token')
+    if not token:
+        err = resp.json().get('error_description', 'Sin access_token en respuesta')
+        registrar_log(payment_id, error=err, extra_info="Token JWT inválido")
+        raise Exception(f"Token JWT inválido: {err}")
+    registrar_log(payment_id, extra_info="Token JWT obtenido correctamente")
+    return token
+
+
 # ===========================
 # XML Y AML
 # ===========================
-def obtener_ruta_schema_transferencia(payment_id):
-    carpeta = os.path.join(SCHEMA_DIR, str(payment_id))
-    os.makedirs(carpeta, exist_ok=True)
-    return carpeta
-
-def generar_xml_pain001(transferencia, payment_id):
-    carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
+def generar_xml_pain001(transferencia: Transfer, payment_id: str) -> str:
+    ruta = obtener_ruta_schema_transferencia(payment_id)
     root = ET.Element("Document", xmlns="urn:iso:std:iso:20022:tech:xsd:pain.001.001.03")
+    
     cstmr_cdt_trf_initn = ET.SubElement(root, "CstmrCdtTrfInitn")
     grp_hdr = ET.SubElement(cstmr_cdt_trf_initn, "GrpHdr")
     ET.SubElement(grp_hdr, "MsgId").text = str(transferencia.payment_id)  # Convertir UUID a cadena
@@ -127,10 +234,9 @@ def generar_xml_pain001(transferencia, payment_id):
     if transferencia.remittance_information_unstructured:
         ET.SubElement(rmt_inf, "Ustrd").text = transferencia.remittance_information_unstructured or ""
         
-    xml_filename = f"pain001_{payment_id}.xml"
-    xml_path = os.path.join(carpeta_transferencia, xml_filename)
+    xml_path = os.path.join(ruta, f"pain001_{payment_id}.xml")
     ET.ElementTree(root).write(xml_path, encoding='utf-8', xml_declaration=True)
-    logger.info(f"XML pain.001 generado en {xml_path}")
+    registrar_log(payment_id, extra_info=f"XML pain.001 generado en {xml_path}")
     return xml_path
 
 def generar_xml_pain002(data, payment_id):
@@ -157,16 +263,12 @@ def generar_xml_pain002(data, payment_id):
     validar_xml_con_xsd(xml_path, xsd_path="schemas/xsd/pain.002.001.03")
     return xml_path
 
-def validar_xml_pain001(xml_path):
+def validar_xml_pain001(xml_path: str):
     tree = ET.parse(xml_path)
-    root = tree.getroot()
     ns = {'ns': "urn:iso:std:iso:20022:tech:xsd:pain.001.001.03"}
-    e2e = root.find('.//ns:EndToEndId', ns)
-    instr = root.find('.//ns:InstrId', ns)
-    if e2e is None or not e2e.text.strip():
+    if tree.find('.//ns:EndToEndId', ns) is None:
         raise ValueError("El XML no contiene un EndToEndId válido.")
-    if instr is None or not instr.text.strip():
-        raise ValueError("El XML no contiene un InstructionId válido.")
+
 
 def validar_xml_con_xsd(xml_path, xsd_path="schemas/xsd/pain.001.001.03.xsd"):
     with open(xsd_path, 'rb') as f:
@@ -178,10 +280,20 @@ def validar_xml_con_xsd(xml_path, xsd_path="schemas/xsd/pain.001.001.03.xsd"):
         errors = schema.error_log
         raise ValueError(f"El XML no es válido según el XSD: {errors}")
     
-def generar_archivo_aml(transferencia, payment_id):
-    carpeta_transferencia = obtener_ruta_schema_transferencia(payment_id)
+    
+def validar_aml_con_xsd(aml_path: str, xsd_path="schemas/xsd/aml_transaction_report.xsd"):
+    schema_root = etree.parse(xsd_path)
+    schema = etree.XMLSchema(schema_root)
+    xml_doc = etree.parse(aml_path)
+    if not schema.validate(xml_doc):
+        raise ValueError(f"AML inválido según XSD: {schema.error_log}")
+
+    
+def generar_archivo_aml(transferencia: Transfer, payment_id: str) -> str:
+    ruta = obtener_ruta_schema_transferencia(payment_id)
     aml_filename = f"aml_{payment_id}.xml"
-    aml_path = os.path.join(carpeta_transferencia, aml_filename)
+    aml_path = os.path.join(ruta, f"aml_{payment_id}.xml")
+    
     root = ET.Element("AMLTransactionReport")
     transaction = ET.SubElement(root, "Transaction")
     ET.SubElement(transaction, "TransactionID").text = str(transferencia.payment_id)  # Convertir UUID a cadena
@@ -212,17 +324,10 @@ def generar_archivo_aml(transferencia, payment_id):
     ET.SubElement(flags, "FrequentTransfers").text = "false"
     ET.SubElement(flags, "ManualReviewRequired").text = "false"
     ET.ElementTree(root).write(aml_path, encoding="utf-8", xml_declaration=True)
+    
+    registrar_log(payment_id, extra_info=f"Archivo AML generado en {aml_path}")
     return aml_path
 
-def validar_aml_con_xsd(aml_path, xsd_path="schemas/xsd/aml_transaction_report.xsd"):
-    with open(xsd_path, 'rb') as f:
-        schema_root = etree.XML(f.read())
-        schema = etree.XMLSchema(schema_root)
-    with open(aml_path, 'rb') as f:
-        xml_doc = etree.parse(f)
-    if not schema.validate(xml_doc):
-        errors = schema.error_log
-        raise ValueError(f"El archivo AML no es válido según el XSD: {errors}")
 
 # ===========================
 # LOGS Y HEADERS
@@ -237,27 +342,7 @@ def setup_logger(payment_id):
         logger.addHandler(file_handler)
     return logger
 
-def registrar_log(payment_id, headers_enviados=None, request_body=None, response_text=None, error=None, extra_info=None):
-    carpeta = obtener_ruta_schema_transferencia(payment_id)
-    log_path = os.path.join(carpeta, f"transferencia_{payment_id}.log")
-    with open(log_path, 'a', encoding='utf-8') as f:
-        f.write("\n" + "="*80 + "\n")
-        f.write(f"Fecha y hora: {datetime.now()}\n")
-        f.write("="*80 + "\n")
-        if extra_info:
-            f.write(f"=== Info ===\n{extra_info}\n\n")
-        if headers_enviados:
-            f.write("=== Headers enviados ===\n")
-            f.write(json.dumps(headers_enviados, indent=4) + "\n\n")
-        if request_body:
-            f.write("=== Body de la petición ===\n")
-            f.write(json.dumps(request_body, indent=4, default=str) + "\n\n")
-        if response_text:
-            f.write("=== Respuesta ===\n")
-            f.write(response_text + "\n\n")
-        if error:
-            f.write("=== Error ===\n")
-            f.write(str(error) + "\n")
+
 
 def read_log_file(payment_id):
     log_path = os.path.join(TRANSFER_LOG_DIR, f'transferencia_{payment_id}.log')
@@ -349,13 +434,15 @@ def default_request_headers():
 # ===========================
 # 6. Creación de PDFs de Transferencia
 # ===========================
-def generar_pdf_transferencia(transferencia):
+def generar_pdf_transferencia(transferencia: Transfer) -> str:
     creditor_name = transferencia.creditor.name.replace(" ", "_")
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     payment_reference = transferencia.payment_id
-    carpeta_transferencia = obtener_ruta_schema_transferencia(payment_reference)
+    ruta = obtener_ruta_schema_transferencia(transferencia.payment_id)
+        
     pdf_filename = f"{creditor_name}_{timestamp}_{payment_reference}.pdf"
-    pdf_path = os.path.join(carpeta_transferencia, pdf_filename)
+    pdf_path = os.path.join(ruta, f"{transferencia.payment_id}.pdf")
+    
     c = canvas.Canvas(pdf_path, pagesize=letter)
     width, height = letter
     current_y = height - 50
@@ -397,7 +484,7 @@ def generar_pdf_transferencia(transferencia):
     crear_tabla_pdf(c, transfer_data, current_y)
     c.showPage()
     qr = qrcode.make(transferencia.payment_id)
-    qr_path = os.path.join(carpeta_transferencia, f"qr_{payment_reference}.png")
+    qr_path = os.path.join(ruta, f"qr_{transferencia.payment_id}.png")
     qr.save(qr_path)
     qr_image = ImageReader(qr_path)
     c.drawImage(qr_image, width / 2.0 - 75, height / 2.0 - 75, width=150, height=150)
@@ -406,6 +493,7 @@ def generar_pdf_transferencia(transferencia):
     c.save()
     if os.path.exists(qr_path):
         os.remove(qr_path)
+    registrar_log(transferencia.payment_id, extra_info=f"PDF generado en {pdf_path}")
     return pdf_path
 
 def crear_tabla_pdf(c, data, y_position):
@@ -452,12 +540,7 @@ def get_access_token0(payment_id=None, force_refresh=False):
     _token_expiry = current_time + token_data.get('expires_in', 3600)
     return _access_token
 
-def get_access_token(force_refresh: bool = False) -> str:
-    """
-    Flujo Client Credentials:
-    - usa CLIENT_ID y CLIENT_SECRET de settings
-    - guarda token en _access_token hasta expires_in
-    """
+def get_access_token2(payment_id=None, force_refresh: bool = False) -> str:
     global _access_token, _token_expiry
     now = time.time()
     if _access_token and not force_refresh and now < (_token_expiry - 60):
@@ -517,7 +600,7 @@ def get_access_token1(payment_id, force_refresh=True):
     return token
 
 # — Token Client Credentials — 
-def get_access_token(payment_id, force_refresh=False):
+def get_access_token3(payment_id=None, force_refresh=False):
     try:
         registrar_log(payment_id, extra_info="Obteniendo Access Token (Client Credentials)")
         data = {'grant_type':'client_credentials','scope':settings.SCOPE}
@@ -534,7 +617,7 @@ def get_access_token(payment_id, force_refresh=False):
         raise
 
 # — Token JWT Assertion — 
-def get_access_token_jwt(payment_id, force_refresh=False):
+def get_access_token_jwt2(payment_id, force_refresh=False):
     transfer = get_object_or_404(Transfer, payment_id=payment_id)
     try:
         registrar_log(payment_id, extra_info="Obteniendo Access Token (JWT Assertion)")
@@ -564,146 +647,6 @@ def get_access_token_jwt(payment_id, force_refresh=False):
     except Exception as e:
         registrar_log(payment_id, error=str(e), extra_info="Error al obtener Access Token JWT")
         raise
-    
-# ===========================
-# OTP
-# ===========================
-def preparar_request_type_y_datos(schema_data):
-    request_type = "SEPA_TRANSFER_GRANT"
-    datos = {
-        "type": "challengeRequestDataSepaPaymentTransfer",
-        "targetIban": schema_data["creditorAccount"]["iban"],
-        "amountCurrency": schema_data["instructedAmount"]["currency"],
-        "amountValue": schema_data["instructedAmount"]["amount"]
-    }
-    return request_type, datos
-
-def crear_challenge_pushtan(transfer: Transfer, token: str, payment_id: str) -> str:
-    schema_data = transfer.to_schema_data()
-    request_data = {
-        "type": "challengeRequestDataSepaPaymentTransfer",
-        "targetIban": schema_data["creditorAccount"]["iban"],
-        "amountCurrency": schema_data["instructedAmount"]["currency"],
-        "amountValue": schema_data["instructedAmount"]["amount"]
-    }
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Content-Type': 'application/json',
-        'Correlation-Id': payment_id
-    }
-    payload = {
-        'method': 'PUSHTAN',
-        'requestType': 'SEPA_TRANSFER_GRANT',
-        'requestData': request_data,
-        'language': 'de'
-    }
-    response = requests.post(AUTH_URL, headers=headers, json=payload, timeout=TIMEOUT_REQUEST)
-    response.raise_for_status()
-    if response.status_code != 201:
-        error_msg = handle_error_response(response)
-        registrar_log(payment_id, headers, response.text, error=error_msg)
-        raise Exception(error_msg)
-    return response.json()['id']
-
-# — OTP Automático — 
-def crear_challenge_autorizacion(transfer, token):
-    pid = transfer.payment_id
-    try:
-        registrar_log(pid, extra_info="Iniciando challenge OTP")
-        payload = {
-            'method':'PUSHTAN','requestType':'SEPA_TRANSFER_GRANT',
-            'requestData':{
-                'type':'challengeRequestDataSepaPaymentTransfer',
-                'targetIban':transfer.creditor_account.iban,
-                'amountCurrency':transfer.currency,
-                'amountValue':float(transfer.instructed_amount)
-            },'language':'de'
-        }
-        headers = {'Authorization':f'Bearer {token}','Content-Type':'application/json'}
-        registrar_log(pid, headers_enviados=headers, request_body=payload)
-        resp = requests.post(AUTH_URL, headers=headers, json=payload, timeout=TIMEOUT_REQUEST)
-        registrar_log(pid, response_text=resp.text)
-        resp.raise_for_status()
-        cid = resp.json().get('id')
-        registrar_log(pid, extra_info=f"Challenge creado con ID {cid}")
-        return cid
-    except Exception as e:
-        registrar_log(pid, error=str(e), extra_info="Error al crear challenge")
-        raise
-
-def resolver_challenge_pushtan(challenge_id: str, token: str, payment_id: str) -> str:
-    headers = {
-        'Authorization': f'Bearer {token}',
-        'Correlation-Id': payment_id
-    }
-    start = time.time()
-    while True:
-        response = requests.get(f"{AUTH_URL}/{challenge_id}", headers=headers, timeout=10)
-        data = response.json()
-        status = data.get('status')
-        if status == 'VALIDATED':
-            return data['otp']
-        if status == 'PENDING' and time.time() - start < 300:
-            msg = "Timeout agotado esperando VALIDATED"
-            registrar_log(payment_id, headers, error=msg)
-            raise TimeoutError(msg)
-            time.sleep(1)
-            continue
-        elif status == "EXPIRED":
-            msg = "El challenge ha expirado (status=EXPIRED)"
-            registrar_log(payment_id, headers, response.text, error=msg)
-            raise Exception(msg)
-        elif status == "REJECTED":
-            msg = "El challenge fue rechazado por el usuario (status=REJECTED)"
-            registrar_log(payment_id, headers, response.text, error=msg)
-            raise Exception(msg)
-        elif status == "EIDP_ERROR":
-            msg = "Error interno de EIDP procesando el challenge (status=EIDP_ERROR)"
-            registrar_log(payment_id, headers, response.text, error=msg)
-            raise Exception(msg)
-        else:
-            msg = f"Estado de challenge desconocido: {status}"
-            registrar_log(payment_id, headers, response.text, error=msg)
-            raise Exception(msg)
-
-def resolver_challenge(challenge_id, token, payment_id):
-    try:
-        registrar_log(payment_id, extra_info=f"Resolviendo challenge {challenge_id}")
-        headers = {'Authorization':f'Bearer {token}'}
-        start = time.time()
-        while True:
-            resp = requests.get(f"{AUTH_URL}/{challenge_id}", headers=headers, timeout=TIMEOUT_REQUEST)
-            data = resp.json()
-            registrar_log(payment_id, response_text=resp.text)
-            status = data.get('status')
-            if status == 'VALIDATED':
-                otp = data.get('otp')
-                registrar_log(payment_id, extra_info=f"OTP validado: {otp}")
-                return otp
-            if status in ('EXPIRED','REJECTED','EIDP_ERROR'):
-                msg = f"Challenge failed: {status}"
-                registrar_log(payment_id, error=msg)
-                raise Exception(msg)
-            if time.time() - start > 300:
-                msg = "Timeout esperando VALIDATED"
-                registrar_log(payment_id, error=msg)
-                raise TimeoutError(msg)
-            time.sleep(1)
-    except Exception as e:
-        registrar_log(payment_id, error=str(e), extra_info="Error al resolver challenge")
-        raise
-
-def obtener_otp_automatico_con_challenge(transfer):
-    token = get_access_token(transfer.payment_id)
-    challenge_id = crear_challenge_autorizacion(transfer, token, transfer.payment_id)
-    otp_token = resolver_challenge(challenge_id, token, transfer.payment_id)
-    return otp_token, token
-
-def obtener_otp_automatico(transfer):
-    token = get_access_token(transfer.payment_id)
-    cid   = crear_challenge_autorizacion(transfer, token)
-    otp   = resolver_challenge(cid, token, transfer.payment_id)
-    return otp, token
 
 # ===========================
 # SEND TRANSFER
@@ -849,81 +792,89 @@ def send_transfer2(
     return response
 
 # — Envío SEPA — 
-def default_request_headers():
-    return {'Accept':'application/json','Content-Type':'application/json'}
-
-def send_transfer(transfer, use_token=None, use_otp=None, regenerate_token=False, regenerate_otp=False):
+def send_transfer(transfer: Transfer, use_token: str = None, use_otp: str = None,
+                  regenerate_token: bool = False, regenerate_otp: bool = False) -> requests.Response:
     pid = transfer.payment_id
-    try:
-        token = use_token if use_token and not regenerate_token else get_access_token(pid)
-        otp, token = (use_otp, token) if use_otp and not regenerate_otp else obtener_otp_automatico(transfer)
-        body = transfer.to_schema_data()
-        headers = default_request_headers()
-        headers.update({
-            'Authorization':   f'Bearer {token}',
-            'Idempotency-Id':  pid,
-            'Correlation-Id':  pid,
-            'Otp':             otp
-        })
-        registrar_log(pid, headers_enviados=headers, request_body=body, extra_info="Enviando transferencia SEPA")
-        resp = requests.post(API_URL, headers=headers, json=body, timeout=TIMEOUT_REQUEST)
-        registrar_log(pid, response_text=resp.text)
-        resp.raise_for_status()
-        data = resp.json()
-        transfer.auth_id = data.get('authId')
-        transfer.status  = data.get('transactionStatus', transfer.status)
-        transfer.save()
-        registrar_log(pid, extra_info="Transferencia enviada con éxito")
-        return resp
-    except Exception as e:
-        registrar_log(pid, error=str(e), extra_info="Error enviando transferencia SEPA")
-        raise
-
-def update_sca_request(transfer, action, otp, token):
-    url = f"{API_URL}/{transfer.payment_id}"
-    headers = default_request_headers()
-    headers.update({
+    # 1️⃣ Token
+    token = use_token if use_token and not regenerate_token else get_access_token(pid)
+    # 2️⃣ OTP
+    if use_otp and not regenerate_otp:
+        otp = use_otp
+    else:
+        otp, token = obtener_otp_automatico(transfer)
+    # 3️⃣ Cuerpo y headers
+    body = transfer.to_schema_data()
+    headers = {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
         'Authorization': f'Bearer {token}',
-        'idempotency-id': transfer.payment_id,
-        'Correlation-Id': transfer.payment_id,
-        'otp': otp
-    })
-    payload = {'action': action, 'authId': transfer.auth_id}
-    response = requests.patch(url, headers=headers, json=payload, timeout=TIMEOUT_REQUEST)
-    data = response.json()
+        'Idempotency-Id': pid,
+        'Correlation-Id': pid,
+        'Otp': otp
+    }
+    registrar_log(pid, headers_enviados=headers, request_body=body, extra_info="Enviando transferencia SEPA")
+    try:
+        resp = requests.post(API_URL, headers=headers, json=body, timeout=TIMEOUT_REQUEST)
+        registrar_log(pid, response_text=resp.text, extra_info="Respuesta del API SEPA")
+        resp.raise_for_status()
+    except requests.RequestException as e:
+        err = str(e)
+        registrar_log(pid, error=err, extra_info="Error HTTP enviando transferencia")
+        raise
+    data = resp.json()
     transfer.auth_id = data.get('authId')
-    transfer.status  = data.get('transactionStatus', transfer.status)
+    transfer.status = data.get('transactionStatus', transfer.status)
     transfer.save()
-    registrar_log(
-        transfer.payment_id,
-        request_headers=headers,
-        request_body=payload,
-        response_headers=dict(response.headers),
-        response_body=response.text
-    )
-    return response
+    registrar_log(pid, extra_info="Transferencia enviada con éxito")
+    # 4️⃣ Validaciones adicionales
+    try:
+        xml_path = generar_xml_pain001(transfer, pid)
+        aml_path = generar_archivo_aml(transfer, pid)
+        validar_xml_pain001(xml_path)
+        validar_aml_con_xsd(aml_path)
+        registrar_log(pid, extra_info="Validación XML/AML completada")
+    except Exception as e:
+        registrar_log(pid, error=str(e), extra_info="Error generando XML/AML posterior")
+    return resp
 
-def fetch_transfer_details(transfer, token):
+def update_sca_request(transfer: Transfer, action: str, otp: str, token: str) -> requests.Response:
     url = f"{API_URL}/{transfer.payment_id}"
-    headers = default_request_headers()
-    headers.update({
-        "Authorization": f"Bearer {token}",
-        "idempotency-id": transfer.payment_id,
-        "Correlation-Id": transfer.payment_id
-    })
-    response = requests.get(url, headers=headers, timeout=TIMEOUT_REQUEST)
-    data = response.json()
-    transfer.status = data.get("transactionStatus", transfer.status)
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json',
+        'Idempotency-Id': transfer.payment_id,
+        'Correlation-Id': transfer.payment_id
+    }
+    payload = {'action': action, 'authId': transfer.auth_id}
+    registrar_log(transfer.payment_id, headers_enviados=headers, request_body=payload, extra_info="Actualizando SCA")
+    resp = requests.patch(url, headers=headers, json=payload, timeout=TIMEOUT_REQUEST)
+    registrar_log(transfer.payment_id, response_text=resp.text, extra_info="Respuesta SCA")
+    resp.raise_for_status()
+    data = resp.json()
+    transfer.auth_id = data.get('authId')
+    transfer.status = data.get('transactionStatus', transfer.status)
     transfer.save()
+    return resp
+
+def fetch_transfer_details(transfer: Transfer, token: str) -> dict:
+    url = f"{API_URL}/{transfer.payment_id}"
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Accept': 'application/json',
+        'Idempotency-Id': transfer.payment_id,
+        'Correlation-Id': transfer.payment_id
+    }
+    registrar_log(transfer.payment_id, headers_enviados=headers, extra_info="Obteniendo estado de transferencia")
+    resp = requests.get(url, headers=headers, timeout=TIMEOUT_REQUEST)
+    registrar_log(transfer.payment_id, response_text=resp.text, extra_info="Respuesta fetch status")
+    resp.raise_for_status()
+    data = resp.json()
+    transfer.status = data.get('transactionStatus', transfer.status)
+    transfer.save()
+    # Generar pain002
     xml_path = generar_xml_pain002(data, transfer.payment_id)
-    validar_xml_con_xsd(xml_path, "pain.002.001.03")
-    registrar_log(
-        transfer.payment_id,
-        request_headers=headers,
-        request_body=None,
-        response_headers=dict(response.headers),
-        response_body=response.text
-    )
+    validar_xml_con_xsd(xml_path, xsd_path="schemas/xsd/pain.002.001.03.xsd")
+    registrar_log(transfer.payment_id, extra_info="Pain002 generado y validado")
     return data
 
 
@@ -990,21 +941,23 @@ def refresh_access_token(refresh_token: str) -> tuple[str,str,int]:
 
 def crear_challenge_mtan(transfer: Transfer, token: str, payment_id: str) -> str:
     headers = {
-      'Authorization': f'Bearer {token}',
-      'Content-Type': 'application/json',
-      'Idempotency-Id': payment_id,
-      'Correlation-Id': payment_id
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json',
+        'Idempotency-Id': payment_id,
+        'Correlation-Id': payment_id
     }
     payload = {
-      'method': 'MTAN',
-      'requestType': 'SEPA_TRANSFER_GRANT',
-      'challenge': {
-        'mobilePhoneNumber': transfer.debtor.mobile_phone_number
-      }
+        'method': 'MTAN',
+        'requestType': 'SEPA_TRANSFER_GRANT',
+        'challenge': {
+            'mobilePhoneNumber': transfer.debtor.mobile_phone_number
+        }
     }
-    r = requests.post(AUTH_URL, headers=headers, json=payload, timeout=TIMEOUT_REQUEST)
-    r.raise_for_status()
-    return r.json()['id']
+    registrar_log(payment_id, headers_enviados=headers, request_body=payload, extra_info="Iniciando MTAN challenge")
+    resp = requests.post(AUTH_URL, headers=headers, json=payload, timeout=TIMEOUT_REQUEST)
+    registrar_log(payment_id, response_text=resp.text)
+    resp.raise_for_status()
+    return resp.json()['id']
 
 def verify_mtan(challenge_id: str, otp: str, token: str, payment_id: str) -> str:
     headers = {
@@ -1017,24 +970,167 @@ def verify_mtan(challenge_id: str, otp: str, token: str, payment_id: str) -> str
     r.raise_for_status()
     return r.json()['challengeProofToken']
 
-def crear_challenge_phototan(transfer: Transfer, token: str, payment_id: str) -> str:
+def crear_challenge_phototan(transfer: Transfer, token: str, payment_id: str):
     headers = {
-      'Authorization': f'Bearer {token}',
-      'Content-Type': 'application/json',
-      'Idempotency-Id': payment_id,
-      'Correlation-Id': payment_id
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json',
+        'Idempotency-Id': payment_id,
+        'Correlation-Id': payment_id
     }
     payload = {
-      'method': 'PHOTOTAN',
-      'requestType': 'SEPA_TRANSFER_GRANT',
-      'challenge': {}  # el servicio te devolverá imageBase64
+        'method': 'PHOTOTAN',
+        'requestType': 'SEPA_TRANSFER_GRANT',
+        'challenge': {}
     }
-    r = requests.post(AUTH_URL, headers=headers, json=payload, timeout=TIMEOUT_REQUEST)
-    r.raise_for_status()
-    data = r.json()
-    # muéstrale al usuario data['imageBase64'] en la plantilla SCA
-    return data['id'], data['imageBase64']
+    registrar_log(payment_id, headers_enviados=headers, request_body=payload, extra_info="Iniciando PhotoTAN challenge")
+    resp = requests.post(AUTH_URL, headers=headers, json=payload, timeout=TIMEOUT_REQUEST)
+    registrar_log(payment_id, response_text=resp.text)
+    resp.raise_for_status()
+    data = resp.json()
+    return data['id'], data.get('imageBase64')
 
 def verify_phototan(challenge_id: str, otp: str, token: str, payment_id: str) -> str:
     # idéntico a verify_mtan
     return verify_mtan(challenge_id, otp, token, payment_id)
+
+
+
+def resolver_challenge(challenge_id: str, token: str, payment_id: str) -> str:
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Correlation-Id': payment_id
+    }
+    start = time.time()
+    while True:
+        resp = requests.get(f"{AUTH_URL}/{challenge_id}", headers=headers, timeout=TIMEOUT_REQUEST)
+        registrar_log(payment_id, response_text=resp.text, extra_info=f"Comprobando estado challenge {challenge_id}")
+        data = resp.json()
+        status = data.get('status')
+        if status == 'VALIDATED':
+            otp = data.get('otp')
+            registrar_log(payment_id, extra_info=f"OTP validado: {otp}")
+            return otp
+        if status in ('EXPIRED', 'REJECTED', 'EIDP_ERROR'):
+            msg = f"Challenge fallido: {status}"
+            registrar_log(payment_id, error=msg)
+            raise Exception(msg)
+        if time.time() - start > 300:
+            msg = "Timeout esperando VALIDATED"
+            registrar_log(payment_id, error=msg)
+            raise TimeoutError(msg)
+        time.sleep(1)
+
+def obtener_otp_automatico(transfer: Transfer):
+    token = get_access_token(transfer.payment_id)
+    challenge_id = crear_challenge_pushtan(transfer, token, transfer.payment_id)
+    otp = resolver_challenge(challenge_id, token, transfer.payment_id)
+    return otp, token
+
+    
+# ===========================
+# OTP
+# ===========================
+def preparar_request_type_y_datos(schema_data):
+    request_type = "SEPA_TRANSFER_GRANT"
+    datos = {
+        "type": "challengeRequestDataSepaPaymentTransfer",
+        "targetIban": schema_data["creditorAccount"]["iban"],
+        "amountCurrency": schema_data["instructedAmount"]["currency"],
+        "amountValue": schema_data["instructedAmount"]["amount"]
+    }
+    return request_type, datos
+
+def crear_challenge_pushtan(transfer: Transfer, token: str, payment_id: str) -> str:
+    schema_data = transfer.to_schema_data()
+    request_data = {
+        "type": "challengeRequestDataSepaPaymentTransfer",
+        "targetIban": schema_data["creditorAccount"]["iban"],
+        "amountCurrency": schema_data["instructedAmount"]["currency"],
+        "amountValue": schema_data["instructedAmount"]["amount"]
+    }
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Content-Type': 'application/json',
+        'Correlation-Id': payment_id
+    }
+    payload = {
+        'method': 'PUSHTAN',
+        'requestType': 'SEPA_TRANSFER_GRANT',
+        'requestData': request_data,
+        'language': 'de'
+    }
+    response = requests.post(AUTH_URL, headers=headers, json=payload, timeout=TIMEOUT_REQUEST)
+    response.raise_for_status()
+    if response.status_code != 201:
+        error_msg = handle_error_response(response)
+        registrar_log(payment_id, headers, response.text, error=error_msg)
+        raise Exception(error_msg)
+    return response.json()['id']
+
+def crear_challenge_autorizacion(transfer, token):
+    pid = transfer.payment_id
+    try:
+        registrar_log(pid, extra_info="Iniciando challenge OTP")
+        payload = {
+            'method':'PUSHTAN','requestType':'SEPA_TRANSFER_GRANT',
+            'requestData':{
+                'type':'challengeRequestDataSepaPaymentTransfer',
+                'targetIban':transfer.creditor_account.iban,
+                'amountCurrency':transfer.currency,
+                'amountValue':float(transfer.instructed_amount)
+            },'language':'de'
+        }
+        headers = {'Authorization':f'Bearer {token}','Content-Type':'application/json'}
+        registrar_log(pid, headers_enviados=headers, request_body=payload)
+        resp = requests.post(AUTH_URL, headers=headers, json=payload, timeout=TIMEOUT_REQUEST)
+        registrar_log(pid, response_text=resp.text)
+        resp.raise_for_status()
+        cid = resp.json().get('id')
+        registrar_log(pid, extra_info=f"Challenge creado con ID {cid}")
+        return cid
+    except Exception as e:
+        registrar_log(pid, error=str(e), extra_info="Error al crear challenge")
+        raise
+
+def resolver_challenge_pushtan(challenge_id: str, token: str, payment_id: str) -> str:
+    headers = {
+        'Authorization': f'Bearer {token}',
+        'Correlation-Id': payment_id
+    }
+    start = time.time()
+    while True:
+        response = requests.get(f"{AUTH_URL}/{challenge_id}", headers=headers, timeout=10)
+        data = response.json()
+        status = data.get('status')
+        if status == 'VALIDATED':
+            return data['otp']
+        if status == 'PENDING' and time.time() - start < 300:
+            msg = "Timeout agotado esperando VALIDATED"
+            registrar_log(payment_id, headers, error=msg)
+            raise TimeoutError(msg)
+            time.sleep(1)
+            continue
+        elif status == "EXPIRED":
+            msg = "El challenge ha expirado (status=EXPIRED)"
+            registrar_log(payment_id, headers, response.text, error=msg)
+            raise Exception(msg)
+        elif status == "REJECTED":
+            msg = "El challenge fue rechazado por el usuario (status=REJECTED)"
+            registrar_log(payment_id, headers, response.text, error=msg)
+            raise Exception(msg)
+        elif status == "EIDP_ERROR":
+            msg = "Error interno de EIDP procesando el challenge (status=EIDP_ERROR)"
+            registrar_log(payment_id, headers, response.text, error=msg)
+            raise Exception(msg)
+        else:
+            msg = f"Estado de challenge desconocido: {status}"
+            registrar_log(payment_id, headers, response.text, error=msg)
+            raise Exception(msg)
+
+
+def obtener_otp_automatico_con_challenge(transfer):
+    token = get_access_token(transfer.payment_id)
+    challenge_id = crear_challenge_autorizacion(transfer, token, transfer.payment_id)
+    otp_token = resolver_challenge(challenge_id, token, transfer.payment_id)
+    return otp_token, token
+

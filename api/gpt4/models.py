@@ -95,7 +95,7 @@ class Transfer(models.Model):
         ('CANC', 'Cancelada'),
         ('PDNG', 'Pendiente'),
         ('CREA', 'Creada'),
-    ])
+    ], default='CREA')
     payment_identification = models.ForeignKey(PaymentIdentification, on_delete=models.CASCADE)
     auth_id = models.CharField(max_length=100, blank=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -144,9 +144,7 @@ class Transfer(models.Model):
                 "iban": self.creditor_account.iban,
                 "currency": self.creditor_account.currency,
             },
-            "remittanceInformationUnstructured": {
-                self.remittance_information_unstructured
-            }
+            "remittanceInformationUnstructured": self.remittance_information_unstructured or ""
         }
             
 
