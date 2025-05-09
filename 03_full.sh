@@ -19,10 +19,13 @@ done
 
 confirmar() {
     [[ "$PROMPT_MODE" == false ]] && return 0
-    echo
+    echo ""
+    echo ""
+    echo ""
     printf "\033[1;34m🔷 ¿Confirmas: %s? (s/n):\033[0m " "$1"
     read -r resp
     [[ "$resp" == "s" || -z "$resp" ]]
+    echo ""
 }
 
 clear
@@ -44,6 +47,8 @@ for PUERTO in 2222 8000 5000 8001 35729; do
         if confirmar "Cerrar procesos en puerto $PUERTO"; then
             sudo fuser -k "${PUERTO}"/tcp || true
             echo -e "\033[7;30m✅ Puerto $PUERTO liberado.\033[0m"
+            echo ""
+            echo ""
         fi
     fi
 done
@@ -54,8 +59,12 @@ if confirmar "Detener contenedores Docker"; then
     if [ -n "$PIDS" ]; then
         docker stop $PIDS
         echo -e "\033[7;30m🐳 Contenedores detenidos.\033[0m"
+        echo ""
+        echo ""
     else
         echo -e "\033[7;30m🐳 No hay contenedores.\033[0m"
+        echo ""
+        echo ""
     fi
 fi
 
@@ -63,6 +72,8 @@ fi
 if confirmar "Actualizar sistema"; then
     sudo apt update && sudo apt upgrade -y
     echo -e "\033[7;30m🔄 Sistema actualizado.\033[0m"
+    echo ""
+    echo ""
 fi
 
 # 4. Entorno Python y PostgreSQL
@@ -73,9 +84,12 @@ if confirmar "Configurar venv y PostgreSQL"; then
     echo "📦 Instalando dependencias..."
     pip install -r "$PROJECT_ROOT/requirements.txt"
     echo ""
+    echo ""
     sudo systemctl enable postgresql
     sudo systemctl start postgresql
     echo -e "\033[7;30m🐍 Entorno y PostgreSQL listos.\033[0m"
+    echo ""
+    echo ""
 fi
 
 # 5. Firewall
@@ -93,6 +107,8 @@ if confirmar "Configurar UFW"; then
     sudo ufw deny 22/tcp comment "Bloquear SSH real en 22"
     sudo ufw enable
     echo -e "\033[7;30m🔐 Reglas de UFW aplicadas con éxito.\033[0m"
+    echo ""
+    echo ""
 fi
 
 # 6. Cambiar MAC
@@ -103,6 +119,8 @@ if confirmar "Cambiar MAC de la interfaz $INTERFAZ"; then
     sudo ip link set "$INTERFAZ" up
     echo -e "\033[7;30m🔍 MAC anterior: $MAC_ANTERIOR\033[0m"
     echo -e "\033[7;30m🎉 MAC asignada: $MAC_NUEVA\033[0m"
+    echo ""
+    echo ""
 fi
 
 # 7. DB: reset y usuario
@@ -133,6 +151,8 @@ EOF
 sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}'" | grep -q 1
 if [ $? -eq 0 ]; then
     echo "La base de datos ${DB_NAME} existe. Eliminándola..."
+    echo ""
+    echo ""
     sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${DB_NAME}';"
     sudo -u postgres psql -c "DROP DATABASE ${DB_NAME};"
 fi
@@ -145,6 +165,8 @@ GRANT CONNECT ON DATABASE ${DB_NAME} TO ${DB_USER};
 GRANT CREATE ON DATABASE ${DB_NAME} TO ${DB_USER};
 EOF
     echo -e "\033[7;30mBase de datos y usuario recreados.\033[0m"
+    echo ""
+    echo ""
 fi
 
 # 8. Migraciones, datos y superusuario condicional
@@ -155,12 +177,15 @@ if confirmar "Ejecutar migraciones y cargar datos"; then
     echo "🔄 Generando migraciones de Django..."
     python manage.py makemigrations
     echo ""
+    echo ""
     echo "⏳ Aplicando migraciones de la base de datos..."
     python manage.py migrate
+    echo ""
     echo ""
     echo "📥 Cargando fixtures desde bdd.json..."
     LOADDATA_OUT=$(python manage.py loaddata bdd.json)
     echo -e "\033[7;30m📥 Datos subidos:\033[0m"
+    echo ""
     echo ""
     echo "$LOADDATA_OUT"
     if echo "$LOADDATA_OUT" | grep -q 'Installed 0'; then
@@ -168,9 +193,12 @@ if confirmar "Ejecutar migraciones y cargar datos"; then
             python manage.py createsuperuser
             echo -e "\033[7;30m👤 Superusuario creado.\033[0m"
             echo ""
+            echo ""
         fi
     else
         echo -e "\033[7;30m👥 Datos cargados, se omite superusuario.\033[0m"
+        echo ""
+        echo ""
     fi
 fi
 
@@ -182,6 +210,7 @@ if confirmar "Sincronizar cambios a api_bank_heroku"; then
         "$PROJECT_ROOT/" "$HEROKU_ROOT/"
     echo -e "\033[7;30m📂 Cambios enviados a api_bank_heroku.\033[0m"
     echo ""
+    echo ""
 fi
 
 # 10. Respaldo ZIP y SQL
@@ -191,6 +220,9 @@ if confirmar "Crear respaldo ZIP"; then
     zip -r "$ZIP_PATH" "$PROJECT_ROOT" \
         -x "$PROJECT_ROOT/venvAPI/*" "$PROJECT_ROOT/backup/*" "$PROJECT_ROOT/*.zip"
     echo -e "\033[7;30m📦 ZIP creado: $ZIP_PATH.\033[0m"
+    echo ""
+    echo ""
+
 fi
 
 if [ "$SYNC_REMOTE_DB" = true ]; then
@@ -214,13 +246,17 @@ if [ "$SYNC_REMOTE_DB" = true ]; then
     echo "🧹 Reseteando base de datos remota..."
     psql "$REMOTE_DB_URL" -q -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" || { echo "❌ Error al resetear la DB remota. Abortando."; exit 1; }
     echo ""
+    echo ""
     echo "📦 Generando backup local..."
     pg_dump --no-owner --no-acl -U "$LOCAL_DB_USER" -h "$LOCAL_DB_HOST" -d "$LOCAL_DB_NAME" > "$BACKUP_FILE" || { echo "❌ Error haciendo el backup local. Abortando."; exit 1; }
+    echo ""
     echo ""
     echo "🌐 Importando backup en la base de datos remota..."
     pv "$BACKUP_FILE" | psql "$REMOTE_DB_URL" -q > /dev/null || { echo "❌ Error al importar el backup en la base de datos remota."; exit 1; }
     echo ""
+    echo ""
     echo "✅ Sincronización completada con éxito: $BACKUP_FILE"
+    echo ""
     echo ""
 fi
 
@@ -243,6 +279,8 @@ if confirmar "Limpiar respaldos antiguos"; then
     for ((i=s;i<n;i++)); do keep["${today_files[i]}"]=1; done
     for f in "${files[@]}"; do
         [[ -z "${keep[$f]:-}" ]] && rm -f "$f" && echo -e "\033[7;30m🗑️ Eliminado $f.\033[0m"
+        echo ""
+        echo ""
     done
     cd - >/dev/null
 fi
@@ -255,10 +293,35 @@ if confirmar "Iniciar Gunicorn, honeypot y livereload simultáneamente"; then
     python manage.py collectstatic --noinput
     export DATABASE_URL="postgres://markmur88:Ptf8454Jd55@localhost:5432/mydatabase"
 
+    # Función para limpiar y salir
+    cleanup() {
+        echo -e "\n\033[1;33mDeteniendo todos los servicios...\033[0m"
+        # Matar todos los procesos en segundo plano
+        pids=$(jobs -p)
+        if [ -n "$pids" ]; then
+            kill $pids 2>/dev/null
+        fi
+        
+        # Liberar puertos
+        for port in 8001 5000 35729; do
+            if lsof -i :$port > /dev/null; then
+                echo "Liberando puerto $port..."
+                kill $(lsof -t -i :$port) 2>/dev/null || true
+            fi
+        done
+        echo -e "\033[1;32mTodos los servicios detenidos y puertos liberados.\033[0m"
+        exit 0
+    }
+
+    # Configurar trap para Ctrl+C
+    trap cleanup SIGINT
+
     # Liberar puertos si es necesario
     for port in 8001 5000 35729; do
         if lsof -i :$port > /dev/null; then
             echo "Liberando puerto $port..."
+            echo ""
+            echo ""
             kill $(lsof -t -i :$port) 2>/dev/null || true
         fi
     done
@@ -279,7 +342,11 @@ if confirmar "Iniciar Gunicorn, honeypot y livereload simultáneamente"; then
     sleep 5
     firefox --new-tab http://0.0.0.0:8000 --new-tab http://localhost:5000
     echo -e "\033[7;30m🚧 Gunicorn, honeypot y livereload están activos. Presiona Ctrl+C para detenerlos.\033[0m"
-    wait
+    
+    # Esperar indefinidamente hasta que se presione Ctrl+C
+    while true; do
+        sleep 1
+    done
 fi
 
 clear
