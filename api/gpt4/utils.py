@@ -1134,3 +1134,53 @@ def obtener_otp_automatico_con_challenge(transfer):
     otp_token = resolver_challenge(challenge_id, token, transfer.payment_id)
     return otp_token, token
 
+
+
+def registrar_log_oauth(accion, estado, metadata=None, error=None, request=None):
+    """
+    Registra eventos detallados del flujo OAuth2
+    """
+    log_entry = {
+        'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        'accion': accion,
+        'estado': estado,
+        'metadata': metadata or {},
+        'error': error
+    }
+    
+    # Directorio específico para logs OAuth
+    log_dir = os.path.join(BASE_SCHEMA_DIR, "oauth_logs")
+    os.makedirs(log_dir, exist_ok=True)
+    
+    # Archivo de log general
+    log_file = os.path.join(log_dir, "oauth_general.log")
+    
+    # Archivo de log por sesión (si hay request)
+    session_log_file = None
+    if request and hasattr(request, 'session'):
+        session_id = request.session.session_key
+        if session_id:
+            session_log_file = os.path.join(log_dir, f"oauth_session_{session_id}.log")
+    
+    # Escribir en los logs
+    try:
+        with open(log_file, 'a') as f:
+            f.write(json.dumps(log_entry) + "\n")
+        
+        if session_log_file:
+            with open(session_log_file, 'a') as f:
+                f.write(json.dumps(log_entry) + "\n")
+    except Exception as e:
+        print(f"Error escribiendo logs OAuth: {str(e)}")
+
+def limpiar_datos_sensibles(data):
+    """
+    Limpia datos sensibles para logs sin truncar información importante
+    """
+    if isinstance(data, dict):
+        cleaned = data.copy()
+        for key in ['access_token', 'refresh_token', 'code_verifier']:
+            if key in cleaned:
+                cleaned[key] = "***REDACTED***"
+        return cleaned
+    return data

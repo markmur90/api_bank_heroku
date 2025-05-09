@@ -20,7 +20,7 @@
     <div class="custom-card-header">Iniciar Autorización</div>
     <div class="card-body custom-card-body text-center">
       <p class="lead">Pulsa el botón para conceder permisos de acceso.</p>
-      <button onclick="initiateOAuthFlow()" class="btn btn-lg btn-success">
+      <button onclick="redirectToAuth()" class="btn btn-lg btn-success">
         <i class="bi bi-key-fill me-2"></i> Autorizar con DB
       </button>
     </div>
@@ -28,12 +28,12 @@
 </div>
 
 <script>
-function initiateOAuthFlow() {
-    // Redirige a la URL de autorización en la misma ventana
-    //window.location.href = "{{ auth_url }}";
+function redirectToAuth() {
+    // Redirige a la URL de autorización de Deutsche Bank
+    window.location.href = "{{ auth_url }}";
     
-    // O si prefieres abrir en una nueva ventana:
-    window.open("{{ auth_url }}", '_blank', 'noopener,noreferrer');
+    // Alternativa para abrir en ventana emergente (si es preferible)
+    window.open("{{ auth_url }}", 'oauthWindow', 'width=600,height=700');
 }
 </script>
 {% endblock %}

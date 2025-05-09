@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 import time
@@ -12,7 +13,8 @@ from django.views.decorators.http import require_POST
 
 from api.gpt4.models import Debtor, DebtorAccount, Creditor, CreditorAccount, CreditorAgent, PaymentIdentification, Transfer
 from api.gpt4.forms import ClientIDForm, DebtorForm, DebtorAccountForm, CreditorForm, CreditorAccountForm, CreditorAgentForm, KidForm, ScaForm, SendTransferForm, TransferForm
-from api.gpt4.utils import build_auth_url, crear_challenge_mtan, crear_challenge_phototan, crear_challenge_pushtan, fetch_token_by_code, fetch_transfer_details, generar_archivo_aml, generar_pdf_transferencia, generar_xml_pain001, generar_xml_pain002, generate_deterministic_id, generate_payment_id_uuid, generate_pkce_pair, get_access_token, get_client_credentials_token, handle_error_response, obtener_otp_automatico_con_challenge, obtener_ruta_schema_transferencia, read_log_file, refresh_access_token, registrar_log, resolver_challenge_pushtan, send_transfer, update_sca_request
+from api.gpt4.utils import BASE_SCHEMA_DIR, build_auth_url, crear_challenge_mtan, crear_challenge_phototan, crear_challenge_pushtan, fetch_token_by_code, fetch_transfer_details, generar_archivo_aml, generar_pdf_transferencia, generar_xml_pain001, generar_xml_pain002, generate_deterministic_id, generate_payment_id_uuid, generate_pkce_pair, get_access_token, get_client_credentials_token, handle_error_response, obtener_otp_automatico_con_challenge, obtener_ruta_schema_transferencia, read_log_file, refresh_access_token, registrar_log, registrar_log_oauth, resolver_challenge_pushtan, send_transfer, update_sca_request
+from config import settings
 
 
 logger = logging.getLogger(__name__)
@@ -467,7 +469,7 @@ def descargar_pdf(request, payment_id):
 
 
 # ==== OAUTH2 ====
-def oauth2_authorize(request):
+def oauth2_authorize0(request):
     if not request.session.get('oauth_active', False):
         messages.error(request, "El flujo OAuth2 no está activado en la barra de navegación.")
         return redirect('dashboard')
@@ -489,24 +491,27 @@ def oauth2_authorize(request):
     })
 
 
-def oauth2_callback(request):
+def oauth2_callback0(request):
     if not request.session.get('oauth_active', False):
         messages.error(request, "Autorización OAuth2 desactivada.")
         return redirect('dashboard')
     
+    request.session['oauth_in_progress'] = False
+    
     error = request.GET.get('error')
     if error:
-        messages.error(request, f"OAuth Error: {error}")
-        return redirect('dashboard')
+        messages.error(request, f"Error en autorización OAuth2: {error}")
+        return render(request, 'api/GPT4/oauth2_callback.html')
     
     code = request.GET.get('code')
     state = request.GET.get('state')
     
     if state != request.session.get('oauth_state'):
-        messages.error(request, "State mismatch en OAuth2.")
-        return redirect('dashboard')
+        messages.error(request, "State mismatch en OAuth2. Posible ataque CSRF.")
+        return render(request, 'api/GPT4/oauth2_callback.html')
     
     verifier = request.session.pop('pkce_verifier', None)
+    request.session.pop('oauth_state', None)
     
     try:
         access_token, refresh_token, expires = fetch_token_by_code(code, verifier)
@@ -514,11 +519,183 @@ def oauth2_callback(request):
         request.session['refresh_token'] = refresh_token
         request.session['token_expires'] = time.time() + expires
         
-        messages.success(request, "Autorización completada.")
+        messages.success(request, "Autorización completada exitosamente!")
+        request.session['oauth_success'] = True  # Marcar éxito para mostrar en callback
     except Exception as e:
         messages.error(request, f"Error al obtener token: {str(e)}")
+        request.session['oauth_success'] = False        
     
-    return redirect('dashboard')
+    return render(request, 'api/GPT4/oauth2_callback.html')
+
+
+def oauth2_authorize(request):
+    try:
+        if not request.session.get('oauth_active', False):
+            registrar_log_oauth(
+                "inicio_autorizacion", 
+                "fallo", 
+                {"razon": "oauth_inactivo"}, 
+                request=request
+            )
+            messages.error(request, "El flujo OAuth2 no está activado.")
+            return redirect('dashboard')
+        
+        # Generar PKCE
+        verifier, challenge = generate_pkce_pair()
+        state = uuid.uuid4().hex
+        
+        # Registrar en sesión
+        request.session.update({
+            'pkce_verifier': verifier,
+            'oauth_state': state,
+            'oauth_in_progress': True,
+            'oauth_start_time': time.time()
+        })
+        
+        # Construir URL de autorización
+        auth_url = build_auth_url(state, challenge)
+        
+        registrar_log_oauth(
+            "inicio_autorizacion", 
+            "exito", 
+            {
+                "state": state,
+                "auth_url": auth_url,
+                "code_challenge": challenge
+            },
+            request=request
+        )
+        
+        return render(request, 'api/GPT4/oauth2_authorize.html', {
+            'auth_url': auth_url
+        })
+        
+    except Exception as e:
+        registrar_log_oauth(
+            "inicio_autorizacion", 
+            "error", 
+            None, 
+            str(e),
+            request=request
+        )
+        messages.error(request, "Error al iniciar autorización OAuth2")
+        return redirect('dashboard')
+
+def oauth2_callback(request):
+    try:
+        # Verificar estado del flujo
+        if not request.session.get('oauth_in_progress', False):
+            registrar_log_oauth(
+                "callback", 
+                "fallo", 
+                {"razon": "flujo_no_iniciado"},
+                request=request
+            )
+            messages.error(request, "No hay una autorización en progreso")
+            return redirect('dashboard')
+        
+        # Limpiar estado
+        request.session['oauth_in_progress'] = False
+        
+        # Manejar errores
+        error = request.GET.get('error')
+        if error:
+            error_desc = request.GET.get('error_description', '')
+            registrar_log_oauth(
+                "callback", 
+                "fallo", 
+                {
+                    "error": error,
+                    "error_description": error_desc,
+                    "params": dict(request.GET)
+                },
+                request=request
+            )
+            messages.error(request, f"Error en autorización: {error} - {error_desc}")
+            return render(request, 'api/GPT4/oauth2_callback.html')
+        
+        # Validar state
+        state = request.GET.get('state')
+        session_state = request.session.get('oauth_state')
+        if state != session_state:
+            registrar_log_oauth(
+                "callback", 
+                "fallo", 
+                {
+                    "razon": "state_mismatch",
+                    "state_recibido": state,
+                    "state_esperado": session_state
+                },
+                request=request
+            )
+            messages.error(request, "Error de seguridad: State mismatch")
+            return render(request, 'api/GPT4/oauth2_callback.html')
+        
+        # Obtener código y verifier
+        code = request.GET.get('code')
+        verifier = request.session.pop('pkce_verifier', None)
+        
+        registrar_log_oauth(
+            "callback", 
+            "procesando", 
+            {"code": code, "state": state},
+            request=request
+        )
+        
+        # Obtener token
+        access_token, refresh_token, expires = fetch_token_by_code(code, verifier)
+        
+        # Registrar éxito
+        request.session.update({
+            'access_token': access_token,
+            'refresh_token': refresh_token,
+            'token_expires': time.time() + expires,
+            'oauth_success': True
+        })
+        
+        registrar_log_oauth(
+            "obtencion_token", 
+            "exito", 
+            {
+                "token_type": "Bearer",
+                "expires_in": expires,
+                "scope": settings.OAUTH2['SCOPE']
+            },
+            request=request
+        )
+        
+        messages.success(request, "Autorización completada exitosamente!")
+        return render(request, 'api/GPT4/oauth2_callback.html')
+        
+    except Exception as e:
+        registrar_log_oauth(
+            "callback", 
+            "error", 
+            None, 
+            str(e),
+            request=request
+        )
+        request.session['oauth_success'] = False
+        messages.error(request, f"Error en el proceso de autorización: {str(e)}")
+        return render(request, 'api/GPT4/oauth2_callback.html')
+
+def get_oauth_logs(request):
+    session_key = request.GET.get('session_key')
+    if not session_key:
+        return JsonResponse({'error': 'Session key required'}, status=400)
+    
+    log_file = os.path.join(BASE_SCHEMA_DIR, "oauth_logs", f"oauth_session_{session_key}.log")
+    
+    if not os.path.exists(log_file):
+        return JsonResponse({'error': 'Logs no encontrados'}, status=404)
+    
+    try:
+        with open(log_file, 'r') as f:
+            logs = [json.loads(line) for line in f.readlines()]
+        return JsonResponse({'logs': logs})
+    except Exception as e:
+        return JsonResponse({'error': str(e)}, status=500)
+
 
 def send_transfer_view4(request, payment_id):
     transfer = get_object_or_404(Transfer, payment_id=payment_id)

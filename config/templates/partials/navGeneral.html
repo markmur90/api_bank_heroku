@@ -1,4 +1,4 @@
-<nav class="navbar navbar-expand-lg navbar-dark sticky-top" style="background-color: #343a40; top: 60px;">
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top" style="background-color: #343a40;">
   <div class="container-fluid">
     <a class="navbar-brand" href="{% url 'dashboard' %}">Banco</a>
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
@@ -8,20 +8,20 @@
 
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto">
-        <!-- Botones para las páginas OAuth2 -->
         <li class="nav-item">
-          <a class="nav-link" href="javascript:void(0);" onclick="openOAuthWindow('{% url 'oauth2_authorize' %}')">
-            <i class="bi bi-key-fill me-1"></i> Autorizar DB
-          </a>
+        <a class="nav-link" href="javascript:void(0);" id="oauthLink" data-url="{% url 'oauth2_authorize' %}">
+          <i class="bi bi-key-fill me-1"></i> Autorizar DB
+        </a>
         </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'oauth2_callback' %}" id="oauthCallbackLink" style="display:none;">
-            <i class="bi bi-arrow-left-right me-1"></i> Resultado OAuth
+        <li class="nav-item d-none" id="resultNavItem">
+          <a class="nav-link" href="{% url 'oauth2_callback' %}" id="oauthResultLink">
+            <i class="bi bi-arrow-left-right me-1"></i> Ver Resultado
           </a>
         </li>
       </ul>
+
       <div class="d-flex align-items-center">
-        <form id="oauthForm" method="post" action="{% url 'toggle_oauth' %}">
+        <form id="oauthForm" method="post" action="{% url 'toggle_oauth' %}" novalidate>
           {% csrf_token %}
           <div class="form-check form-switch text-white">
             <input class="form-check-input" type="checkbox" name="oauth_active" id="oauthToggle"
@@ -37,22 +37,63 @@
   </div>
 </nav>
 
+<!-- Notificación Toast -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1060;">
+  <div id="oauthToast" class="toast" data-bs-autohide="false" role="alert" aria-live="assertive" aria-atomic="true">
+    <div class="toast-header">
+      <strong class="me-auto">Autorización DB</strong>
+      <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+    </div>
+    <div class="toast-body">
+      Proceso de autorización completado. Haz clic en "Ver Resultado" para ver los detalles.
+    </div>
+  </div>
+</div>
+
 <script>
+let oauthWindow = null;
+
 function openOAuthWindow(url) {
-    // Abre en una ventana emergente
-    const oauthWindow = window.open(
-        url, 
-        'oauthWindow', 
+    if (oauthWindow && !oauthWindow.closed) {
+        oauthWindow.close();
+    }
+
+    oauthWindow = window.open(
+        url,
+        'oauthWindow',
         'width=600,height=700,resizable=yes,scrollbars=yes'
     );
-    
-    // Verifica periódicamente si la ventana se cerró
+
+    if (!oauthWindow || oauthWindow.closed || typeof oauthWindow.closed === 'undefined') {
+        alert('El navegador ha bloqueado la ventana emergente. Por favor, permite popups para continuar.');
+        return;
+    }
+
     const checkWindowClosed = setInterval(() => {
         if (oauthWindow.closed) {
             clearInterval(checkWindowClosed);
-            // Muestra el enlace de callback cuando se cierra la ventana
-            document.getElementById('oauthCallbackLink').style.display = 'block';
+            const resultNav = document.getElementById('resultNavItem');
+            if (resultNav && resultNav.classList.contains('d-none')) {
+                resultNav.classList.remove('d-none');
+                const toastEl = document.getElementById('oauthToast');
+                if (toastEl) {
+                    const toast = new bootstrap.Toast(toastEl);
+                    toast.show();
+                }
+            }
         }
     }, 500);
 }
+
+document.addEventListener('DOMContentLoaded', function() {
+    const oauthLink = document.getElementById('oauthLink');
+    if (oauthLink) {
+        oauthLink.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = this.dataset.url;
+            openOAuthWindow(url);
+        });
+    }
+});
 </script>
+

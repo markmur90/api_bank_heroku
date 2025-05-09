@@ -42,5 +42,6 @@ urlpatterns = [
     path('oauth2/authorize/', views.oauth2_authorize, name='oauth2_authorize'),
     path('oauth2/callback/', views.oauth2_callback, name='oauth2_callback'),
     path('toggle-oauth/', views.toggle_oauth, name='toggle_oauth'),
+    path('oauth2/logs/', views.get_oauth_logs, name='get_oauth_logs'),
     
 ]
