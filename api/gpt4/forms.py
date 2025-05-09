@@ -109,7 +109,7 @@ class SendTransferForm(forms.ModelForm):
         required=False,
         label='OTP manual',
         min_length=6,
-        max_length=8,
+        max_length=70,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Introduce OTP manual de 6 a 8 caracteres'})
     )
     OTP_METHOD_CHOICES = [
