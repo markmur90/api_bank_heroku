@@ -1,74 +1,81 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+PROMPT_MODE=true
+function usage() {
+    echo "Uso: $0 [-a|--all] [-s|--step]"
+}
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        -a|--all) PROMPT_MODE=false; shift ;;
+        -s|--step) PROMPT_MODE=true; shift ;;
+        -h|--help) usage; exit 0 ;;
+        *) echo "Opción desconocida: $1"; usage; exit 1 ;;
+    esac
+done
+
 PROJECT_ROOT="$HOME/Documentos/GitHub/api_bank_h2"
+BACKUP_DIR="$HOME/Documentos/GitHub/backup/"
+HEROKU_ROOT="$HOME/Documentos/GitHub/api_bank_heroku"
 VENV_PATH="$HOME/Documentos/Entorno/venvAPI"
 INTERFAZ="wlan0"
+DB_NAME="api_bank_h2"
+DB_USER="markmur88"
+DB_PASS="Ptf8454Jd55"
+
+mkdir -p "$BACKUP_DIR"
 
 confirmar() {
-    echo ""
-    echo ""
-    printf "\033[1;34m🔷 ¿Confirmas la ejecución de: «%s»? (s/n):\033[0m " "$1"
+    [[ "$PROMPT_MODE" == false ]] && return 0
+    echo
+    printf "\033[1;34m🔷 ¿Confirmas: %s? (s/n):\033[0m " "$1"
     read -r resp
     [[ "$resp" == "s" || -z "$resp" ]]
 }
 
 clear
 
+# 1. Puertos
 for PUERTO in 2222 8000 5000 8001 35729; do
     if lsof -i tcp:"$PUERTO" &>/dev/null; then
         if confirmar "Cerrar procesos en puerto $PUERTO"; then
             sudo fuser -k "${PUERTO}"/tcp || true
-            echo -e "\033[1;32m✅ Puerto $PUERTO liberado con éxito.\033[0m"
+            echo -e "\033[7;30m✅ Puerto $PUERTO liberado.\033[0m"
         fi
     fi
 done
 
-if confirmar "Detener contenedores Docker activos"; then
-    ACTIVE_CONTAINERS=$(docker ps -q)
-    if [ -n "$ACTIVE_CONTAINERS" ]; then
-        sudo docker stop $ACTIVE_CONTAINERS
-        echo -e "\033[1;32m🛑 Todos los contenedores Docker activos han sido detenidos.\033[0m"
+# 2. Docker
+if confirmar "Detener contenedores Docker"; then
+    PIDS=$(docker ps -q)
+    if [ -n "$PIDS" ]; then
+        docker stop $PIDS
+        echo -e "\033[7;30m🐳 Contenedores detenidos.\033[0m"
     else
-        echo -e "\033[1;33mℹ️ No se detectan contenedores Docker en ejecución.\033[0m"
+        echo -e "\033[7;30m🐳 No hay contenedores.\033[0m"
     fi
 fi
 
-if confirmar "Eliminar contenedores Docker"; then
-    ALL_CONTAINERS=$(docker ps -aq)
-    if [ -n "$ALL_CONTAINERS" ]; then
-        sudo docker rm $ALL_CONTAINERS
-        echo -e "\033[1;32m🗑️ Todos los contenedores Docker han sido eliminados.\033[0m"
-    else
-        echo -e "\033[1;33mℹ️ No hay contenedores Docker para eliminar.\033[0m"
-    fi
+# 3. Actualizar sistema
+if confirmar "Actualizar sistema"; then
+    sudo apt update && sudo apt upgrade -y
+    echo -e "\033[7;30m🔄 Sistema actualizado.\033[0m"
 fi
 
-if confirmar "Eliminar imágenes Docker"; then
-    ALL_IMAGES=$(docker images -q)
-    if [ -n "$ALL_IMAGES" ]; then
-        sudo docker rmi $ALL_IMAGES
-        echo -e "\033[1;32m🗑️ Todas las imágenes Docker han sido eliminadas.\033[0m"
-    else
-        echo -e "\033[1;33mℹ️ No se encontraron imágenes Docker para eliminar.\033[0m"
-    fi
-fi
-
-if confirmar "Actualizar el sistema"; then
-    sudo apt-get update && sudo apt-get full-upgrade -y
-    sudo apt-get autoremove -y && sudo apt-get clean
-    echo -e "\033[1;32m🎉 Sistema actualizado correctamente.\033[0m"
-fi
-
-if confirmar "Configurar entorno Python y PostgreSQL"; then
-    export DATABASE_URL="postgres://markmur88:Ptf8454Jd55@localhost:5432/mydatabase"
+# 4. Entorno Python y PostgreSQL
+if confirmar "Configurar venv y PostgreSQL"; then
     python3 -m venv "$VENV_PATH"
     source "$VENV_PATH/bin/activate"
+    pip install --upgrade pip
+    echo "📦 Instalando dependencias..."
+    pip install -r "$PROJECT_ROOT/requirements.txt"
+    echo ""
     sudo systemctl enable postgresql
     sudo systemctl start postgresql
-    echo -e "\033[1;32m🐍 Entorno virtual y PostgreSQL configurados y en ejecución.\033[0m"
+    echo -e "\033[7;30m🐍 Entorno y PostgreSQL listos.\033[0m"
 fi
 
+# 5. Firewall
 if confirmar "Configurar UFW"; then
     sudo ufw --force reset
     sudo ufw default deny incoming
@@ -82,44 +89,65 @@ if confirmar "Configurar UFW"; then
     sudo ufw allow from 127.0.0.1 to any port 8001 proto tcp comment "Gunicorn local backend"
     sudo ufw deny 22/tcp comment "Bloquear SSH real en 22"
     sudo ufw enable
-    echo -e "\033[1;32m🔐 Reglas de UFW aplicadas con éxito.\033[0m"
+    echo -e "\033[7;30m🔐 Reglas de UFW aplicadas con éxito.\033[0m"
 fi
 
+# 6. Cambiar MAC
 if confirmar "Cambiar MAC de la interfaz $INTERFAZ"; then
     sudo ip link set "$INTERFAZ" down
     MAC_ANTERIOR=$(sudo macchanger -s "$INTERFAZ" | awk '/Current MAC:/ {print $3}')
     MAC_NUEVA=$(sudo macchanger -r "$INTERFAZ" | awk '/New MAC:/ {print $3}')
     sudo ip link set "$INTERFAZ" up
-    echo -e "\033[1;32m🔍 MAC anterior: $MAC_ANTERIOR\033[0m"
-    echo -e "\033[1;32m🎉 MAC asignada:    $MAC_NUEVA\033[0m"
+    echo -e "\033[7;30m🔍 MAC anterior: $MAC_ANTERIOR\033[0m"
+    echo -e "\033[7;30m🎉 MAC asignada: $MAC_NUEVA\033[0m"
 fi
 
+# 7. DB: reset y usuario
 if confirmar "Resetear base de datos y crear usuario en PostgreSQL"; then
     DB_NAME="mydatabase"
     DB_USER="markmur88"
     DB_PASSWORD="Ptf8454Jd55"
     sudo -u postgres psql <<-EOF
-    DO \$\$
-    BEGIN
-        -- Verificar si el usuario ya existe
-        IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${DB_USER}') THEN
-            CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';
-        END IF;
-    END
-    \$\$;
+DO \$\$
+BEGIN
+    -- Verificar si el usuario ya existe
+    IF NOT EXISTS (SELECT FROM pg_catalog.pg_roles WHERE rolname = '${DB_USER}') THEN
+        CREATE USER ${DB_USER} WITH PASSWORD '${DB_PASSWORD}';
+    END IF;
+END
+\$\$;
 
-    -- Asignar permisos al usuario
-    ALTER USER ${DB_USER} WITH SUPERUSER;
-    GRANT CONNECT ON DATABASE ${DB_NAME} TO ${DB_USER};
-    GRANT CREATE ON DATABASE ${DB_NAME} TO ${DB_USER};
+-- Asignar permisos al usuario
+ALTER USER ${DB_USER} WITH SUPERUSER;
+GRANT USAGE, CREATE ON SCHEMA public TO ${DB_USER};
+GRANT ALL PRIVILEGES ON SCHEMA public TO ${DB_USER};
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON FUNCTIONS TO ${DB_USER};
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON SEQUENCES TO ${DB_USER};
+ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT ALL ON TABLES TO ${DB_USER};
 EOF
-    echo "🗄️ La base de datos «${DB_NAME}» ya existe. Procediendo a eliminarla..."
+
+# Verificar si la base de datos existe y eliminarla si es necesario
+sudo -u postgres psql -tAc "SELECT 1 FROM pg_database WHERE datname = '${DB_NAME}'" | grep -q 1
+if [ $? -eq 0 ]; then
+    echo "La base de datos ${DB_NAME} existe. Eliminándola..."
+    sudo -u postgres psql -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '${DB_NAME}';"
+    sudo -u postgres psql -c "DROP DATABASE ${DB_NAME};"
 fi
 
+# Crear la base de datos y asignar permisos
+sudo -u postgres psql <<-EOF
+CREATE DATABASE ${DB_NAME};
+GRANT ALL PRIVILEGES ON DATABASE ${DB_NAME} TO ${DB_USER};
+GRANT CONNECT ON DATABASE ${DB_NAME} TO ${DB_USER};
+GRANT CREATE ON DATABASE ${DB_NAME} TO ${DB_USER};
+EOF
+    echo -e "\033[7;30mBase de datos y usuario recreados.\033[0m"
+fi
+
+# 8. Migraciones, datos y superusuario condicional
 if confirmar "Ejecutar migraciones y cargar datos"; then
+    cd "$PROJECT_ROOT"
     source "$VENV_PATH/bin/activate"
-    echo "📦 Instalando dependencias..."
-    pip install -r requirements.txt
     echo ""
     echo "🔄 Generando migraciones de Django..."
     python manage.py makemigrations
@@ -128,103 +156,107 @@ if confirmar "Ejecutar migraciones y cargar datos"; then
     python manage.py migrate
     echo ""
     echo "📥 Cargando fixtures desde bdd.json..."
-    python manage.py loaddata bdd.json
+    LOADDATA_OUT=$(python manage.py loaddata bdd.json)
+    echo -e "\033[7;30m📥 Datos subidos:\033[0m"
     echo ""
-    echo -e "\033[1;32m✅ Migraciones aplicadas y datos cargados correctamente.\033[0m"
-elif confirmar "Crear superusuario de Django"; then
-    source "$VENV_PATH/bin/activate"
-    echo "📦 Instalando dependencias..."
-    pip install -r requirements.txt
-    echo ""
-    echo "🔄 Generando migraciones de Django..."
-    python manage.py makemigrations
-    echo ""
-    echo "⏳ Aplicando migraciones de la base de datos..."
-    python manage.py migrate
-    echo ""
-    echo "👤 Creando superusuario de Django..."
-    python manage.py createsuperuser
-    echo ""
-    echo -e "\033[1;32m👤 Superusuario de Django creado con éxito.\033[0m"
+    echo "$LOADDATA_OUT"
+    if echo "$LOADDATA_OUT" | grep -q 'Installed 0'; then
+        if confirmar "Crear superusuario de Django"; then
+            python manage.py createsuperuser
+            echo -e "\033[7;30m👤 Superusuario creado.\033[0m"
+            echo ""
+        fi
+    else
+        echo -e "\033[7;30m👥 Datos cargados, se omite superusuario.\033[0m"
+    fi
 fi
 
-if confirmar "Copiar proyecto y crear respaldo ZIP"; then
-    SOURCE="$PROJECT_ROOT/"
-    DEST="$HOME/Documentos/GitHub/api_bank_heroku/"
-    BACKUP_DIR="$HOME/Documentos/GitHub/backup/"
-    read -p "Campo adicional para el nombre del ZIP (opcional): " SUFFIX
-    TIMESTAMP=$(date +%Y%m%d__%H-%M-%S)
-    BACKUP_ZIP="${BACKUP_DIR}${TIMESTAMP}_backup_api_bank_h2${SUFFIX}.zip"
-    sudo mkdir -p "$DEST" "$BACKUP_DIR"
-    echo "📦 Creando archivo ZIP de respaldo..."
-    (
-        cd "$(dirname "$SOURCE")"
-        sudo zip -r "$BACKUP_ZIP" "$(basename "$SOURCE")" --exclude="*.sqlite3" --exclude="*.db" --exclude="*.pyc" --exclude="*.pyo"
-    )
+# 9. Sincronizar a Heroku
+if confirmar "Sincronizar cambios a api_bank_heroku"; then
     echo ""
     echo "🔄 Sincronizando archivos al destino..."
-    rsync -av --exclude=".gitattributes" --exclude="auto_commit" --exclude="*.db" --exclude="*.sqlite3" --exclude="temp/" "$SOURCE" "$DEST"
+    rsync -av --exclude=".gitattributes" --exclude="auto_commit_sync.sh" --exclude="manage.py" --exclude="*local.py" --exclude=".git/" --exclude="gunicorn.log" --exclude="honeypot_logs.csv" --exclude="token.md" --exclude="url_help.md" --exclude="honeypot.py" --exclude="URL_TOKEN.md" --exclude="01_full.sh" --exclude="05Gunicorn.sh" --exclude="*.zip" --exclude="*.db" --exclude="*.sqlite3" --exclude="temp/" \
+        "$PROJECT_ROOT/" "$HEROKU_ROOT/"
+    echo -e "\033[7;30m📂 Cambios enviados a api_bank_heroku.\033[0m"
     echo ""
-    echo -e "\033[1;32m✅ Respaldo ZIP creado en: $BACKUP_ZIP\033[0m"
-    cd "$BACKUP_DIR" || exit 1
-    TODAY=$(date +%Y%m%d)
-    today_files=( $(ls -1t "${TODAY}__"*.zip 2>/dev/null) )
-    for f in "${today_files[@]:10}"; do sudo rm -- "$f"; done
-    dates=( $(ls -1 *.zip | grep -E '^[0-9]{8}__' | cut -c1-8 | grep -v "^$TODAY" | sort -u) )
-    for d in "${dates[@]}"; do
-        files=( $(ls -1t "${d}__"*.zip) )
-        for f in "${files[@]:1}"; do sudo rm -- "$f"; done
-    done
-    echo ""
-    echo "🧹 Archivos ZIP antiguos eliminados."
+fi
+
+# 10. Respaldo ZIP y SQL
+if confirmar "Crear respaldo ZIP"; then
+    TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+    ZIP_PATH="$BACKUP_DIR/respaldo_${TIMESTAMP}.zip"
+    zip -r "$ZIP_PATH" "$PROJECT_ROOT" \
+        -x "$PROJECT_ROOT/venvAPI/*" "$PROJECT_ROOT/backup/*" "$PROJECT_ROOT/*.zip"
+    echo -e "\033[7;30m📦 ZIP creado: $ZIP_PATH.\033[0m"
 fi
 
 if confirmar "Sincronizar base de datos remota"; then
     LOCAL_DB_NAME="mydatabase"
     LOCAL_DB_USER="markmur88"
     LOCAL_DB_HOST="localhost"
-    REMOTE_DB_URL="postgres://usuario:contraseña@servidor:5432/d9vb99r9t1m7kt"
+    REMOTE_DB_URL="postgres://ue2erdhkle4v0h:pa1773a2b68d739e66a794acd529d1b60c016733f35be6884a9f541365d5922cf@ec2-63-33-30-239.eu-west-1.compute.amazonaws.com:5432/d9vb99r9t1m7kt"
 
-    # 🕒 Marca de tiempo para el backup
+    # **🕒 Marca de tiempo para el backup**
     DATE=$(date +"%Y%m%d_%H%M%S")
     BACKUP_DIR="$HOME/Documentos/GitHub/backup/"
+    # Crear el directorio de backup si no existe
     BACKUP_FILE="${BACKUP_DIR}backup_${DATE}.sql"
     if ! command -v pv > /dev/null 2>&1; then
         echo "⚠️ La herramienta 'pv' no está instalada. Instálala con: sudo apt install pv"
         exit 1
     fi
     echo ""
-    echo "🗄️ Iniciando reinicio de la base de datos remota..."
-    psql "$REMOTE_DB_URL" -q -c "DROP SCHEMA public CASCADE;..." || { echo "❌ Ocurrió un error al reiniciar la base de datos remota. Abortando operación."; exit 1; }
+    echo "🧹 Reseteando base de datos remota..."
+    psql "$REMOTE_DB_URL" -q -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;" || { echo "❌ Error al resetear la DB remota. Abortando."; exit 1; }
     echo ""
-    echo "💾 Generando respaldo local de la base de datos..."
-    pg_dump --no-owner --no-acl -U "$LOCAL_DB_USER" -h "$LOCAL_DB_HOST" "$LOCAL_DB_NAME" > "$BACKUP_FILE" || { echo "❌ Error al generar el respaldo local. Abortando operación."; exit 1; }
+    echo "📦 Generando backup local..."
+    pg_dump --no-owner --no-acl -U "$LOCAL_DB_USER" -h "$LOCAL_DB_HOST" -d "$LOCAL_DB_NAME" > "$BACKUP_FILE" || { echo "❌ Error haciendo el backup local. Abortando."; exit 1; }
     echo ""
-    echo "🌐 Importando respaldo en la base de datos remota..."
-    pv "$BACKUP_FILE" | psql "$REMOTE_DB_URL" -q > /dev/null || { echo "❌ Error al importar el respaldo remoto. Abortando operación."; exit 1; }
+    echo "🌐 Importando backup en la base de datos remota..."
+    pv "$BACKUP_FILE" | psql "$REMOTE_DB_URL" -q > /dev/null || { echo "❌ Error al importar el backup en la base de datos remota."; exit 1; }
     echo ""
-    echo "🎉 Sincronización completada: respaldo guardado en $BACKUP_FILE"
+    echo "✅ Sincronización completada con éxito: $BACKUP_FILE"
     echo ""
-    echo "🧹 Archivos SQL antiguos eliminados."
 fi
 
-if confirmar "Recolectar estáticos y desplegar"; then
+# 11. Retención de backups
+if confirmar "Limpiar respaldos antiguos"; then
+    cd "$BACKUP_DIR"
+    mapfile -t files < <(ls -1tr *.zip *.sql 2>/dev/null)
+    declare -A first last all keep
+    for f in "${files[@]}"; do
+        d=${f:10:8}
+        all["$d"]+="$f;"
+        [[ -z "${first[$d]:-}" ]] && first[$d]=$f
+        last[$d]=$f
+    done
+    today=$(date +%Y%m%d)
+    for d in "${!first[@]}"; do keep["${first[$d]}"]=1; done
+    for d in "${!last[@]}";  do keep["${last[$d]}"]=1;  done
+    today_files=(); for f in "${files[@]}"; do [[ "${f:10:8}" == "$today" ]] && today_files+=("$f"); done
+    n=${#today_files[@]}; s=$(( n>10 ? n-10 : 0 ))
+    for ((i=s;i<n;i++)); do keep["${today_files[i]}"]=1; done
+    for f in "${files[@]}"; do
+        [[ -z "${keep[$f]:-}" ]] && rm -f "$f" && echo -e "\033[7;30m🗑️ Eliminado $f.\033[0m"
+    done
+    cd - >/dev/null
+fi
+
+# 12. Arranque de servicios
+if confirmar "Iniciar Gunicorn, honeypot y livereload"; then
+    clear
+    cd "$PROJECT_ROOT"
     source "$VENV_PATH/bin/activate"
     python manage.py collectstatic --noinput
-    export DATABASE_URL="postgres://markmur88:Ptf8454Jd55@localhost:5432/mydatabase"
-    nohup gunicorn config.wsgi:application \
-        --workers 3 \
-        --bind 0.0.0.0:8001 \
-        --keep-alive 2 \
-        > gunicorn.log 2>&1 < /dev/null &
-    nohup python honeypot.py \
-        > honeypot.log 2>&1 < /dev/null &
-    nohup livereload --host 0.0.0.0 --port 35729 static/ -t templates/ \
-        > livereload.log 2>&1 < /dev/null &
-    sleep 5
+    export DATABASE_URL="postgres://$DB_USER:$DB_PASS@localhost:5432/$DB_NAME"
+    nohup gunicorn config.wsgi:application --workers 3 --bind 0.0.0.0:8001 --keep-alive 2 > gunicorn.log 2>&1 < /dev/null &
+    nohup python honeypot.py    > honeypot.log 2>&1 < /dev/null &
+    nohup livereload --host 0.0.0.0 --port 35729 static/ -t templates/ > livereload.log 2>&1 < /dev/null &
+    sleep 1
     firefox --new-tab http://0.0.0.0:8000 --new-tab http://localhost:5000
-    echo -e "\033[1;32m🚧 Gunicorn, honeypot y livereload están activos. Presiona Ctrl+C para detenerlos.\033[0m"
+    echo -e "\033[7;30m🚧 Servicios en marcha. Ctrl+C para parar.\033[0m"
     wait
 fi
 
-echo -e "\033[1;35m\n🏁 Todos los procesos han finalizado correctamente.\033[0m"
+clear
+echo -e "\033[1;30m\n🏁 ¡Todo completado con éxito!\033[0m"

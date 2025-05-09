@@ -8,10 +8,12 @@ from django.contrib import messages
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from django.template.loader import get_template
 from weasyprint import HTML
+from django.views.decorators.http import require_POST
 
 from api.gpt4.models import Debtor, DebtorAccount, Creditor, CreditorAccount, CreditorAgent, PaymentIdentification, Transfer
 from api.gpt4.forms import ClientIDForm, DebtorForm, DebtorAccountForm, CreditorForm, CreditorAccountForm, CreditorAgentForm, KidForm, ScaForm, SendTransferForm, TransferForm
-from api.gpt4.utils import ZCOD_DIR, build_auth_url, crear_challenge_mtan, crear_challenge_phototan, crear_challenge_pushtan, fetch_token_by_code, fetch_transfer_details, generar_archivo_aml, generar_pdf_transferencia, generar_xml_pain001, generate_deterministic_id, generate_payment_id_uuid, generate_pkce_pair, get_access_token, get_client_credentials_token, obtener_otp_automatico_con_challenge, obtener_ruta_schema_transferencia, read_log_file, refresh_access_token, registrar_log, resolver_challenge_pushtan, send_transfer, update_sca_request
+from api.gpt4.utils import build_auth_url, crear_challenge_mtan, crear_challenge_phototan, crear_challenge_pushtan, fetch_token_by_code, generar_archivo_aml, generar_pdf_transferencia, generar_xml_pain001, generate_deterministic_id, generate_payment_id_uuid, generate_pkce_pair, get_access_token, get_client_credentials_token, obtener_ruta_schema_transferencia, read_log_file, refresh_access_token, registrar_log, resolver_challenge_pushtan, send_transfer
+
 
 logger = logging.getLogger(__name__)
 
@@ -215,43 +217,115 @@ def transfer_detail(request, payment_id):
         'mensaje_error': mensaje_error
     })
 
+
+
 def send_transfer_view(request, payment_id):
     transfer = get_object_or_404(Transfer, payment_id=payment_id)
     form = SendTransferForm(request.POST or None, instance=transfer)
+
+    token = None
+    if request.session.get('oauth_active', False):
+        token = request.session.get('access_token')
+        expires = request.session.get('token_expires', 0)
+        if not token or time.time() > expires - 60:
+            rt = request.session.get('refresh_token')
+            if rt:
+                try:
+                    token, rt_new, exp = refresh_access_token(rt)
+                    request.session['access_token'] = token
+                    request.session['refresh_token'] = rt_new or rt
+                    request.session['token_expires'] = time.time() + exp
+                except Exception:
+                    token, exp = get_client_credentials_token()
+                    request.session['access_token'] = token
+                    request.session['token_expires'] = time.time() + exp
+            else:
+                token, exp = get_client_credentials_token()
+                request.session['access_token'] = token
+                request.session['token_expires'] = time.time() + exp
+
     if request.method == "POST":
         if form.is_valid():
-            form.save()
-            obtain_token = form.cleaned_data['obtain_token']
             manual_token = form.cleaned_data['manual_token']
+            final_token = manual_token or token
+            if not final_token:
+                return _render_transfer_detail(
+                    request,
+                    transfer,
+                    "Para obtener el token, primero activa OAuth2 en la barra de navegación."
+                )
+
             obtain_otp = form.cleaned_data['obtain_otp']
             manual_otp = form.cleaned_data['manual_otp']
             try:
-                token = manual_token or (
-                    get_access_token(transfer.payment_id, force_refresh=True)
-                    if obtain_token else
-                    get_access_token(transfer.payment_id)
-                )
-            except Exception as e:
-                registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error obteniendo access_token en vista")
-                return _render_transfer_detail(request, transfer, str(e))
-            try:
                 if obtain_otp:
-                    otp, _ = obtener_otp_automatico_con_challenge(transfer)
-                else:
+                    method = form.cleaned_data.get('otp_method')
+                    if method == 'MTAN':
+                        challenge_id = crear_challenge_mtan(transfer, final_token, transfer.payment_id)
+                        transfer.auth_id = challenge_id
+                        transfer.save()
+                        return redirect('transfer_update_scaGPT4', payment_id=transfer.payment_id)
+                    elif method == 'PHOTOTAN':
+                        challenge_id, img64 = crear_challenge_phototan(transfer, final_token, transfer.payment_id)
+                        request.session['photo_tan_img'] = img64
+                        transfer.auth_id = challenge_id
+                        transfer.save()
+                        return redirect('transfer_update_scaGPT4', payment_id=transfer.payment_id)
+                    else:
+                        otp = resolver_challenge_pushtan(
+                            crear_challenge_pushtan(transfer, final_token, transfer.payment_id),
+                            final_token,
+                            transfer.payment_id
+                        )
+                elif manual_otp:
                     otp = manual_otp
+                else:
+                    return _render_transfer_detail(
+                        request,
+                        transfer,
+                        "Debes seleccionar 'Obtener OTP automáticamente' o introducirlo manualmente."
+                    )
             except Exception as e:
-                registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error generando OTP automático en vista")
+                registrar_log(
+                    transfer.payment_id,
+                    {},
+                    "",
+                    error=str(e),
+                    extra_info="Error generando OTP automático en vista"
+                )
                 return _render_transfer_detail(request, transfer, str(e))
+
             try:
-                send_transfer(transfer, token, otp)
+                send_transfer(transfer, final_token, otp)
                 return redirect('transfer_detailGPT4', payment_id=payment_id)
             except Exception as e:
-                registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error enviando transferencia en vista")
+                registrar_log(
+                    transfer.payment_id,
+                    {},
+                    "",
+                    error=str(e),
+                    extra_info="Error enviando transferencia en vista"
+                )
                 return _render_transfer_detail(request, transfer, str(e))
-        else:
-            registrar_log(transfer.payment_id, {}, "", error="Formulario inválido", extra_info="Errores de validación en vista")
-            return _render_transfer_detail(request, transfer, "Debes seleccionar obtener TOKEN/OTP o proporcionar manualmente.")
-    return render(request, "api/GPT4/send_transfer.html", {"form": form, "transfer": transfer})
+        registrar_log(
+            transfer.payment_id,
+            {},
+            "",
+            error="Formulario inválido",
+            extra_info="Errores de validación en vista"
+        )
+        return _render_transfer_detail(
+            request,
+            transfer,
+            "Debes seleccionar OTP o proporcionar uno manualmente."
+        )
+
+    return render(
+        request,
+        "api/GPT4/send_transfer.html",
+        {"form": form, "transfer": transfer}
+    )
+
 
 def transfer_update_sca(request, payment_id):
     transfer = get_object_or_404(Transfer, payment_id=payment_id)
@@ -338,6 +412,9 @@ def descargar_pdf(request, payment_id):
 
 # ==== OAUTH2 ====
 def oauth2_authorize(request):
+    if not request.session.get('oauth_active', False):
+        messages.error(request, "El flujo OAuth2 no está activado en la barra de navegación.")
+        return redirect('dashboard')
     verifier, challenge = generate_pkce_pair()
     state = uuid.uuid4().hex
     request.session['pkce_verifier'] = verifier
@@ -345,6 +422,9 @@ def oauth2_authorize(request):
     return redirect(build_auth_url(state, challenge))
 
 def oauth2_callback(request):
+    if not request.session.get('oauth_active', False):
+        messages.error(request, "Autorización OAuth2 desactivada.")
+        return redirect('dashboard')
     error = request.GET.get('error')
     if error:
         messages.error(request, f"OAuth Error: {error}")
@@ -355,10 +435,12 @@ def oauth2_callback(request):
         messages.error(request, "State mismatch en OAuth2.")
         return redirect('dashboard')
     verifier = request.session.pop('pkce_verifier', None)
+    
     access_token, refresh_token, expires = fetch_token_by_code(code, verifier)
     request.session['access_token'] = access_token
     request.session['refresh_token'] = refresh_token
     request.session['token_expires'] = time.time() + expires
+    
     messages.success(request, "Autorización completada.")
     return redirect('dashboard')
 
@@ -458,3 +540,7 @@ def send_transfer_view4(request, payment_id):
         {"form": form, "transfer": transfer}
     )
 
+@require_POST
+def toggle_oauth(request):
+    request.session['oauth_active'] = 'oauth_active' in request.POST
+    return redirect(request.META.get('HTTP_REFERER', 'dashboard'))
