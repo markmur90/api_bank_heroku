@@ -1,0 +1,139 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  h1.text-center {
+    font-size: 2.5rem !important;
+  }
+  .custom-card {
+    border-radius: 1rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #ffffff 0%, #f1f3f5 100%);
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .custom-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  }
+  .custom-card-header {
+    background: linear-gradient(45deg, #4b555e, #8b99a7);
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.3rem;
+    padding: 1rem 1.5rem;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+  }
+  .custom-card-body {
+    padding: 1.5rem;
+  }
+</style>
+
+<div class="container-fluid">
+  <h1 class="text-center mb-4 display-6 fw-bold">GPT4 Enviar Transferencia</h1>
+
+  <div class="card custom-card mb-4">
+    <div class="custom-card-header d-flex justify-content-between align-items-center">
+      <h2 class="mb-0">Enviar Transferencia</h2>
+      <span class="text-muted">ID: {{ transfer.payment_id }}</span>
+    </div>
+    <div class="card-body custom-card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <div class="mb-4">
+          <h5>Configuración del TOKEN</h5>
+          <div class="form-check mb-2">
+            {{ form.obtain_token }}
+            <label for="id_obtain_token">Solicitar automáticamente nuevo TOKEN</label>
+          </div>
+          <div class="form-text">
+            Si prefieres, puedes ingresar manualmente tu propio TOKEN.
+          </div>
+          <div class="mt-2">
+            {{ form.manual_token }}
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <h5>Configuración del OTP</h5>
+          <div class="form-check mb-2">
+            {{ form.obtain_otp }}
+            <label for="id_obtain_otp">Solicitar automáticamente nuevo OTP</label>
+          </div>
+          <div class="form-text mb-2">
+            Ingresa manualmente solo si ya dispones de un OTP válido.
+          </div>
+          <div class="row gx-3">
+            <div class="col">
+              {{ form.manual_otp }}
+            </div>
+            <div class="col">
+              <label for="id_challenge_id">ID del Challenge</label>
+              <input type="text" id="id_challenge_id" class="form-control" value="{{ challenge_id }}" readonly>
+            </div>
+          </div>
+          <p class="mt-2">
+            Estado del challenge OTP: <strong>{{ challenge_status }}</strong>
+          </p>
+        </div>
+
+        <div class="mt-5">
+          <h5>Log de Transferencia</h5>
+          {% for nombre, contenido in log_files_content.items %}
+          <div class="mt-3">
+            <h6 class="text-primary">{{ nombre }}</h6>
+            <div class="border rounded p-2 bg-white log-content" style="max-height:300px; overflow-y:auto;">
+              <pre class="mb-0">{{ contenido }}</pre>
+            </div>
+          </div>
+          {% empty %}
+          <p class="text-muted">No hay logs disponibles para esta transferencia.</p>
+          {% endfor %}
+        </div>
+
+        <div class="card custom-card mb-4">
+          <div class="custom-card-header">
+            <button
+              class="btn btn-secondary"
+              type="button"
+              data-bs-toggle="collapse"
+              data-bs-target="#zCodContent"
+              aria-expanded="false"
+              aria-controls="zCodContent"
+            >
+              Mostrar Información Adicional
+            </button>
+          </div>
+          <div id="zCodContent" class="collapse">
+            <div class="card-body custom-card-body overflow-auto" style="max-height: 200px">
+              <pre>{{ zcod_content|safe }}</pre>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+          <a href="{% url 'transfer_detailGPT4' transfer.id %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Cancelar
+          </a>
+          <a href="{% url 'dashboard' %}" class="btn btn-secondary me-2">
+            <i class="bi bi-house-door"></i> Dashboard
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-send-check"></i> Enviar Transferencia
+          </button>
+        </div>
+      </form>
+      <script>
+        const manualTokenField = document.getElementById("id_manual_token");
+        let token_data;
+        if (manualTokenField && manualTokenField.value.trim() !== "") {
+          token_data = manualTokenField.value.trim();
+        } else {
+          token_data = get_access_token();
+        }
+      </script>
+    </div>
+  </div>
+</div>
+{% endblock %}

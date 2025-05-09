@@ -1,0 +1,97 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  h1.text-center {
+    font-size: 2.5rem !important;
+  }
+  .custom-card {
+    border-radius: 1rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #ffffff 0%, #f1f3f5 100%);
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .custom-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  }
+  .custom-card-header {
+    background: linear-gradient(45deg, #4b555e, #8b99a7);
+    color: #fff;
+    font-weight: 600;
+    font-size: 1.3rem;
+    padding: 1rem 1.5rem;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+  }
+  .custom-card-body {
+    padding: 1.5rem;
+  }
+</style>
+
+<div class="container-fluid">
+  <h1 class="text-center mb-4 display-6 fw-bold">GPT4 Enviar Transferencia</h1>
+
+  <div class="card custom-card mb-4">
+    <div class="custom-card-header d-flex justify-content-between align-items-center">
+      <h2 class="mb-0">Enviar Transferencia</h2>
+      <span class="text-muted">ID: {{ transfer.payment_id }}</span>
+    </div>
+    <div class="card-body custom-card-body">
+      <form method="post" novalidate>
+        {% csrf_token %}
+
+        <h5>Token de Autorización</h5>
+        <div class="form-check">
+          {{ form.obtain_token }}
+          <label class="form-check-label">Obtener nuevo TOKEN automáticamente</label>
+        </div>
+        <div class="mb-3">
+          {{ form.manual_token }}
+        </div>
+
+        <h5>OTP / TAN</h5>
+        <div class="form-check">
+          {{ form.obtain_otp }}
+          <label class="form-check-label">Obtener nuevo OTP automáticamente</label>
+        </div>
+        <div class="mb-3">
+          {{ form.manual_otp }}
+        </div>
+
+                <!-- Selección de credenciales -->
+        <div class="card custom-card mb-4">
+          <div class="custom-card-header">Credenciales</div>
+          <div class="card-body custom-card-body">
+            <div class="row g-3">
+              <div class="col-md-6">
+                <label for="id_client" class="form-label">ClientID</label>
+                {{ form.client }}
+                <a href="{% url 'create_clientidGPT4' %}" class="btn btn-link">Crear nuevo ClientID</a>
+              </div>
+              <div class="col-md-6">
+                <label for="id_kid" class="form-label">KID</label>
+                {{ form.kid }}
+                <a href="{% url 'create_kidGPT4' %}" class="btn btn-link">Crear nuevo KID</a>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+          <a href="{% url 'transfer_detailGPT4' transfer.payment_id %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Cancelar
+          </a>
+          <a href="{% url 'dashboard' %}" class="btn btn-secondary me-2">
+            <i class="bi bi-house-door"></i> Dashboard
+          </a>
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-send-check"></i> Enviar Transferencia
+          </button>
+        </div>
+      </form>
+      
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,40 @@
+{
+  // These tasks will run in order when initializing your CodeSandbox project.
+  "setupTasks": [
+    {
+      "command": "python3 -m venv .venv",
+      "name": "Create virtual environment"
+    },
+    {
+      "command": "source .venv/bin/activate",
+      "name": "Activate virtual environment"
+    },
+    {
+      "command": "pip install --upgrade pip",
+      "name": "Upgrade pip"
+    },
+    {
+      "command": "pip install -r requirements.txt",
+      "name": "Install dependencies"
+    },
+    {
+      "command": "python manage.py makemigrations",
+      "name": "Make migrations"
+    },
+    {
+      "command": "python manage.py migrate",
+      "name": "Apply migrations"
+    },
+    {
+      "command": "python manage.py collectstatic --noinput",
+      "name": "Collect static files"
+    }
+    // {
+    //   "command": "python manage.py loaddata bdd.json",
+    //   "name": "Load initial data"
+    // }
+  ],
+
+  // These tasks can be run from CodeSandbox. Running one will open a log in the app.
+  "tasks": {}
+}
