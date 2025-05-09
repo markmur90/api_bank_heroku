@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Detalle de Transferencia{% endblock %}
+{% block content %}
+<style>
+  h1.text-center { font-size: 2.5rem !important; }
+  .custom-card { border-radius: 1rem; box-shadow: 0 8px 20px rgba(0,0,0,0.1); background: linear-gradient(135deg,#fff 0%,#f1f3f5 100%); border:none; transition:transform 0.3s,box-shadow 0.3s; }
+  .custom-card:hover { transform:translateY(-5px); box-shadow:0 12px 24px rgba(0,0,0,0.15); }
+  .custom-card-header { background:linear-gradient(45deg,#343a40,#495057); color:#fff; font-weight:600; font-size:1.3rem; padding:1rem 1.5rem; border-top-left-radius:1rem; border-top-right-radius:1rem; }
+  .custom-card-body { padding:1.5rem; }
+  .table-custom { width:100%; border-collapse:collapse; }
+  .table-custom th, .table-custom td { padding:0.4rem 0.6rem; }
+  .table-custom thead { background-color:#e9ecef; }
+  .table-custom tbody tr:hover { background-color:rgba(52,58,64,0.05); }
+  .log-content::-webkit-scrollbar { width:6px; }
+  .log-content::-webkit-scrollbar-thumb { background-color:rgba(0,0,0,0.3); border-radius:3px; }
+  .log-content { scrollbar-width:thin; scrollbar-color:rgba(0,0,0,0.3) transparent; }
+</style>
+
+<div class="container-fluid">
+  <div class="card custom-card mb-4">
+    <div class="custom-card-header d-flex justify-content-between align-items-center">
+      <h2 class="mb-0">Transferencia {{ transferencia.payment_id }}</h2>
+      <div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-info me-2">
+          <i class="bi bi-arrow-left"></i> Volver al Listado
+        </a>
+        <a href="{% url 'descargar_pdfGPT3' transferencia.payment_id %}" class="btn btn-outline-secondary">
+          <i class="bi bi-file-earmark-pdf"></i> Descargar PDF
+        </a>
+      </div>
+    </div>
+    <div class="card-body custom-card-body">
+      <dl class="row">
+        <dt class="col-sm-3">Fecha de ejecución</dt>
+        <dd class="col-sm-9">{{ transferencia.requested_execution_date|default:"-" }}</dd>
+
+        <dt class="col-sm-3">Estado</dt>
+        <dd class="col-sm-9">
+          <span class="badge bg-{{ transferencia.get_status_color }}">
+            {{ transferencia.get_transaction_status_display }}
+          </span>
+        </dd>
+
+        <dt class="col-sm-3">Auth ID</dt>
+        <dd class="col-sm-9">{{ transferencia.auth_id }}</dd>
+
+        <dt class="col-sm-3">Instruction ID</dt>
+        <dd class="col-sm-9">{{ transferencia.payment_identification.instruction_id }}</dd>
+
+        <dt class="col-sm-3">End-to-End ID</dt>
+        <dd class="col-sm-9">{{ transferencia.payment_identification.end_to_end_id }}</dd>
+
+
+        <dt class="col-sm-3">Monto</dt>
+        <dd class="col-sm-9">
+          {{ transferencia.instructed_amount.amount }} {{ transferencia.instructed_amount.currency }}
+        </dd>
+
+        <dt class="col-sm-3">Beneficiario</dt>
+        <dd class="col-sm-9">
+          {{ transferencia.creditor.creditor_name }} {{ transferencia.creditor_account.iban }}
+        </dd>
+      </dl>
+
+      <div class="mt-4 p-3 bg-light border rounded">
+        <h5>Logs de Transacción</h5>
+        {% if log_files_content %}
+          {% for nombre, contenido in log_files_content.items %}
+            <div class="mb-3">
+              <h6 class="text-primary">{{ nombre }}</h6>
+              <div class="border rounded p-2 bg-white log-content" style="max-height: 300px; overflow-y: auto">
+                <pre class="mb-0">{{ contenido }}</pre>
+              </div>
+            </div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">No hay logs disponibles para esta transferencia.</p>
+        {% endif %}
+      </div>
+
+      <div class="mt-4 p-3 bg-light border rounded">
+        <h5>Archivos Relacionados</h5>
+        {% for archivo, contenido in archivos.items %}
+          <div class="mb-3">
+            <h6 class="text-primary">{{ archivo|capfirst }}</h6>
+            {% if contenido %}
+              <div class="border rounded p-2 bg-white log-content" style="max-height: 300px; overflow-y: auto">
+                <pre class="mb-0">{{ contenido }}</pre>
+              </div>
+            {% else %}
+              <p class="text-muted">El archivo {{ archivo }} no contiene información.</p>
+            {% endif %}
+          </div>
+        {% endfor %}
+      </div>
+
+      <div class="mt-4 p-3 bg-light border rounded">
+        <h5>Errores</h5>
+        {% if mensaje_error %}
+          <div class="alert alert-danger">{{ mensaje_error }}</div>
+        {% elif errores_detectados %}
+          {% for error in errores_detectados %}
+            <div class="alert alert-danger">{{ error }}</div>
+          {% endfor %}
+        {% else %}
+          <p class="text-muted">No hay errores registrados para esta transferencia.</p>
+        {% endif %}
+      </div>
+
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <h2 class="mb-4">Nueva Transferencia SEPA</h2>
+    <form method="post" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <!-- Card Deudor -->
+        <div class="card mb-4">
+            <div class="card-header">Deudor</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="id_debtor" class="form-label">Deudor</label>
+                        {{ form.debtor }}
+                        <a href="{% url 'create_debtorGPT' %}" class="btn btn-link">Crear nuevo deudor</a>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_debtor_account" class="form-label">Cuenta del Deudor</label>
+                        {{ form.debtor_account }}
+                        <a href="{% url 'create_accountGPT' %}" class="btn btn-link">Crear nueva cuenta</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Acreedor -->
+        <div class="card mb-4">
+            <div class="card-header">Acreedor</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="id_creditor" class="form-label">Acreedor</label>
+                        {{ form.creditor }}
+                        <a href="{% url 'create_creditorGPT' %}" class="btn btn-link">Crear nuevo acreedor</a>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_creditor_account" class="form-label">Cuenta del Acreedor</label>
+                        {{ form.creditor_account }}
+                        <a href="{% url 'create_accountGPT' %}" class="btn btn-link">Crear nueva cuenta</a>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_creditor_agent" class="form-label">Agente del Acreedor</label>
+                        {{ form.creditor_agent }}
+                        <a href="{% url 'create_financial_institutionGPT' %}" class="btn btn-link">Crear nuevo agente</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Datos de la transferencia -->
+        <div class="card mb-4">
+            <div class="card-header">Datos de la transferencia</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="id_instructed_amount" class="form-label">Monto Instruido</label>
+                        {{ form.instructed_amount }}
+                        <a href="{% url 'create_amountGPT' %}" class="btn btn-link">Crear nuevo monto</a>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_purpose_code" class="form-label">Código de Propósito</label>
+                        {{ form.purpose_code }}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_requested_execution_date" class="form-label">Fecha de Ejecución</label>
+                        {{ form.requested_execution_date }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Card Información de la transferencia -->
+        <div class="card mb-4">
+            <div class="card-header">Información de la transferencia</div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label for="id_remittance_information_structured" class="form-label">Información Estructurada</label>
+                        {{ form.remittance_information_structured }}
+                    </div>
+                    <div class="col-md-6">
+                        <label for="id_remittance_information_unstructured" class="form-label">Información No Estructurada</label>
+                        {{ form.remittance_information_unstructured }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a href="{% url 'transfer_listGPT' %}" class="btn btn-secondary me-2">
+                <i class="bi bi-arrow-left"></i> Volver al Listado
+            </a>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-send-check"></i> Enviar Transferencia
+            </button>
+        </div>
+    </form>
+{% endblock %}

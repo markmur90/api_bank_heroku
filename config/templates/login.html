@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Iniciar Sesión{% endblock %}
+
+{% block content %}
+<style>
+  .login-container {
+    max-width: 450px;
+    margin: 5rem auto;
+  }
+  .login-card {
+    border-radius: 1rem;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    background: linear-gradient(135deg, #ffffff 0%, #f1f3f5 100%);
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  .login-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+  }
+  .login-header {
+    background: linear-gradient(45deg, #343a40, #495057);
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 1.5rem;
+    padding: 1.5rem;
+    border-top-left-radius: 1rem;
+    border-top-right-radius: 1rem;
+    text-align: center;
+  }
+  .login-body {
+    padding: 2rem;
+  }
+  .form-control {
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    border: 1px solid #dee2e6;
+  }
+  .form-control:focus {
+    border-color: #495057;
+    box-shadow: 0 0 0 0.25rem rgba(73, 80, 87, 0.25);
+  }
+  .btn-login {
+    background: linear-gradient(45deg, #343a40, #495057);
+    border: none;
+    padding: 0.75rem;
+    font-weight: 600;
+    border-radius: 0.5rem;
+    transition: all 0.3s ease;
+  }
+  .btn-login:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  .alert {
+    border-radius: 0.5rem;
+  }
+</style>
+
+<div class="container login-container">
+  <div class="card login-card">
+    <div class="login-header">
+      <h2 class="mb-0">Iniciar Sesión</h2>
+    </div>
+    <div class="card-body login-body">
+      {% if error %}
+      <div class="alert alert-danger mb-4">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i> {{ error }}
+      </div>
+      {% endif %}
+      
+      <form method="POST">
+        {% csrf_token %}
+        <div class="mb-4">
+          <label for="username" class="form-label fw-semibold">Usuario</label>
+          <input type="text" class="form-control" id="username" name="username" required
+                 placeholder="Ingrese su nombre de usuario">
+        </div>
+        <div class="mb-4">
+          <label for="password" class="form-label fw-semibold">Contraseña</label>
+          <input type="password" class="form-control" id="password" name="password" required
+                 placeholder="Ingrese su contraseña">
+        </div>
+        <button type="submit" class="btn btn-login text-white w-100">
+          <i class="bi bi-box-arrow-in-right me-2"></i> Ingresar
+        </button>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
