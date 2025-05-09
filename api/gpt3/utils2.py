@@ -20,18 +20,15 @@ from requests_oauthlib import OAuth2Session
 from api.gpt3.helpers import obtener_ruta_schema_transferencia
 from api.gpt3.models import SepaCreditTransfer
 from api.gpt3.schemas import sepa_credit_transfer_schema
+from config import settings
 
 logger = logging.getLogger(__name__)
 
 # Configuraciones iniciales
-ORIGIN = "https://api-bank-heroku-72c443ab11d3.herokuapp.com"
-ACCESS_TOKEN = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg"
-API_CLIENT_ID = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
-API_CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzsniABTiDYl7QCh6XXEXzgDrjBD4zSvtHbP0Qa707g3eYbmKxO'
-DEUTSCHE_BANK_CLIENT_ID='SE0IWHFHJFHB848R9E0R9FRUFBCJHW0W9FHF008E88W0457338ASKH64880'
-DEUTSCHE_BANK_CLIENT_SECRET='H858hfhg0ht40588hhfjpfhhd9944940jf'
-CLIENT_ID = API_CLIENT_ID
-CLIENT_SECRET = API_CLIENT_SECRET
+ORIGIN = settings.ORIGIN
+CLIENT_ID = settings.CLIENT_ID
+ACCESS_TOKEN = settings.ACCESS_TOKEN
+
 TIMEOUT_REQUEST = 10
 
 # Directorio de logs

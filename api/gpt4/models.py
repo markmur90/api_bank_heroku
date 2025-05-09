@@ -6,6 +6,10 @@ class Debtor(models.Model):
     postal_address_country = models.CharField(max_length=2, blank=False, default='DE')
     postal_address_street = models.CharField(max_length=70, blank=False, unique=True, default='TAUNUSANLAGE 12')
     postal_address_city = models.CharField(max_length=70, blank=False, unique=True, default='60325 FRANKFURT')
+    mobile_phone_number = models.CharField(
+        max_length=15, blank=True, null=True,
+        help_text="Formato internacional, e.g. +4915123456789"
+    )    
 
     def __str__(self):
         return self.name
@@ -78,7 +82,7 @@ class Transfer(models.Model):
     purpose_code = models.CharField(max_length=4, default='GDSV')
     requested_execution_date = models.DateField()
     remittance_information_unstructured = models.CharField(max_length=140, blank=True, null=True)
-    status = models.CharField(max_length=10, default='PDNG', choices=[
+    status = models.CharField(max_length=10, choices=[
         ('RJCT', 'Rechazada'),
         ('RCVD', 'Recibida'),
         ('ACCP', 'Aceptada'),
@@ -115,6 +119,10 @@ class Transfer(models.Model):
                 "iban": self.debtor_account.iban,
                 "currency": self.debtor_account.currency,
             },
+            "paymentIdentification": {
+                "instructionId": self.payment_identification.instruction_id,
+                "endToEndId":     self.payment_identification.end_to_end_id
+            },
             "instructedAmount": {
                 "amount": float(self.instructed_amount),
                 "currency": self.currency,
@@ -136,11 +144,11 @@ class Transfer(models.Model):
                 "iban": self.creditor_account.iban,
                 "currency": self.creditor_account.currency,
             },
-                "paymentIdentification": {
-                    "instructionId": self.payment_identification.instruction_id,
-                    "endToEndId":     self.payment_identification.end_to_end_id
-                }
+            "remittanceInformationUnstructured": {
+                self.remittance_information_unstructured
             }
+        }
+            
 
     def get_status_color(self):
         return {

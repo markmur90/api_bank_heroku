@@ -11,7 +11,7 @@ from weasyprint import HTML
 
 from api.gpt4.models import Debtor, DebtorAccount, Creditor, CreditorAccount, CreditorAgent, PaymentIdentification, Transfer
 from api.gpt4.forms import ClientIDForm, DebtorForm, DebtorAccountForm, CreditorForm, CreditorAccountForm, CreditorAgentForm, KidForm, ScaForm, SendTransferForm, TransferForm
-from api.gpt4.utils import ZCOD_DIR, build_auth_url, crear_challenge_mtan, crear_challenge_phototan, crear_challenge_pushtan, fetch_token_by_code, fetch_transfer_details, generar_archivo_aml, generar_pdf_transferencia, generar_xml_pain001, generate_deterministic_id, generate_payment_id_uuid, generate_pkce_pair, get_access_token, get_client_credentials_token, obtener_otp_automatico_con_challenge, obtener_ruta_schema_transferencia, read_log_file, refresh_access_token, registrar_log, resolver_challenge_pushtan, send_transfer, update_sca_request
+from api.gpt4.utils import ZCOD_DIR, build_auth_url, fetch_token_by_code, fetch_transfer_details, generar_archivo_aml, generar_pdf_transferencia, generar_xml_pain001, generar_xml_pain002, generate_deterministic_id, generate_payment_id_uuid, generate_pkce_pair, get_access_token, get_client_credentials_token, handle_error_response, obtener_otp_automatico_con_challenge, obtener_ruta_schema_transferencia, read_log_file, refresh_access_token, registrar_log, send_transfer, update_sca_request
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +30,6 @@ def list_debtors(request):
     debtors = Debtor.objects.all()
     return render(request, 'api/GPT4/list_debtor.html', {'debtors': debtors})
 
-
 # ==== DEBTOR ACCOUNT ====
 def create_debtor_account(request):
     if request.method == 'POST':
@@ -45,7 +44,6 @@ def create_debtor_account(request):
 def list_debtor_accounts(request):
     accounts = DebtorAccount.objects.all()
     return render(request, 'api/GPT4/list_debtor_accounts.html', {'accounts': accounts})
-
 
 # ==== CREDITOR ====
 def create_creditor(request):
@@ -62,7 +60,6 @@ def list_creditors(request):
     creditors = Creditor.objects.all()
     return render(request, 'api/GPT4/list_creditors.html', {'creditors': creditors})
 
-
 # ==== CREDITOR ACCOUNT ====
 def create_creditor_account(request):
     if request.method == 'POST':
@@ -78,7 +75,6 @@ def list_creditor_accounts(request):
     accounts = CreditorAccount.objects.all()
     return render(request, 'api/GPT4/list_creditor_accounts.html', {'accounts': accounts})
 
-
 # ==== CREDITOR AGENT ====
 def create_creditor_agent(request):
     if request.method == 'POST':
@@ -93,7 +89,6 @@ def create_creditor_agent(request):
 def list_creditor_agents(request):
     agents = CreditorAgent.objects.all()
     return render(request, 'api/GPT4/list_creditor_agents.html', {'agents': agents})
-
 
 # ==== CLIENT ID ====
 def create_clientid(request):
@@ -117,8 +112,38 @@ def create_kid(request):
         form = KidForm()
     return render(request, 'api/GPT4/create_kid.html', {'form': form})
 
-
 # ==== TRANSFER ====
+def create_transfer1(request):
+    if request.method == 'POST':
+        form = TransferForm(request.POST)
+        if form.is_valid():
+            transfer = form.save(commit=False)
+            transfer.payment_id = str(generate_payment_id_uuid())
+            payment_identification = PaymentIdentification.objects.create(
+                instruction_id=generate_deterministic_id(
+                    transfer.payment_id,
+                    transfer.creditor_account.iban,
+                    transfer.instructed_amount
+                ),
+                end_to_end_id=generate_deterministic_id(
+                    transfer.debtor_account.iban,
+                    transfer.creditor_account.iban,
+                    transfer.instructed_amount,
+                    transfer.requested_execution_date,
+                    prefix="E2E"
+                )
+            )
+            transfer.payment_identification = payment_identification
+            transfer.save()
+            messages.success(request, "Transferencia creada correctamente.")
+            return redirect('dashboard')
+        else:
+            messages.error(request, "Por favor corrige los errores en el formulario.")
+    else:
+        form = TransferForm()
+    return render(request, 'api/GPT4/create_transfer.html', {'form': form, 'transfer': None})
+
+
 def create_transfer(request):
     if request.method == 'POST':
         form = TransferForm(request.POST)
@@ -156,6 +181,8 @@ def create_transfer(request):
         form = TransferForm()
     return render(request, 'api/GPT4/create_transfer.html', {'form': form, 'transfer': None})
 
+
+
 def list_transfers(request):
     estado = request.GET.get("estado")
     transfers = Transfer.objects.all().order_by('-created_at')
@@ -172,6 +199,44 @@ def list_transfers(request):
 
     return render(request, 'api/GPT4/list_transfer.html', {
         'transfers': transfers_paginated
+    })
+
+
+
+def transfer_detail0(request, transfer_id):
+    transfer = get_object_or_404(Transfer, id=transfer_id)
+    log_content = read_log_file(transfer.payment_id)
+    carpeta = obtener_ruta_schema_transferencia(transfer.payment_id)
+    archivos_logs = {
+        archivo: os.path.join(carpeta, archivo)
+        for archivo in os.listdir(carpeta)
+        if archivo.endswith(".log")
+    }
+    log_files_content = {}
+    mensaje_error = None
+    for nombre, ruta in archivos_logs.items():
+        if os.path.exists(ruta):
+            with open(ruta, 'r', encoding='utf-8') as f:
+                contenido = f.read()
+                log_files_content[nombre] = contenido
+                if "=== Error ===" in contenido:
+                    mensaje_error = contenido.split("=== Error ===")[-1].strip().split("===")[0].strip()
+    archivos = {
+        'pain001': os.path.join(carpeta, f"pain001_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"pain001_{transfer.payment_id}.xml")) else None,
+        'aml': os.path.join(carpeta, f"aml_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"aml_{transfer.payment_id}.xml")) else None,
+        'pain002': os.path.join(carpeta, f"pain002_{transfer.payment_id}.xml") if os.path.exists(os.path.join(carpeta, f"pain002_{transfer.payment_id}.xml")) else None,
+    }
+    errores_detectados = []
+    for contenido in log_files_content.values():
+        if "Error" in contenido or "Traceback" in contenido or "no válido según el XSD" in contenido:
+            errores_detectados.append(contenido)
+    return render(request, 'api/GPT4/transfer_detail.html', {
+        'transfer': transfer,
+        'log_files_content': log_files_content,
+        'log_content': log_content,
+        'archivos': archivos,
+        'errores_detectados': errores_detectados,
+        'mensaje_error': mensaje_error
     })
 
 def transfer_detail(request, payment_id):
@@ -215,6 +280,142 @@ def transfer_detail(request, payment_id):
         'mensaje_error': mensaje_error
     })
 
+def transfer_detail2(request, payment_id):
+    transfer = get_object_or_404(Transfer, payment_id=payment_id)
+    mensaje_error = None
+    details = None
+    try:
+        token = get_access_token(transfer.payment_id)
+        details = fetch_transfer_details(transfer, token)
+    except Exception as e:
+        registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error obteniendo detalles en vista")
+        mensaje_error = str(e)
+    return _render_transfer_detail(request, transfer, mensaje_error, details)
+
+
+    
+
+
+def send_transfer_view1(request, transfer_id):
+    transfer = get_object_or_404(Transfer, id=transfer_id)
+    # zcod_path = os.path.join(ZCOD_DIR, 'zCod.md')
+    # zcod_content = ""
+    # if os.path.exists(zcod_path):
+    #     with open(zcod_path, 'r', encoding='utf-8') as f:
+    #         zcod_content = f.read()
+    # log_content = read_log_file(transfer.payment_id)
+    # carpeta = obtener_ruta_schema_transferencia(transfer.payment_id)
+    # archivos_logs = {archivo: os.path.join(carpeta, archivo) for archivo in os.listdir(carpeta) if archivo.endswith(".log")}
+    # log_files_content = {}
+    # mensaje_error = None
+    # for nombre, ruta in archivos_logs.items():
+    #     if os.path.exists(ruta):
+    #         with open(ruta, 'r', encoding='utf-8') as f:
+    #             contenido = f.read()
+    #             log_files_content[nombre] = contenido
+    #             if "=== Error ===" in contenido:
+    #                 mensaje_error = contenido.split("=== Error ===")[-1].strip().split("===")[0].strip()
+    if request.method == 'POST':
+        form = SendTransferForm(request.POST)
+        if not form.is_valid():
+            registrar_log(transfer.payment_id, {}, "", error="Formulario inválido", extra_info="Errores de validación en vista")
+            return redirect('transfer_detailGPT4', transfer_id=transfer.id)
+        obtain_token = form.cleaned_data['obtain_token']
+        manual_token = form.cleaned_data['manual_token']
+        obtain_otp = form.cleaned_data['obtain_otp']
+        manual_otp = form.cleaned_data['manual_otp']
+        
+        if obtain_token:
+            try:
+                token_to_use = get_access_token(transfer.payment_id, force_refresh=True)
+            except Exception as e:
+                registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error obteniendo access_token en vista")
+                return redirect('transfer_detailGPT4', transfer_id=transfer.id)
+            regenerate_token = True
+        else:
+            token_to_use = manual_token
+            regenerate_token = False
+            
+        if obtain_otp:
+            try:
+                otp_to_use, _ = obtener_otp_automatico_con_challenge(transfer)
+                regenerate_otp = True
+            except Exception as e:
+                registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error generando OTP automático en vista")
+                return redirect('transfer_detailGPT4', transfer_id=transfer.id)
+        else:
+            otp_to_use = manual_otp
+            regenerate_otp = False
+        try:
+            send_transfer(
+                transfer,
+                use_token=token_to_use,
+                use_otp=otp_to_use,
+                regenerate_token=regenerate_token,
+                regenerate_otp=regenerate_otp
+            )
+            return redirect('transfer_detailGPT4', transfer_id=transfer.id)
+        except Exception as e:
+            registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error enviando transferencia en vista")
+            return redirect('transfer_detailGPT4', transfer_id=transfer.id)
+    else:
+        form = SendTransferForm()
+        
+    return render(request, 'api/GPT4/send_transfer.html', {
+        'transfer': transfer,
+        'form': form,
+    })
+
+def send_transfer_view2(request, payment_id):
+    transfer = get_object_or_404(Transfer, payment_id=payment_id)
+    form = SendTransferForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        token = form.cleaned_data["manual_token"] or get_access_token(payment_id)
+        otp = form.cleaned_data["manual_otp"] or obtener_otp_automatico_con_challenge(transfer)[0]
+        send_transfer(transfer, token, otp)
+        return redirect("transfer_detailGPT4", payment_id=payment_id)
+    return render(request, "api/GPT4/send_transfer.html", {"form": form, "transfer": transfer})
+
+# ==== ENVÍO DE TRANSFERENCIA ====
+def send_transfer_view3(request, payment_id):
+    transfer = get_object_or_404(Transfer, payment_id=payment_id)
+    form = SendTransferForm(request.POST or None)
+    if request.method == "POST":
+        if form.is_valid():
+            obtain_token = form.cleaned_data['obtain_token']
+            manual_token = form.cleaned_data['manual_token']
+            obtain_otp = form.cleaned_data['obtain_otp']
+            manual_otp = form.cleaned_data['manual_otp']
+            # Obtener o usar token
+            try:
+                token = manual_token or (get_access_token(transfer.payment_id, force_refresh=True) if obtain_token else get_access_token(transfer.payment_id))
+            except Exception as e:
+                registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error obteniendo access_token en vista")
+                mensaje_error = str(e)
+                return _render_transfer_detail(request, transfer, mensaje_error)
+            # Obtener o usar OTP
+            try:
+                otp = manual_otp or (obtener_otp_automatico_con_challenge(transfer.payment_id)[0] if obtain_otp else obtener_otp_automatico_con_challenge(transfer.payment_id)[0])
+            except Exception as e:
+                registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error generando OTP automático en vista")
+                mensaje_error = str(e)
+                return _render_transfer_detail(request, transfer, mensaje_error)
+            # Intento de envío
+            try:
+                from api.gpt4.utils import send_transfer
+                send_transfer(transfer.payment_id, token, otp)
+                return redirect('transfer_detailGPT4', payment_id=payment_id)
+            except Exception as e:
+                registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error enviando transferencia en vista")
+                mensaje_error = str(e)
+                return _render_transfer_detail(request, transfer, mensaje_error)
+        else:
+            registrar_log(transfer.payment_id, {}, "", error="Formulario inválido", extra_info="Errores de validación en vista")
+            mensaje_error = "Debes seleccionar obtener TOKEN/OTP o proporcionar manualmente."
+            return _render_transfer_detail(request, transfer, mensaje_error)
+    return render(request, "api/GPT4/send_transfer.html", {"form": form, "transfer": transfer})
+
+
 def send_transfer_view(request, payment_id):
     transfer = get_object_or_404(Transfer, payment_id=payment_id)
     form = SendTransferForm(request.POST or None, instance=transfer)
@@ -253,6 +454,20 @@ def send_transfer_view(request, payment_id):
             return _render_transfer_detail(request, transfer, "Debes seleccionar obtener TOKEN/OTP o proporcionar manualmente.")
     return render(request, "api/GPT4/send_transfer.html", {"form": form, "transfer": transfer})
 
+
+
+def transfer_update_sca1(request, payment_id):
+    transfer = get_object_or_404(Transfer, payment_id=payment_id)
+    form = ScaForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        token  = get_access_token(transfer.payment_id)
+        action = form.cleaned_data['action']
+        otp    = form.cleaned_data['otp']
+        update_sca_request(transfer, action, otp, token)
+        return redirect('transfer_detailGPT4', payment_id=payment_id)
+    return render(request, 'api/GPT4/transfer_sca.html', {'form': form, 'transfer': transfer})
+
+# ==== AUTORIZACIÓN SCA ====
 def transfer_update_sca(request, payment_id):
     transfer = get_object_or_404(Transfer, payment_id=payment_id)
     form = ScaForm(request.POST or None)
@@ -275,6 +490,8 @@ def transfer_update_sca(request, payment_id):
             return _render_transfer_detail(request, transfer, mensaje_error)
     return render(request, 'api/GPT4/transfer_sca.html', {'form': form, 'transfer': transfer})
 
+
+# ==== FUNCIÓN AUXILIAR PARA RENDERIZAR transfer_detail.html ====
 def _render_transfer_detail(request, transfer, mensaje_error=None, details=None):
     log_content = read_log_file(transfer.payment_id)
     carpeta = obtener_ruta_schema_transferencia(transfer.payment_id)
@@ -320,6 +537,72 @@ def edit_transfer(request, payment_id):
         'transfer': transfer
     })
 
+def edit_transfer2(request, payment_id):
+    transfer = get_object_or_404(Transfer, payment_id=payment_id)
+    # Dos formularios: uno para editar la transferencia, otro para enviarla
+    if request.method == "POST":
+        form_edit = TransferForm(request.POST, instance=transfer)
+        form_send = SendTransferForm(request.POST)
+
+        # Si vienen datos del form de edición
+        if "save_transfer" in request.POST and form_edit.is_valid():
+            form_edit.save()
+            messages.success(request, "Transferencia actualizada correctamente.")
+            return redirect('transfer_detailGPT4', payment_id=payment_id)
+        # Si vienen datos del form de envío
+        elif "send_transfer" in request.POST and form_send.is_valid():
+            obtain_token = form_send.cleaned_data['obtain_token']
+            manual_token = form_send.cleaned_data['manual_token']
+            obtain_otp = form_send.cleaned_data['obtain_otp']
+            manual_otp = form_send.cleaned_data['manual_otp']
+
+            # Obtener o usar token
+            try:
+                token = (
+                    manual_token
+                    or (get_access_token(transfer.payment_id, force_refresh=True) if obtain_token else get_access_token(transfer.payment_id))
+                )
+            except Exception as e:
+                registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error obteniendo access_token")
+                messages.error(request, f"Error obteniendo token: {e}")
+                return redirect('transfer_detailGPT4', payment_id=payment_id)
+
+            # Obtener o usar OTP
+            try:
+                if obtain_otp:
+                    otp, _ = obtener_otp_automatico_con_challenge(transfer.payment_id)
+                else:
+                    otp = manual_otp
+            except Exception as e:
+                registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error generando OTP")
+                messages.error(request, f"Error obteniendo OTP: {e}")
+                return redirect('transfer_detailGPT4', payment_id=payment_id)
+
+            # Intento de envío
+            try:
+                send_transfer(transfer.payment_id, token, otp)
+                messages.success(request, "Transferencia enviada correctamente.")
+            except Exception as e:
+                registrar_log(transfer.payment_id, {}, "", error=str(e), extra_info="Error enviando transferencia")
+                messages.error(request, f"No se pudo enviar la transferencia: {e}")
+
+            return redirect('transfer_detailGPT4', payment_id=payment_id)
+
+        else:
+            # Validación fallida
+            if "save_transfer" in request.POST:
+                messages.error(request, "Por favor corrige los errores en el formulario de edición.")
+            else:
+                messages.error(request, "Por favor corrige los errores en el formulario de envío.")
+    else:
+        form_edit = TransferForm(instance=transfer)
+        form_send = SendTransferForm()
+
+    return render(request, 'api/GPT4/edit_transfer.html', {
+        'form_edit': form_edit,
+        'form_send': form_send,
+        'transfer': transfer
+    })
 
 # ==== PDF ====
 def descargar_pdf(request, payment_id):
@@ -335,8 +618,9 @@ def descargar_pdf(request, payment_id):
         return redirect('transfer_detailGPT4', payment_id=transferencia.payment_id)
     return FileResponse(open(pdf_file, 'rb'), content_type='application/pdf', as_attachment=True, filename=os.path.basename(pdf_file))
 
+# views.py (fragmento)
 
-# ==== OAUTH2 ====
+
 def oauth2_authorize(request):
     verifier, challenge = generate_pkce_pair()
     state = uuid.uuid4().hex
@@ -362,10 +646,11 @@ def oauth2_callback(request):
     messages.success(request, "Autorización completada.")
     return redirect('dashboard')
 
+
 def send_transfer_view4(request, payment_id):
     transfer = get_object_or_404(Transfer, payment_id=payment_id)
     form = SendTransferForm(request.POST or None)
-    
+
     # Obtener o renovar token desde sesión
     token = request.session.get('access_token')
     expires = request.session.get('token_expires', 0)
@@ -396,25 +681,11 @@ def send_transfer_view4(request, payment_id):
             final_token = manual_token or token
 
             # Obtener o usar OTP
-            try:                   
-                method = form.cleaned_data.get('otp_method')
+            try:
                 if obtain_otp:
-                    if method == 'MTAN':
-                        challenge_id = crear_challenge_mtan(transfer, token, transfer.payment_id)
-                        transfer.auth_id = challenge_id
-                        transfer.save()
-                        return redirect('transfer_update_scaGPT4', payment_id=transfer.payment_id)
-                    elif method == 'PHOTOTAN':
-                        challenge_id, img64 = crear_challenge_phototan(transfer, token, transfer.payment_id)
-                        request.session['photo_tan_img'] = img64
-                        transfer.auth_id = challenge_id
-                        transfer.save()
-                        return redirect('transfer_update_scaGPT4', payment_id=transfer.payment_id)
-                    else:  # PUSHTAN
-                        otp = resolver_challenge_pushtan(crear_challenge_pushtan(transfer, token, transfer.payment_id), token, transfer.payment_id)
+                    otp, _ = obtener_otp_automatico_con_challenge(transfer)
                 else:
                     otp = manual_otp
-                    
             except Exception as e:
                 registrar_log(
                     transfer.payment_id,

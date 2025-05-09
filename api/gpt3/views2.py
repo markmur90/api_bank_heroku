@@ -19,11 +19,13 @@ from api.gpt3.schemas import sepa_credit_transfer_schema
 from api.gpt4.utils import read_log_file
 from .models import SepaCreditTransfer, PaymentIdentification, BulkTransfer, Address, Debtor, Creditor, FinancialInstitution, InstructedAmount
 from .forms import SepaCreditTransferForm, AccountForm, AddressForm, PaymentIdentificationForm, DebtorForm, CreditorForm, FinancialInstitutionForm, InstructedAmountForm, BulkTransferForm, GroupHeaderForm, PaymentInformationForm
+from config import settings
 
 logger = logging.getLogger(__name__)
 
-ORIGIN = "https://api-bank-heroku-72c443ab11d3.herokuapp.com"
-API_URL = "https://api.db.com:443/gw/dbapi/banking/transactions/v2/sepaCreditTransfer"
+ORIGIN = settings.ORIGIN
+API_URL = settings.API_URL
+
 HEADERS_DEFAULT = {
     "Accept": "application/json, text/html, application/xhtml+xml, application/xml;q=0.9, */*;q=0.8",
     "Accept-Language": "es-CO",

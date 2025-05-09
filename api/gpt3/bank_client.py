@@ -7,6 +7,8 @@ import xml.etree.ElementTree as ET
 from cryptography.fernet import Fernet
 from lxml import etree
 
+from config import settings
+
 from .utils2 import (
     HEADERS_DEFAULT,
     TIMEOUT_REQUEST,
@@ -36,11 +38,7 @@ os.makedirs(LOGS_DIR, exist_ok=True)
 os.makedirs(SCHEMA_DIR, exist_ok=True)
 os.makedirs(os.path.dirname(KEY_FILE), exist_ok=True)
 
-URL1 = "https://api.db.com/gw/dbapi/banking/transactions/v2"
-URL2 = "https://api.db.com:443/gw/dbapi/banking/transactions/v2/sepaCreditTransfer"
-URL3 = "https://api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer"
-
-URL = URL2
+URL = settings.API_URL
 
 def _load_key():
     if not os.path.exists(KEY_FILE):

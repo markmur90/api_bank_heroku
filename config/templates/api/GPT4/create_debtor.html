@@ -18,11 +18,15 @@
       <div class="custom-card-header">Información del Deudor</div>
       <div class="card-body custom-card-body">
         <div class="row g-3">
-          <div class="col-md-6">
+          <div class="col-md-4">
             <label for="id_name" class="form-label">Nombre</label>
             {{ form.name }}
           </div>
-          <div class="col-md-6">
+          <div class="col-md-4">
+            <label for="id_mobile_phone_number" class="form-label">Teléfono</label>
+            {{ form.mobile_phone_number }}
+          </div>          
+          <div class="col-md-4">
             <label for="id_customer_id" class="form-label">CustomerID</label>
             {{ form.customer_id }}
           </div>

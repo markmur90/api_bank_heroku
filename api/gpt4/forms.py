@@ -13,6 +13,7 @@ class DebtorForm(forms.ModelForm):
             'postal_address_country': forms.TextInput(attrs={'class': 'form-control'}),
             'postal_address_street': forms.TextInput(attrs={'class': 'form-control'}),
             'postal_address_city': forms.TextInput(attrs={'class': 'form-control'}),
+            'mobile_phone_number': forms.TextInput(attrs={'class':'form-control','placeholder':'+4915…'}),
         }
 
 class DebtorAccountForm(forms.ModelForm):
@@ -111,6 +112,17 @@ class SendTransferForm(forms.ModelForm):
         max_length=8,
         widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Introduce OTP manual de 6 a 8 caracteres'})
     )
+    OTP_METHOD_CHOICES = [
+    ('MTAN', 'SMS (MTAN)'),
+    ('PHOTOTAN', 'PhotoTAN'),
+    ('PUSHTAN', 'PushTAN'),
+    ]
+    otp_method = forms.ChoiceField(
+    choices=OTP_METHOD_CHOICES,
+    widget=forms.RadioSelect,
+    label='Método de entrega OTP',
+    required=False
+    )
     
     class Meta:
         model = Transfer
@@ -134,6 +146,9 @@ class SendTransferForm(forms.ModelForm):
 
         if not obtain_otp and not manual_otp:
             raise forms.ValidationError('Debes seleccionar obtener OTP o proporcionar uno manualmente.')
+        
+        if cleaned_data.get('obtain_otp') and not cleaned_data.get('otp_method'):
+            raise forms.ValidationError('Si obtienes OTP automáticamente, debes elegir un método.')
 
         return cleaned_data
 
