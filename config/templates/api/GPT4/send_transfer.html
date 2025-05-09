@@ -47,6 +47,12 @@
         </div>
 
         <!-- OTP METHOD -->
+        <h5>OTP / TAN</h5>
+        <div class="form-check">
+          {{ form.obtain_otp }}
+          <label class="form-check-label">Obtener nuevo OTP automáticamente</label>
+        </div>
+        
         <h5 class="mt-4">Selección de método OTP</h5>
         <div class="mb-3">
           {{ form.otp_method.label_tag }}

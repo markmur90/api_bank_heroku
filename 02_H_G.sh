@@ -60,13 +60,13 @@ if confirmar "Iniciar Gunicorn, honeypot y livereload simultáneamente"; then
         --keep-alive 2 \
         > gunicorn.log 2>&1 < /dev/null &
 
-    nohup python honeypot.py \
+    nohup python honeypot.py --interva \
         > honeypot.log 2>&1 < /dev/null &
 
     nohup livereload --host 0.0.0.0 --port 35729 static/ -t templates/ \
         > livereload.log 2>&1 < /dev/null &
 
-    sleep 5
+    sleep 1
     firefox --new-tab http://0.0.0.0:8000 --new-tab http://localhost:5000
     echo -e "\033[1;32mGunicorn, honeypot y livereload en marcha. Ctrl+C para detener.\033[0m"
     wait
