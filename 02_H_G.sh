@@ -53,23 +53,54 @@ if confirmar "Iniciar Gunicorn, honeypot y livereload simultáneamente"; then
     cd "$PROJECT_ROOT"
     source "$VENV_PATH/bin/activate"
     python manage.py collectstatic --noinput
-
+    export DATABASE_URL="postgres://markmur88:Ptf8454Jd55@localhost:5432/mydatabase"
+    # Función para limpiar y salir
+    cleanup() {
+        echo -e "\n\033[1;33mDeteniendo todos los servicios...\033[0m"
+        # Matar todos los procesos en segundo plano
+        pids=$(jobs -p)
+        if [ -n "$pids" ]; then
+            kill $pids 2>/dev/null
+        fi
+        # Liberar puertos
+        for port in 8001 5000 35729; do
+            if lsof -i :$port > /dev/null; then
+                echo "Liberando puerto $port..."
+                kill $(lsof -t -i :$port) 2>/dev/null || true
+            fi
+        done
+        echo -e "\033[1;32mTodos los servicios detenidos y puertos liberados.\033[0m"
+        exit 0
+    }
+    # Configurar trap para Ctrl+C
+    trap cleanup SIGINT
+    # Liberar puertos si es necesario
+    for port in 8001 5000 35729; do
+        if lsof -i :$port > /dev/null; then
+            echo "Liberando puerto $port..."
+            echo ""
+            echo ""
+            kill $(lsof -t -i :$port) 2>/dev/null || true
+        fi
+    done
+    # Iniciar servicios
     nohup gunicorn config.wsgi:application \
         --workers 3 \
         --bind 0.0.0.0:8001 \
         --keep-alive 2 \
         > gunicorn.log 2>&1 < /dev/null &
-
-    nohup python honeypot.py --interva \
+    nohup python honeypot.py \
         > honeypot.log 2>&1 < /dev/null &
 
     nohup livereload --host 0.0.0.0 --port 35729 static/ -t templates/ \
         > livereload.log 2>&1 < /dev/null &
-
-    sleep 1
+    sleep 5
     firefox --new-tab http://0.0.0.0:8000 --new-tab http://localhost:5000
-    echo -e "\033[1;32mGunicorn, honeypot y livereload en marcha. Ctrl+C para detener.\033[0m"
-    wait
+    echo -e "\033[7;30m🚧 Gunicorn, honeypot y livereload están activos. Presiona Ctrl+C para detenerlos.\033[0m"
+    # Esperar indefinidamente hasta que se presione Ctrl+C
+    while true; do
+        sleep 1
+    done
 fi
 
 echo -e "\033[1;35m\n¡Todos los procesos han terminado!\033[0m"

@@ -15,6 +15,8 @@ DB_NAME="api_bank_h2"
 DB_USER="markmur88"
 DB_PASS="Ptf8454Jd55"
 
+
+
 mkdir -p "$BACKUP_DIR"
 
 
@@ -305,23 +307,41 @@ echo -e "\033[7;30m-------------------------------------------------------------
 
 
 if [ "$HEROKU" = true ]; then
+
+    cat > ~/.netrc <<EOF
+machine api.heroku.com
+  login: markmur90@proton.me
+  password: HRKU-6803f1ea-fd1f-4210-a5cd-95ca7902ccf6
+
+machine git.heroku.com
+  login: markmur90@proton.me
+  password: HRKU-6803f1ea-fd1f-4210-a5cd-95ca7902ccf6
+EOF
+
+    chmod 600 ~/.netrc
+
     echo -e "\033[7;30m Haciendo deploy... \033[0m"
-    cd "$HEROKU_ROOT" || { echo -e "\033[7;30m❌ Error al acceder a "$HEROKU_ROOT"\033[0m"; exit 1; }
-    # Git commit y push (automático)
+    cd "$HEROKU_ROOT" || { echo -e "\033[7;30m❌ Error al acceder a $HEROKU_ROOT\033[0m"; exit 1; }
+
     git add --all
-    git commit -m "fix: Actualizar ajustes"
+    if git diff-index --quiet HEAD --; then
+        echo -e "\033[7;30m⚠️  No hay cambios para commitear\033[0m"
+    else
+        git commit -m "fix: Actualizar ajustes"
+    fi
+
     git push origin api-bank || { echo -e "\033[7;30m❌ Error al subir a GitHub\033[0m"; exit 1; }
-    # Deploy en Heroku (sin confirmación)
-    sleep 5
-    heroku login || { echo -e "\033[7;30m❌ Error en login de Heroku\033[0m"; exit 1; }
+
     sleep 5
     git push heroku api-bank:main || { echo -e "\033[7;30m❌ Error en deploy\033[0m"; exit 1; }
     sleep 5
+
     cd "$PROJECT_ROOT"
     echo -e "\033[7;30m✅ ¡Deploy completado!\033[0m"
     echo -e "\033[7;30m----\033[0m"
     echo -e "\033[7;30m----\033[0m"
 fi
+
 echo -e "\033[7;30m--------------------------------------------------------------------------------\033[0m"
 
 
@@ -341,12 +361,10 @@ echo -e "\033[7;30m-------------------------------------------------------------
 
 
 
-cd "$PROJECT_ROOT"
-source "$VENV_PATH/bin/activate"
+
 
 if [ "$GUNICORN" = true ]; then
     echo -e "\033[7;30m Haciendo deploy... \033[0m"
-    clear
     cd "$PROJECT_ROOT"
     source "$VENV_PATH/bin/activate"
     python manage.py collectstatic --noinput
