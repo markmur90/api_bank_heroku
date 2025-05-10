@@ -218,7 +218,7 @@ echo -e "\033[7;30m-------------------------------------------------------------
 if confirmar "Sincronizar cambios a api_bank_heroku"; then
     echo -e "\033[7;30m----\033[0m"
     echo "🔄 Sincronizando archivos al destino..."
-    rsync -av --exclude=".gitattributes" --exclude="auto_commit_sync.sh" --exclude="manage.py" --exclude="*local.py" --exclude=".git/" --exclude="gunicorn.log" --exclude="honeypot_logs.csv" --exclude="token.md" --exclude="url_help.md" --exclude="honeypot.py" --exclude="URL_TOKEN.md" --exclude="01_full.sh" --exclude="05Gunicorn.sh" --exclude="*.zip" --exclude="*.db" --exclude="*.sqlite3" --exclude="temp/" \
+    rsync -av --exclude=".gitattributes" --exclude="auto_commit_sync.sh" --exclude="base1.py" --exclude="*local.py" --exclude=".git/" --exclude="gunicorn.log" --exclude="honeypot_logs.csv" --exclude="token.md" --exclude="url_help.md" --exclude="honeypot.py" --exclude="URL_TOKEN.md" --exclude="01_full.sh" --exclude="05Gunicorn.sh" --exclude="*.zip" --exclude="*.db" --exclude="*.sqlite3" --exclude="temp/" \
         "$PROJECT_ROOT/" "$HEROKU_ROOT/"
     echo -e "\033[7;30m📂 Cambios enviados a api_bank_heroku.\033[0m"
     echo -e "\033[7;30m----\033[0m"
@@ -322,7 +322,8 @@ if [ "$HEROKU" = true ]; then
     cd "$PROJECT_ROOT"
     echo -e "\033[7;30m✅ ¡Deploy completado!\033[0m"
     echo -e "\033[7;30m----\033[0m"
-    echo -e "\033[7;30m----\033[0m"
+    echo -e "\033[7;30m----\033[0m"Ptf8454Jd55
+    
 fi
 echo -e "\033[7;30m--------------------------------------------------------------------------------\033[0m"
 
