@@ -1,0 +1,22 @@
+ClientID
+
+766ae693-6297-47ea-b825-fd3d07dcf9b6
+
+Secret Client
+
+CCGiHIEQZmMjxS8JXCzt8a8nSKLXKDoVy3a61ZWD2jIaFfcDMq7ekmsLaog3fjpzqVpXj-4piqSoiln7dqKwuQ
+
+
+Branch
+100
+
+Account
+2040040
+
+Sub Account
+00
+
+Pin
+79945
+
+otpauth://totp/gluesim:100204004000001?secret=7G3DC4GV4J2YFPDS

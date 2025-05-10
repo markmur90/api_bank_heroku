@@ -1,38 +1,18 @@
+from datetime import timedelta
 import os
 from pathlib import Path
-import environ
-from django.core.exceptions import ImproperlyConfigured
-import dj_database_url
+from dotenv import load_dotenv
 
 BASE_DIR = Path(__file__).resolve().parent.parent
-# 1. Creamos el lector de .env
-env = environ.Env()
-
-# 2. Detectamos el entorno (por defecto 'local') y cargamos el .env correspondiente
-DJANGO_ENV = os.getenv('DJANGO_ENV', 'local')
+DJANGO_ENV = os.getenv('DJANGO_ENV', 'development')
 env_file = BASE_DIR / ('.env.production' if DJANGO_ENV == 'production' else '.env.development')
-if not env_file.exists():
-    raise ImproperlyConfigured(f'No se encuentra el archivo de entorno: {env_file}')
-env.read_env(env_file)
+load_dotenv(env_file)
 
-# 3. Variables críticas
-SECRET_KEY = env('SECRET_KEY')
-DEBUG      = env.bool('DEBUG', default=False)
-ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
+SECRET_KEY = os.getenv('SECRET_KEY')
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '').split(',')
 
-CLIENT_ID = env('CLIENT_ID')
-SECRET_CLIENT = env('SECRET_CLIENT')
-ACCESS_TOKEN = env('ACCESS_TOKEN')
-ORIGIN = env('ORIGIN')
-TOKEN_URL = env('TOKEN_URL')
-OTP_URL = env('OTP_URL')
-AUTH_URL = env('AUTH_URL')
-API_URL = env('API_URL')
-AUTHORIZE_URL = env('AUTHORIZE_URL')
-REDIRECT_URI = env('REDIRECT_URI')
-SCOPE = env('SCOPE')
-
-# 4. Apps y middleware (sin cambios)
+# Installed apps
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -40,7 +20,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-
     'drf_yasg',
     'rest_framework',
     'oauth2_provider',
@@ -48,25 +27,18 @@ INSTALLED_APPS = [
     'corsheaders',
     'debug_toolbar',
     'rest_framework.authtoken',
-    'markdownify',
-
+    'api.accounts',
+    'api.collection',
+    'api.transactions',
     'api.transfers',
     'api.core',
     'api.authentication',
-    
-    # 'api.transactions',
-
-    # 'api.accounts',
-    # 'api.collection',
-    # 'api.sandbox',
-    # 'api.sct',
-    # 'api.sepa_payment',
-    # 'api.gpt',
-
-    'api.gpt3',
-    'api.gpt4',
+    'api.sandbox',
+    'api.sct',
+    'api.sepa_payment',
 ]
 
+# Middleware
 MIDDLEWARE = [
     'debug_toolbar.middleware.DebugToolbarMiddleware',
     "api.middleware.ExceptionLoggingMiddleware",
@@ -81,10 +53,11 @@ MIDDLEWARE = [
     'api.core.middleware.CurrentUserMiddleware',
 ]
 
-
+# URL and WSGI configuration
 ROOT_URLCONF = 'config.urls'
 WSGI_APPLICATION = 'config.wsgi.application'
 
+# Templates
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -101,84 +74,121 @@ TEMPLATES = [
     },
 ]
 
-# 4. DEBUG_TOOLBAR_SETTINGS (opcional, pero recomendado)
-INTERNAL_IPS = [
-    '127.0.0.1',
-    '192.168.0.143'
-    # añade aquí la IP de tu máquina si usas Docker o VM
-]
+# Databases
 
-# 5. Plantillas de base de datos
-DATABASES = {
-    'default': dj_database_url.config(default=env('DATABASE_URL'))
+
+DATABASE_SQLITE = {
+    'default': {
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+    }
 }
-SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
+DATABASE_PSQL = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'mydatabase',
+        'USER': 'markmur88',
+        'PASSWORD': 'Ptf8454Jd55',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
+DATABASES = DATABASE_PSQL
 
-# 6. Resto de configuración (sin cambios)
+# Authentication
+AUTH_USER_MODEL = 'authentication.CustomUser'
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
     {'NAME': 'django.contrib.auth.password_validation.CommonPasswordValidator'},
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
+
+# Internationalization
 LANGUAGE_CODE = 'en-us'
-TIME_ZONE = 'Europe/Berlin'
+TIME_ZONE = 'UTC'
 USE_I18N = True
-USE_L10N = True
 USE_TZ = True
 
+# Static and media files
 STATIC_URL = '/static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-STATIC_TMP =os.path.join(BASE_DIR, 'static')
+STATIC_TMP = os.path.join(BASE_DIR, 'static')
+
 os.makedirs(STATIC_TMP, exist_ok=True)
 os.makedirs(STATIC_ROOT, exist_ok=True)
 
-STATICFILES_DIRS = [STATIC_TMP]
+STATICFILES_DIRS = [
+    os.path.join(BASE_DIR, 'static')
+]
+
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+
 MEDIA_URL = '/media/'
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+
+# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # CORS
 CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
-CORS_ALLOWED_ORIGINS = [
-    "https://api.db.com",
-    "https://simulator-api.db.com",
-    "https://api-bank-heroku-72c443ab11d3.herokuapp.com",
-]
 
-# REST Framework y OAuth/JWT (sin cambios)
-from datetime import timedelta
+# REST Framework
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
         'oauth2_provider.contrib.rest_framework.OAuth2Authentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
-    'DEFAULT_PERMISSION_CLASSES': ('rest_framework.permissions.AllowAny',),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.AllowAny',
+        #'rest_framework.permissions.AllowAny',
+        
+    ),
 }
 
-OAUTH2_PROVIDER = {'ACCESS_TOKEN_EXPIRE_SECONDS': 3600, 'OIDC_ENABLED': True}
-
-OAUTH2 = {
-    'CLIENT_ID': CLIENT_ID,
-    'CLIENT_SECRET': SECRET_CLIENT,
-    'TOKEN_URL': TOKEN_URL,
-    'AUTHORIZE_URL': AUTHORIZE_URL,
-    'REDIRECT_URI': REDIRECT_URI,
-    'SCOPE': SCOPE,
-    'TIMEOUT': 10,
+# OAuth2 and JWT
+OAUTH2_PROVIDER = {
+    'ACCESS_TOKEN_EXPIRE_SECONDS': 3600,
+    'OIDC_ENABLED': True,
 }
+
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=30),
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ALGORITHM": "HS256",
-    "SIGNING_KEY": env('JWT_SIGNING_KEY', default=''),
-    "VERIFYING_KEY": env('JWT_VERIFYING_KEY', default=''),
+    "SIGNING_KEY": 'Ptf8454Jd55',
+    "VERIFYING_KEY": 'Ptf8454Jd55',
     "AUTH_HEADER_TYPES": ("Bearer",),
 }
 
-# Logging (sin cambios)
+# Bank API configurations
+API_BASE_URL = 'https://api.db.com:443/gw/dbapi/banking/transactions/v2'
+API_CLIENT_ID = 'JEtg1v94VWNbpGoFwqiWxRR92QFESFHGHdwFiHvc'
+API_CLIENT_SECRET = 'V3TeQPIuc7rst7lSGLnqUGmcoAWVkTWug1zLlxDupsyTlGJ8Ag0CRalfCbfRHeKYQlksobwRElpxmDzsniABTiDYl7QCh6XXEXzgDrjBD4zSvtHbP0Qa707g3eYbmKxO'
+
+DEUTSCHE_BANK_API_URL = API_BASE_URL
+DEUTSCHE_BANK_CLIENT_ID = API_CLIENT_ID
+DEUTSCHE_BANK_CLIENT_SECRET = API_CLIENT_SECRET
+
+MEMO_BANK_API_URL = API_BASE_URL
+MEMO_BANK_CLIENT_ID = API_CLIENT_ID
+MEMO_BANK_CLIENT_SECRET = API_CLIENT_SECRET
+
+OAUTH_CLIENT_ID = API_CLIENT_ID
+OAUTH_CLIENT_SECRET = API_CLIENT_SECRET
+OAUTH_API_URL = API_BASE_URL
+
+
+ACCESS_TOKEN='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzQ0Njk1MTE5LCJpYXQiOjE3NDQ2OTMzMTksImp0aSI6ImUwODBhMTY0YjZlZDQxMjA4NzdmZTMxMDE0YmE4Y2Y5IiwidXNlcl9pZCI6MX0.432cmStSF3LXLG2j2zLCaLWmbaNDPuVm38TNSfQclMg'
+
+REFRESH_TOKEN='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc0NDc3OTcxOSwiaWF0IjoxNzQ0NjkzMzE5LCJqdGkiOiIxMGQ5ZDIzZjJhMjY0ZTMyOTkxYzVmNzQ2OTI4ZWVjNiIsInVzZXJfaWQiOjF9.Md5TQ8l8HNvba-GfIyqp3aj084DANR9X4ySCRZA6WwI'
+
+BEARER_TOKEN='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyfQ.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c'
+
+
+# Logging
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -190,10 +200,14 @@ LOGGING = {
         "file": {
             "level": "WARNING",
             "class": "logging.FileHandler",
-            "filename": BASE_DIR / "logs" / "errors.log",
+            "filename": os.path.join(BASE_DIR, "logs", "errors.log"),
             "formatter": "verbose",
         },
-        "console": {"level": "INFO", "class": "logging.StreamHandler", "formatter": "simple"},
+        "console": {
+            "level": "INFO",
+            "class": "logging.StreamHandler",
+            "formatter": "simple",
+        },
     },
     "loggers": {
         "django": {"handlers": ["file", "console"], "level": "WARNING", "propagate": True},
@@ -201,13 +215,20 @@ LOGGING = {
     },
 }
 
-LOGIN_URL = '/login/'
-SESSION_COOKIE_AGE = 300
-SESSION_EXPIRE_AT_BROWSER_CLOSE = True
+SANDBOX_API_URL = os.getenv("SANDBOX_API_URL")
+API_KEY = os.getenv("API_KEY")
 
-DEBUG_TOOLBAR_CONFIG = {
-    'INTERCEPT_REDIRECTS': False,
+LOGIN_URL = '/login/'
+
+ACCESS_TOKEN = {
+    "refresh": os.getenv("REFRESH_TOKEN"),
+    "access": os.getenv("ACCESS_TOKEN"),
 }
+
+# Session expiration settings
+#SESSION_COOKIE_AGE = 1800  # 30 minutes in seconds
+# SESSION_COOKIE_AGE = 1800  # 30 minutes in seconds
+# SESSION_EXPIRE_AT_BROWSER_CLOSE = True
 
 # Configure Django App for Heroku.
 import django_heroku
