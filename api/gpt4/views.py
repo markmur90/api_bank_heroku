@@ -512,6 +512,8 @@ def oauth2_callback0(request):
     return render(request, 'api/GPT4/oauth2_callback.html')
 
 
+
+
 def oauth2_authorize(request):
     try:
         if not request.session.get('oauth_active', False):
