@@ -2,9 +2,11 @@
 set -euo pipefail
 
 PROMPT_MODE=true
-SYNC_REMOTE_DB=true
-HEROKU=true
-GUNICORN=true
+OMIT_SYNC_REMOTE_DB=false
+OMIT_HEROKU=false
+OMIT_GUNICORN=false
+OMIT_CLEAN=false
+
 
 PROJECT_ROOT="$HOME/Documentos/GitHub/api_bank_h2"
 BACKUP_DIR="$HOME/Documentos/GitHub/backup/"
@@ -22,15 +24,16 @@ mkdir -p "$BACKUP_DIR"
 
 
 function usage() {
-    echo "Uso: $0 [-a|--all] [-s|--step] [-o|--omit-remote-sync] [-h|--help]"
+    echo "Uso: $0 [-a|--all] [-s|--step] [-B|--omit-bdd] [-H|--omit-heroku] [-G|--omit-gunicorn] [-C|--omit-clean] [-h|--help]"
 }
 while [[ $# -gt 0 ]]; do
     case "$1" in
         -a|--all) PROMPT_MODE=false; shift ;;
         -s|--step) PROMPT_MODE=true; shift ;;
-        -B|--omit-bdd) SYNC_REMOTE_DB=false; shift ;;
-        -H|--omit-heroku) HEROKU=false; shift ;;
-        -G|--omit-gunicorn) GUNICORN=false; shift ;;
+        -B|--omit-bdd) OMIT_SYNC_REMOTE_DB=true; shift ;;
+        -H|--omit-heroku) OMIT_HEROKU=true; shift ;;
+        -G|--omit-gunicorn) OMIT_GUNICORN=true; shift ;;
+        -C|--omit-clean) OMIT_CLEAN=true; shift ;;
         -h|--help) usage; exit 0 ;;
         *) echo "Opción desconocida: $1"; usage; exit 1 ;;
     esac
@@ -42,7 +45,6 @@ confirmar() {
     printf "\033[1;34m🔷 ¿Confirmas: %s? (s/n):\033[0m " "$1"
     read -r resp
     [[ "$resp" == "s" || -z "$resp" ]]
-    echo -e "\033[7;37m--------------------------------------------------------------------------------\033[0m"
     
 }
 
@@ -62,7 +64,7 @@ if confirmar "Detener puertos abiertos"; then
         fi
     done
 fi
-echo -e "\033[7;34m--------------------------------------------------------------------------------\033[0m"
+echo -e "\033[7;33m--------------------------------------------------------------------------------\033[0m"
 sleep 2
 
 
@@ -80,7 +82,7 @@ if confirmar "Detener contenedores Docker"; then
         echo -e "\033[7;30m----------///----------\033[0m"
     fi
 fi
-echo -e "\033[7;34m--------------------------------------------------------------------------------\033[0m"
+echo -e "\033[7;33m--------------------------------------------------------------------------------\033[0m"
 sleep 2
 
 
@@ -91,7 +93,7 @@ if confirmar "Actualizar sistema"; then
     echo -e "\033[7;30m🔄 Sistema actualizado.\033[0m"
     echo -e "\033[7;30m----------///----------\033[0m"
 fi
-echo -e "\033[7;34m--------------------------------------------------------------------------------\033[0m"
+echo -e "\033[7;33m--------------------------------------------------------------------------------\033[0m"
 sleep 2
 
 
@@ -110,7 +112,7 @@ if confirmar "Configurar venv y PostgreSQL"; then
     echo -e "\033[7;30m🐍 Entorno y PostgreSQL listos.\033[0m"
     echo -e "\033[7;30m----------///----------\033[0m"
 fi
-echo -e "\033[7;34m--------------------------------------------------------------------------------\033[0m"
+echo -e "\033[7;33m--------------------------------------------------------------------------------\033[0m"
 sleep 2
 
 
@@ -132,7 +134,7 @@ if confirmar "Configurar UFW"; then
     echo -e "\033[7;30m🔐 Reglas de UFW aplicadas con éxito.\033[0m"
     echo -e "\033[7;30m----------///----------\033[0m"
 fi
-echo -e "\033[7;34m--------------------------------------------------------------------------------\033[0m"
+echo -e "\033[7;33m--------------------------------------------------------------------------------\033[0m"
 sleep 2
 
 
@@ -185,7 +187,7 @@ EOF
     echo -e "\033[7;30mBase de datos y usuario recreados.\033[0m"
     echo -e "\033[7;30m----------///----------\033[0m"
 fi
-echo -e "\033[7;34m--------------------------------------------------------------------------------\033[0m"
+echo -e "\033[7;33m--------------------------------------------------------------------------------\033[0m"
 sleep 2
 
 
@@ -218,7 +220,7 @@ if confirmar "Ejecutar migraciones y cargar datos"; then
         echo -e "\033[7;30m----------///----------\033[0m"
     fi
 fi
-echo -e "\033[7;34m--------------------------------------------------------------------------------\033[0m"
+echo -e "\033[7;33m--------------------------------------------------------------------------------\033[0m"
 sleep 2
 
 
@@ -234,7 +236,7 @@ if confirmar "Sincronizar cambios a api_bank_heroku"; then
     echo -e "\033[7;30m----------///----------\033[0m"
     sleep 3
 fi
-echo -e "\033[7;34m--------------------------------------------------------------------------------\033[0m"
+echo -e "\033[7;33m--------------------------------------------------------------------------------\033[0m"
 
 
 
@@ -248,14 +250,15 @@ if confirmar "Crear respaldo ZIP"; then
     echo -e "\033[7;30m📦 ZIP creado: $ZIP_PATH.\033[0m"
     echo -e "\033[7;30m----------///----------\033[0m"
 fi
-echo -e "\033[7;34m--------------------------------------------------------------------------------\033[0m"
+echo -e "\033[7;33m--------------------------------------------------------------------------------\033[0m"
 sleep 2
 
 
+if [[ "$OMIT_SYNC_REMOTE_DB" == false ]] && ([[ "$PROMPT_MODE" == false ]] || confirmar "Subir las bases de datos a la web"); then
+    echo -e "\033[7;30m🚀 Subiendo las bses de datos...\033[0m"
 
-
-if [ "$SYNC_REMOTE_DB" = true ]; then
-    echo "🚀 Sincronizando base de datos remota..."
+# if [ "$SYNC_REMOTE_DB" = true ]; then
+#     echo "🚀 Sincronizando base de datos remota..."
     echo -e "\033[7;30m----------///----------\033[0m"
     LOCAL_DB_NAME="mydatabase"
     LOCAL_DB_USER="markmur88"
@@ -284,14 +287,15 @@ if [ "$SYNC_REMOTE_DB" = true ]; then
     echo "✅ Sincronización completada con éxito: $BACKUP_FILE"
     echo -e "\033[7;30m----------///----------\033[0m"
 fi
-echo -e "\033[7;34m--------------------------------------------------------------------------------\033[0m"
+echo -e "\033[7;33m--------------------------------------------------------------------------------\033[0m"
 sleep 2
 
 
 
 
 # 11. Retención de backups
-if confirmar "Limpiar respaldos antiguos"; then
+if [[ "$OMIT_CLEAN" == false ]] && ([[ "$PROMPT_MODE" == false ]] || confirmar "Limpiar respaldos antiguos"); then
+    echo "🚀 Limpiando..."
     cd "$BACKUP_DIR"
     mapfile -t files < <(ls -1tr *.zip *.sql 2>/dev/null)
     declare -A first last all keep
@@ -308,17 +312,20 @@ if confirmar "Limpiar respaldos antiguos"; then
     n=${#today_files[@]}; s=$(( n>10 ? n-10 : 0 ))
     for ((i=s;i<n;i++)); do keep["${today_files[i]}"]=1; done
     for f in "${files[@]}"; do
-        [[ -z "${keep[$f]:-}" ]] && rm -f "$f" && echo -e "\033[7;30m🗑️ Eliminado $f.\033[0m"
+        if [[ -z "${keep[$f]:-}" ]]; then 
+            rm -f "$f" && echo -e "\033[7;30m🗑️ Eliminado $f.\033[0m"
+        fi
     done
     cd - >/dev/null
 fi
-echo -e "\033[7;34m--------------------------------------------------------------------------------\033[0m"
+echo -e "\033[7;33m--------------------------------------------------------------------------------\033[0m"
 sleep 2
 
 
-
-if [ "$HEROKU" = true ]; then
-    echo -e "\033[7;30m Haciendo deploy... \033[0m"
+if [[ "$OMIT_HEROKU" == false ]] && ([[ "$PROMPT_MODE" == false ]] || confirmar "Subir el proyecto a la web"); then
+    echo -e "\033[7;30m🚀 Subiendo el proyecto a Heroku y GitHub...\033[0m"
+# if [ "$HEROKU" = true ]; then
+#     echo -e "\033[7;30m Haciendo deploy... \033[0m"
     echo -e "\033[7;30m----------///----------\033[0m"
     cd "$HEROKU_ROOT" || { echo -e "\033[7;30m❌ Error al acceder a "$HEROKU_ROOT"\033[0m"; exit 1; }
     # Git commit y push (automático)
@@ -336,7 +343,7 @@ if [ "$HEROKU" = true ]; then
     echo -e "\033[7;30m----------///----------\033[0m"
     
 fi
-echo -e "\033[7;34m--------------------------------------------------------------------------------\033[0m"
+echo -e "\033[7;33m--------------------------------------------------------------------------------\033[0m"
 sleep 2
 
 
@@ -352,52 +359,75 @@ if confirmar "Cambiar MAC de la interfaz $INTERFAZ"; then
     echo -e "\033[7;30m🎉 MAC asignada: $MAC_NUEVA\033[0m"
     echo -e "\033[7;30m----------///----------\033[0m"
 fi
-echo -e "\033[7;34m--------------------------------------------------------------------------------\033[0m"
+echo -e "\033[7;33m--------------------------------------------------------------------------------\033[0m"
 sleep 2
 
 
 
 
-if [ "$GUNICORN" = true ]; then
-    echo -e "\033[7;30m Corriendo servidores... \033[0m"
+if [[ "$OMIT_GUNICORN" == false ]] && ([[ "$PROMPT_MODE" == false ]] || confirmar "Iniciar Gunicorn, honeypot y livereload"); then
+    echo "🚀 Iniciar Gunicorn, honeypot y livereload simultáneamente..."
     echo -e "\033[7;30m----------///----------\033[0m"
-
+    # clear
     cd "$PROJECT_ROOT"
     source "$VENV_PATH/bin/activate"
     python manage.py collectstatic --noinput
     export DATABASE_URL="postgres://markmur88:Ptf8454Jd55@localhost:5432/mydatabase"
-
+    # Función para limpiar y salir
+    cleanup() {
+        echo -e "\n\033[1;33mDeteniendo todos los servicios...\033[0m"
+        echo -e "\033[7;30m----------///----------\033[0m"
+        # Matar todos los procesos en segundo plano
+        pids=$(jobs -p)
+        if [ -n "$pids" ]; then
+            kill $pids 2>/dev/null
+        fi
+        # Liberar puertos
+        for port in 8001 5000 35729; do
+            if lsof -i :$port > /dev/null; then
+                echo "Liberando puerto $port..."
+                kill $(lsof -t -i :$port) 2>/dev/null || true
+            fi
+        done
+        echo -e "\033[1;32mTodos los servicios detenidos y puertos liberados.\033[0m"
+        echo -e "\033[7;30m----------///----------\033[0m"
+        exit 0
+    }
+    # Configurar trap para Ctrl+C
+    trap cleanup SIGINT
     # Liberar puertos si es necesario
     for port in 8001 5000 35729; do
         if lsof -i :$port > /dev/null; then
             echo "Liberando puerto $port..."
             echo -e "\033[7;30m----------///----------\033[0m"
-            sleep 3
+            
+            echo ""
             kill $(lsof -t -i :$port) 2>/dev/null || true
         fi
     done
-
     # Iniciar servicios
     nohup gunicorn config.wsgi:application \
         --workers 3 \
         --bind 0.0.0.0:8001 \
         --keep-alive 2 \
         > gunicorn.log 2>&1 < /dev/null &
-
     nohup python honeypot.py \
         > honeypot.log 2>&1 < /dev/null &
 
     nohup livereload --host 0.0.0.0 --port 35729 static/ -t templates/ \
         > livereload.log 2>&1 < /dev/null &
-
     sleep 5
     firefox --new-tab http://0.0.0.0:8000 --new-tab http://localhost:5000
     echo -e "\033[7;30m🚧 Gunicorn, honeypot y livereload están activos. Presiona Ctrl+C para detenerlos.\033[0m"
     echo -e "\033[7;30m----------///----------\033[0m"
-    wait
+    # Esperar indefinidamente hasta que se presione Ctrl+C
+    while true; do
+        sleep 1
+    done
 fi
-clear
-echo -e "\033[7;34m--------------------------------------------------------------------------------\033[0m"
+
+# clear
+echo -e "\033[7;33m--------------------------------------------------------------------------------\033[0m"
 
 
 echo -e "\033[1;30m\n🏁 ¡Todo completado con éxito!\033[0m"
