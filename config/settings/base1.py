@@ -20,17 +20,16 @@ SECRET_KEY = env('SECRET_KEY')
 DEBUG      = env.bool('DEBUG', default=False)
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 
-CLIENT_ID = env('CLIENT_ID')
-SECRET_CLIENT = env('SECRET_CLIENT')
-ACCESS_TOKEN = env('ACCESS_TOKEN')
-ORIGIN = env('ORIGIN')
-TOKEN_URL = env('TOKEN_URL')
-OTP_URL = env('OTP_URL')
-AUTH_URL = env('AUTH_URL')
-API_URL = env('API_URL')
-AUTHORIZE_URL = env('AUTHORIZE_URL')
-REDIRECT_URI = env('REDIRECT_URI')
-SCOPE = env('SCOPE')
+CLIENT_ID = '766ae693-6297-47ea-b825-fd3d07dcf9b6'
+SECRET_CLIENT = 'CCGiHIEQZmMjxS8JXCzt8a8nSKLXKDoVy3a61ZWD2jIaFfcDMq7ekmsLaog3fjpzqVpXj-4piqSoiln7dqKwuQ'
+ORIGIN = 'https://api-bank-heroku-72c443ab11d3.herokuapp.com'
+TOKEN_URL = 'https://simulator-api.db.com:443/gw/oidc/token'
+OTP_URL = 'https://simulator-api.db.com:443/gw/dbapi/others/onetimepasswords/v2/single'
+AUTH_URL = 'https://simulator-api.db.com:443/gw/dbapi/others/transactionAuthorization/v1/challenges'
+API_URL = 'https://simulator-api.db.com:443/gw/dbapi/paymentInitiation/payments/v1/sepaCreditTransfer'
+AUTHORIZE_URL = 'https://simulator-api.db.com:443/gw/oidc/authorize'
+REDIRECT_URI = 'https://api-bank-heroku-72c443ab11d3.herokuapp.com/app/gpt4/oauth2/callback/'
+SCOPE = 'sepa_credit_transfers'
 
 # 4. Apps y middleware (sin cambios)
 INSTALLED_APPS = [

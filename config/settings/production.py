@@ -21,17 +21,7 @@ DEBUG      = env.bool('DEBUG', default=False)
 ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=[])
 
 
-CLIENT_ID = env('CLIENT_ID')
-SECRET_CLIENT = env('SECRET_CLIENT')
-ACCESS_TOKEN = env('ACCESS_TOKEN')
-ORIGIN = env('ORIGIN')
-TOKEN_URL = env('TOKEN_URL')
-OTP_URL = env('OTP_URL')
-AUTH_URL = env('AUTH_URL')
-API_URL = env('API_URL')
-AUTHORIZE_URL = env('AUTHORIZE_URL')
-REDIRECT_URI = env('REDIRECT_URI')
-SCOPE = env('SCOPE')
+
 
 
 
